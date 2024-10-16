@@ -24,8 +24,8 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] "First-order projects" below (which have zero build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] "Second-order projects" below (which have build.zig.zon dependencies) have been updated, their CI is passing/green using the new version.
 * [ ] The `.zigversion` file https://github.com/hexops/mach/blob/main/.zigversion has been updated.
-* [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L187-L192
-* [ ] https://machengine.org/about/zig-version has been updated
+* [ ] The mach build.zig version check has been updated: https://github.com/hexops/mach/blob/main/build.zig#L427-L432
+* [ ] https://machengine.org/docs/zig-version has been updated
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update finalize 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has had `-wip` removed and the `mach-latest` entry has been updated.
 * [ ] The `**IN-PROGRESS**` warning in the _Nomination history_ has been removed.
 * [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=slimsag&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
