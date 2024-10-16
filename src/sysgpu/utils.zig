@@ -12,8 +12,7 @@ pub fn Manager(comptime T: type) type {
         }
 
         pub fn release(manager: *@This()) void {
-            if (@atomicRmw(u32, &manager.count, .Sub, 1, .release) == 1) {
-                @fence(.acquire);
+            if (@atomicRmw(u32, &manager.count, .Sub, 1, .acq_rel) == 1) {
                 const parent: *T = @alignCast(@fieldParentPtr("manager", manager));
                 parent.deinit();
             }
