@@ -83,7 +83,7 @@ pub fn init(
         .libxkbcommon = try LibXkbCommon.load(),
         .libwaylandclient = libwaylandclient_global,
         .interfaces = Interfaces{},
-        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToWaylandDisplay,
+        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
         .title = try options.allocator.dupeZ(u8, options.title),
         .size = &linux.size,
         .modifiers = .{

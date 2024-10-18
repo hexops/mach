@@ -99,8 +99,7 @@ pub fn init(
         else => return err,
     };
     const display = libx11.XOpenDisplay(null) orelse {
-        std.log.err("X11: Cannot open display", .{});
-        return error.CannotOpenDisplay;
+        return error.FailedToConnectToDisplay;
     };
     const screen = c.DefaultScreen(display);
     const visual = c.DefaultVisual(display, screen);
