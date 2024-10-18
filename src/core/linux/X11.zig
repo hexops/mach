@@ -74,7 +74,7 @@ display_mode: DisplayMode = .windowed,
 vsync_mode: VSyncMode = .triple,
 border: bool,
 headless: bool,
-size: Core.Size,
+size: *Core.Size,
 cursor_mode: CursorMode = .normal,
 cursor_shape: CursorShape = .arrow,
 surface_descriptor: *gpu.Surface.DescriptorFromXlibWindow,
@@ -99,8 +99,7 @@ pub fn init(
         else => return err,
     };
     const display = libx11.XOpenDisplay(null) orelse {
-        std.log.err("X11: Cannot open display", .{});
-        return error.CannotOpenDisplay;
+        return error.FailedToConnectToDisplay;
     };
     const screen = c.DefaultScreen(display);
     const visual = c.DefaultVisual(display, screen);
@@ -119,8 +118,8 @@ pub fn init(
         root_window,
         @divFloor(libx11.XDisplayWidth(display, screen), 2), // TODO: add window width?
         @divFloor(libx11.XDisplayHeight(display, screen), 2), // TODO: add window height?
-        options.size.width,
-        options.size.height,
+        linux.size.width,
+        linux.size.height,
         0,
         c.DefaultDepth(display, screen),
         c.InputOutput,
@@ -130,7 +129,7 @@ pub fn init(
     );
     var window_attrs: c.XWindowAttributes = undefined;
     _ = libx11.XGetWindowAttributes(display, window, &window_attrs);
-    const window_size = Core.Size{
+    linux.size = Core.Size{
         .width = @intCast(window_attrs.width),
         .height = @intCast(window_attrs.height),
     };
@@ -180,7 +179,7 @@ pub fn init(
         .display_mode = .windowed,
         .border = options.border,
         .headless = options.headless,
-        .size = window_size,
+        .size = &linux.size,
         .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .surface_descriptor = surface_descriptor,
         .libxkbcommon = try LibXkbCommon.load(),

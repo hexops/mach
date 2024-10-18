@@ -46,6 +46,11 @@ surface_descriptor: gpu.Surface.Descriptor,
 gamemode: ?bool = null,
 backend: Backend,
 
+// these arrays are used as info messages to the user that some features are missing
+// please keep these up to date until we can remove them
+const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/title/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Keyboard input", "Changing display mode", "VSync", "Setting window border/title/cursor" };
+
 pub fn init(
     linux: *Linux,
     core: *Core.Mod,
@@ -54,14 +59,21 @@ pub fn init(
     linux.allocator = options.allocator;
 
     if (!options.is_app and try wantGamemode(linux.allocator)) linux.gamemode = initLinuxGamemode();
+    linux.headless = options.headless;
+    linux.refresh_rate = 60; // TODO: set to something meaningful
+    linux.vsync_mode = .triple;
+    linux.size = options.size;
+    if (!options.headless) {
+        // TODO: this function does nothing right now
+        setDisplayMode(linux, options.display_mode);
+    }
 
     const desired_backend: BackendEnum = blk: {
         const backend = std.process.getEnvVarOwned(
             linux.allocator,
-            "MACH_CORE_BACKEND",
+            "MACH_BACKEND",
         ) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => {
-                // TODO(core): default to .x11 in the future
                 break :blk .wayland;
             },
             else => return err,
@@ -70,36 +82,34 @@ pub fn init(
 
         if (std.ascii.eqlIgnoreCase(backend, "x11")) break :blk .x11;
         if (std.ascii.eqlIgnoreCase(backend, "wayland")) break :blk .wayland;
-        std.debug.panic("mach: unknown MACH_CORE_BACKEND: {s}", .{backend});
+        std.debug.panic("mach: unknown MACH_BACKEND: {s}", .{backend});
     };
-
-    if (desired_backend == .x11) {
-        // TODO(core): support X11 in the future
-        @panic("X11 is not supported...YET");
-    }
 
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
-        .x11 => {
-            // const x11 = X11.init(linux, core, options) catch |err| switch (err) {
-            //     error.NotSupported => {
-            //         log.err("failed to initialize X11 backend, falling back to Wayland", .{});
-            //         linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-            //     },
-            //     else => return err,
-            // };
-            // linux.backend = .{ .x11 = x11 };
+        .x11 => blk: {
+            const x11 = X11.init(linux, core, options) catch |err| {
+                const err_msg = switch (err) {
+                    error.LibraryNotFound => "Missing X11 library",
+                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    else => "An unknown error occured while trying to connect to X11",
+                };
+                log.err("{s}\nFalling back to Wayland\n", .{err_msg});
+                linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+                break :blk;
+            };
+            linux.backend = .{ .x11 = x11 };
         },
-        .wayland => {
-            const wayland = Wayland.init(linux, core, options) catch |err| switch (err) {
-                error.LibraryNotFound => {
-                    log.err("failed to initialize Wayland backend, falling back to X11", .{});
-                    linux.backend = .{ .x11 = try X11.init(linux, core, options) };
-
-                    // TODO(core): support X11 in the future
-                    @panic("X11 is not supported...YET");
-                },
-                else => return err,
+        .wayland => blk: {
+            const wayland = Wayland.init(linux, core, options) catch |err| {
+                const err_msg = switch (err) {
+                    error.LibraryNotFound => "Missing Wayland library",
+                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    else => "An unknown error occured while trying to connect to Wayland",
+                };
+                log.err("{s}\nFalling back to X11\n", .{err_msg});
+                linux.backend = .{ .x11 = try X11.init(linux, core, options) };
+                break :blk;
             };
             linux.backend = .{ .wayland = wayland };
         },
@@ -114,7 +124,9 @@ pub fn init(
         },
     }
 
-    linux.refresh_rate = 60; // TODO: set to something meaningful
+    // warn about incomplete features
+    // TODO: remove this when linux is not missing major features
+    try warnAboutIncompleteFeatures(linux.backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, options.allocator);
 
     return;
 }
@@ -129,7 +141,11 @@ pub fn deinit(linux: *Linux) void {
     return;
 }
 
-pub fn update(_: *Linux) !void {
+pub fn update(linux: *Linux) !void {
+    switch (linux.backend) {
+        .wayland => {},
+        .x11 => try linux.backend.x11.update(),
+    }
     return;
 }
 
@@ -182,11 +198,46 @@ pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf
 pub fn initLinuxGamemode() bool {
     mach.gamemode.start();
     if (!mach.gamemode.isActive()) return false;
-    gamemode_log.info("gamemode: activated", .{});
+    gamemode_log.info("gamemode: activated\n", .{});
     return true;
 }
 
 pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
-    gamemode_log.info("gamemode: deactivated", .{});
+    gamemode_log.info("gamemode: deactivated\n", .{});
+}
+
+/// Used to inform users that some features are not present. Remove when features are complete.
+fn warnAboutIncompleteFeatures(backend: BackendEnum, missing_features_x11: []const []const u8, missing_features_wayland: []const []const u8, alloc: std.mem.Allocator) !void {
+    const features_incomplete_message =
+        \\WARNING: You are using the {s} backend, which is currently experimental as we continue to rewrite Mach in Zig instead of using C libraries like GLFW/etc. The following features are expected to not work:
+        \\
+        \\{s}
+        \\
+        \\Contributions welcome!
+        \\
+    ;
+    const bullet_points = switch (backend) {
+        .x11 => try generateFeatureBulletPoints(missing_features_x11, alloc),
+        .wayland => try generateFeatureBulletPoints(missing_features_wayland, alloc),
+    };
+    defer bullet_points.deinit();
+    log.info(features_incomplete_message, .{ @tagName(backend), bullet_points.items });
+}
+
+/// Turn an array of strings into a single, bullet-pointed string, like this:
+/// * Item one
+/// * Item two
+///
+/// Returned value will need to be deinitialized.
+fn generateFeatureBulletPoints(features: []const []const u8, alloc: std.mem.Allocator) !std.ArrayList(u8) {
+    var message = std.ArrayList(u8).init(alloc);
+    for (features, 0..) |str, i| {
+        try message.appendSlice("* ");
+        try message.appendSlice(str);
+        if (i < features.len - 1) {
+            try message.appendSlice("\n");
+        }
+    }
+    return message;
 }

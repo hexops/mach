@@ -83,7 +83,7 @@ pub fn init(
         .libxkbcommon = try LibXkbCommon.load(),
         .libwaylandclient = libwaylandclient_global,
         .interfaces = Interfaces{},
-        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToWaylandDisplay,
+        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
         .title = try options.allocator.dupeZ(u8, options.title),
         .size = &linux.size,
         .modifiers = .{
@@ -130,8 +130,8 @@ pub fn init(
             region,
             0,
             0,
-            @intCast(options.size.width),
-            @intCast(options.size.height),
+            @intCast(wl.size.width),
+            @intCast(wl.size.height),
         );
         c.wl_surface_set_opaque_region(wl.surface, region);
         c.wl_region_destroy(region);
