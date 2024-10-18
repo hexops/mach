@@ -88,26 +88,28 @@ pub fn init(
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
         .x11 => blk: {
-            const x11 = X11.init(linux, core, options) catch |err| switch (err) {
-                error.LibraryNotFound => {
-                    log.err("failed to initialize X11 backend, falling back to Wayland", .{});
-                    linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-
-                    break :blk;
-                },
-                else => return err,
+            const x11 = X11.init(linux, core, options) catch |err| {
+                const err_msg = switch (err) {
+                    error.LibraryNotFound => "Missing X11 library",
+                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    else => "An unknown error occured while trying to connect to X11",
+                };
+                log.err("{s}\nFalling back to Wayland\n", .{err_msg});
+                linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
+                break :blk;
             };
             linux.backend = .{ .x11 = x11 };
         },
         .wayland => blk: {
-            const wayland = Wayland.init(linux, core, options) catch |err| switch (err) {
-                error.LibraryNotFound => {
-                    log.err("failed to initialize Wayland backend, falling back to X11", .{});
-                    linux.backend = .{ .x11 = try X11.init(linux, core, options) };
-
-                    break :blk;
-                },
-                else => return err,
+            const wayland = Wayland.init(linux, core, options) catch |err| {
+                const err_msg = switch (err) {
+                    error.LibraryNotFound => "Missing Wayland library",
+                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    else => "An unknown error occured while trying to connect to Wayland",
+                };
+                log.err("{s}\nFalling back to X11\n", .{err_msg});
+                linux.backend = .{ .x11 = try X11.init(linux, core, options) };
+                break :blk;
             };
             linux.backend = .{ .wayland = wayland };
         },
@@ -196,13 +198,13 @@ pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf
 pub fn initLinuxGamemode() bool {
     mach.gamemode.start();
     if (!mach.gamemode.isActive()) return false;
-    gamemode_log.info("gamemode: activated", .{});
+    gamemode_log.info("gamemode: activated\n", .{});
     return true;
 }
 
 pub fn deinitLinuxGamemode() void {
     mach.gamemode.stop();
-    gamemode_log.info("gamemode: deactivated", .{});
+    gamemode_log.info("gamemode: deactivated\n", .{});
 }
 
 /// Used to inform users that some features are not present. Remove when features are complete.
@@ -213,6 +215,7 @@ fn warnAboutIncompleteFeatures(backend: BackendEnum, missing_features_x11: []con
         \\{s}
         \\
         \\Contributions welcome!
+        \\
     ;
     const bullet_points = switch (backend) {
         .x11 => try generateFeatureBulletPoints(missing_features_x11, alloc),
