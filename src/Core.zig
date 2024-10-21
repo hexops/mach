@@ -611,6 +611,7 @@ fn presentFrame(core: *Mod, entities: *mach.Entities.Mod) !void {
     if (num_windows > 1) @panic("mach: Core currently only supports a single window");
 
     _ = try state.platform.update();
+    mach.sysgpu.Impl.deviceTick(state.device);
     state.swap_chain.present();
 
     // Update swapchain for the next frame
