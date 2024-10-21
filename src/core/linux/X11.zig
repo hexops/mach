@@ -243,7 +243,6 @@ pub fn deinit(
     x11: *X11,
     linux: *Linux,
 ) void {
-    x11.allocator.destroy(x11.surface_descriptor);
     linux.allocator.destroy(x11.surface_descriptor);
     for (x11.cursors) |cur| {
         if (cur) |_| {
