@@ -185,7 +185,6 @@ pub fn init(
         .surface_descriptor = surface_descriptor,
         .libxkbcommon = try LibXkbCommon.load(),
     };
-    _ = libx11.XSetErrorHandler(errorHandler);
     _ = libx11.XrmInitialize();
     defer _ = libx11.XFreeColormap(display, colormap);
     for (0..2) |i| {
@@ -441,12 +440,6 @@ const LibXkbCommon = struct {
         return lib;
     }
 };
-
-fn errorHandler(display: ?*c.Display, event: [*c]c.XErrorEvent) callconv(.C) c_int {
-    _ = display;
-    log.err("X11: error code {d}\n", .{event.*.error_code});
-    return 0;
-}
 
 fn createStandardCursor(x11: *X11, shape: CursorShape) !c.Cursor {
     if (x11.libxcursor) |libxcursor| {
