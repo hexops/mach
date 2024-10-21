@@ -91,7 +91,7 @@ pub fn init(
             const x11 = X11.init(linux, core, options) catch |err| {
                 const err_msg = switch (err) {
                     error.LibraryNotFound => "Missing X11 library",
-                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    error.FailedToConnectToDisplay => "Failed to connect to X11 display",
                     else => "An unknown error occured while trying to connect to X11",
                 };
                 log.err("{s}\nFalling back to Wayland\n", .{err_msg});
@@ -104,7 +104,7 @@ pub fn init(
             const wayland = Wayland.init(linux, core, options) catch |err| {
                 const err_msg = switch (err) {
                     error.LibraryNotFound => "Missing Wayland library",
-                    error.FailedToConnectToDisplay => "Failed to connect to display",
+                    error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",
                 };
                 log.err("{s}\nFalling back to X11\n", .{err_msg});
