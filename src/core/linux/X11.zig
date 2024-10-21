@@ -86,6 +86,10 @@ pub fn init(
 ) !X11 {
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
+
+    // Xlibx11.XInitThreads must be called first
+    //
+    // if not, 'Unknown sequence number while processing queue' errors occur.
     _ = libx11.XInitThreads();
     const libgl: ?LibGL = LibGL.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
