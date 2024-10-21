@@ -357,7 +357,7 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
 
     // GPU backend (ie. d3d12, metal, opengl, vulkan)
     //
-    // Must be done BEFORE platform deinit.
+    // Must be released BEFORE platform deinit.
     //   Otherwise, we enter a race condition where GPU might try to present
     //   to the window server.
     state.swap_chain.release();
@@ -367,7 +367,7 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
     state.adapter.release();
     state.instance.release();
 
-    // Platform (ie. Windows, MacOS, Linux X11 or Wayland)
+    // Platform (ie. Windows, MacOS, Linux X11, or Wayland)
     state.platform.deinit();
 
     state.events.deinit();
