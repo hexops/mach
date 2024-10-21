@@ -86,6 +86,7 @@ pub fn init(
 ) !X11 {
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
+    _ = libx11.XInitThreads();
     const libgl: ?LibGL = LibGL.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
         else => return err,
@@ -185,7 +186,6 @@ pub fn init(
         .libxkbcommon = try LibXkbCommon.load(),
     };
     _ = libx11.XSetErrorHandler(errorHandler);
-    _ = libx11.XInitThreads();
     _ = libx11.XrmInitialize();
     defer _ = libx11.XFreeColormap(display, colormap);
     for (0..2) |i| {
