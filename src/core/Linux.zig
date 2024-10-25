@@ -103,6 +103,7 @@ pub fn init(
         .wayland => blk: {
             const wayland = Wayland.init(linux, core, options) catch |err| {
                 const err_msg = switch (err) {
+                    error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
                     error.LibraryNotFound => "Missing Wayland library",
                     error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",
