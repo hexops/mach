@@ -94,7 +94,7 @@ pub fn init(
                     error.FailedToConnectToDisplay => "Failed to connect to X11 display",
                     else => "An unknown error occured while trying to connect to X11",
                 };
-                log.err("{s}\nFalling back to Wayland\n", .{err_msg});
+                log.err("{s}\n\nFalling back to Wayland\n", .{err_msg});
                 linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
                 break :blk;
             };
@@ -107,7 +107,7 @@ pub fn init(
                     error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",
                 };
-                log.err("{s}\nFalling back to X11\n", .{err_msg});
+                log.err("{s}\n\nFalling back to X11\n", .{err_msg});
                 linux.backend = .{ .x11 = try X11.init(linux, core, options) };
                 break :blk;
             };
@@ -210,7 +210,7 @@ pub fn deinitLinuxGamemode() void {
 /// Used to inform users that some features are not present. Remove when features are complete.
 fn warnAboutIncompleteFeatures(backend: BackendEnum, missing_features_x11: []const []const u8, missing_features_wayland: []const []const u8, alloc: std.mem.Allocator) !void {
     const features_incomplete_message =
-        \\WARNING: You are using the {s} backend, which is currently experimental as we continue to rewrite Mach in Zig instead of using C libraries like GLFW/etc. The following features are expected to not work:
+        \\You are using the {s} backend, which is currently experimental as we continue to rewrite Mach in Zig instead of using C libraries like GLFW/etc. The following features are expected to not work:
         \\
         \\{s}
         \\
@@ -222,7 +222,7 @@ fn warnAboutIncompleteFeatures(backend: BackendEnum, missing_features_x11: []con
         .wayland => try generateFeatureBulletPoints(missing_features_wayland, alloc),
     };
     defer bullet_points.deinit();
-    log.info(features_incomplete_message, .{ @tagName(backend), bullet_points.items });
+    log.warn(features_incomplete_message, .{ @tagName(backend), bullet_points.items });
 }
 
 /// Turn an array of strings into a single, bullet-pointed string, like this:
