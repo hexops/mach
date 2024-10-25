@@ -178,6 +178,27 @@ pub fn deinit(
 }
 
 pub fn update(wl: *Wayland) !void {
+    while (wl.libwaylandclient.wl_display_flush(wl.display) == -1) {
+        if (std.posix.errno(-1) == std.posix.E.AGAIN) {
+            log.err("flush error", .{});
+            return error.FlushError;
+        }
+        var pollfd = [_]std.posix.pollfd{
+            std.posix.pollfd{
+                .fd = wl.libwaylandclient.wl_display_get_fd(wl.display),
+                .events = std.posix.POLL.OUT,
+                .revents = 0,
+            },
+        };
+        while (try std.posix.poll(&pollfd, 1) == -1) {
+            const errno = std.posix.errno(-1);
+            if (errno == std.posix.E.INTR or errno == std.posix.E.AGAIN) {
+                log.err("poll error", .{});
+                return error.PollError;
+            }
+        }
+    }
+
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
     wl.core.input.tick();
