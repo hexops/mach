@@ -312,7 +312,8 @@ fn linkCore(b: *std.Build, module: *std.Build.Module) void {
             .target = target,
             .optimize = optimize,
         })) |dep| {
-            module.linkLibrary(dep.artifact("wayland-headers"));
+            module.addIncludePath(dep.path("wayland"));
+            module.addIncludePath(dep.path("wayland-protocols"));
         }
         if (b.lazyDependency("x11_headers", .{
             .target = target,
