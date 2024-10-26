@@ -52,10 +52,9 @@
             .hash = "1220aa08da5d0682f5e6defcd8fcc3f7fbd7c3f471ec25cca6cc47e1e0f003dad28b",
             .lazy = true,
         },
-        .wayland_headers = .{
-            .url = "https://pkg.machengine.org/wayland-headers/464f5d7e9de3bd93dd6f4b4f880b7276ecdcaf13.tar.gz",
-            .hash = "12205ac3159cfe9af679bf43545a71e45216ee110ee6d37ee4bedbb1cbc7f6caff7d",
-            .lazy = true,
+        .shimizu = .{
+            .url = "https://git.sr.ht/~geemili/shimizu/archive/76ea423f2467978020765e8e3d0975a14aa641f8.tar.gz",
+            .hash = "1220875e9cb9629bdf5cb5387b40b229d09ae5079c59519e4d49e22674df461eb40d",
         },
         .x11_headers = .{
             .url = "https://pkg.machengine.org/x11-headers/29aefb525d5c08b05b0351e34b1623854a138c21.tar.gz",

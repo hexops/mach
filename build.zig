@@ -101,11 +101,6 @@ pub fn build(b: *std.Build) !void {
         if (want_examples) try buildExamples(b, optimize, target, module);
     }
     if (want_core) {
-        if (target.result.os.tag == .linux) {
-            module.addCSourceFile(.{
-                .file = b.path("src/core/linux/wayland.c"),
-            });
-        }
         linkCore(b, module);
     }
     if (want_sysaudio) {
@@ -278,11 +273,42 @@ fn linkCore(b: *std.Build, module: *std.Build.Module) void {
     const optimize = module.optimize orelse @panic("module must have .optimize specified");
 
     if (target.result.os.tag == .linux) {
-        if (b.lazyDependency("wayland_headers", .{
+        if (b.lazyDependency("shimizu", .{
             .target = target,
             .optimize = optimize,
         })) |dep| {
-            module.linkLibrary(dep.artifact("wayland-headers"));
+            module.addImport("shimizu", dep.module("shimizu"));
+
+            const generate_wayland_protocols_zig_cmd = b.addRunArtifact(dep.artifact("shimizu-scanner"));
+            generate_wayland_protocols_zig_cmd.addFileArg(b.path("src/core/linux/Wayland/xdg-shell.xml"));
+            generate_wayland_protocols_zig_cmd.addFileArg(b.path("src/core/linux/Wayland/xdg-decoration-unstable-v1.xml"));
+
+            // lowest common denominators as of 2024-01-05 https://wayland.app/protocols/xdg-shell#compositor-support
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "xdg_wm_base", "2" });
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "wp_presentation", "1" });
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "wp_viewporter", "1" });
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "zwp_linux_dmabuf_v1", "3" });
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "zwp_tablet_manager_v2", "1" });
+            generate_wayland_protocols_zig_cmd.addArgs(&.{ "--interface-version", "zxdg_decoration_manager_v1", "1" });
+
+            generate_wayland_protocols_zig_cmd.addArg("--import");
+            generate_wayland_protocols_zig_cmd.addFileArg(b.path("src/core/linux/Wayland/wayland.xml"));
+            generate_wayland_protocols_zig_cmd.addArg("@import(\"core\")");
+
+            generate_wayland_protocols_zig_cmd.addArg("--output");
+            const wayland_protocols_dir = generate_wayland_protocols_zig_cmd.addOutputDirectoryArg("wayland-unstable");
+
+            const wayland_protocols_module = b.addModule("wayland-protocols", .{
+                .root_source_file = wayland_protocols_dir.path(b, "root.zig"),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "wire", .module = dep.module("wire") },
+                    .{ .name = "core", .module = dep.module("core") },
+                },
+            });
+
+            module.addImport("wayland-protocols", wayland_protocols_module);
         }
         if (b.lazyDependency("x11_headers", .{
             .target = target,
