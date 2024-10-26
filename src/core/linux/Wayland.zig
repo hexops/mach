@@ -49,6 +49,7 @@ state: *Core,
 core: *Core,
 title: [:0]const u8,
 size: *Core.Size,
+pending_size: ?Core.Size = null,
 surface_descriptor: *gpu.Surface.DescriptorFromWaylandSurface,
 configured: bool = false,
 
@@ -737,6 +738,10 @@ const xdg_surface_listener = struct {
             wl.configured = true;
         }
 
+        if (wl.pending_size) |pending_size| {
+            wl.size.* = pending_size;
+            wl.pending_size = null;
+        }
         setContentAreaOpaque(wl, wl.size.*);
     }
 
@@ -754,7 +759,7 @@ const xdg_toplevel_listener = struct {
         _ = states;
 
         if (width > 0 and height > 0) {
-            wl.size.* = .{ .width = @intCast(width), .height = @intCast(height) };
+            wl.pending_size = .{ .width = @intCast(width), .height = @intCast(height) };
         }
     }
 
