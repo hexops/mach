@@ -31,7 +31,7 @@ pub fn main() !void {
     while (true) {
         std.debug.print("( paused = {}, volume = {d} )\n> ", .{ player.paused(), try player.volume() });
         const line = (try std.io.getStdIn().reader().readUntilDelimiterOrEof(&buf, '\n')) orelse break;
-        var iter = std.mem.split(u8, line, ":");
+        var iter = std.mem.splitScalar(u8, line, ':');
         const cmd = std.mem.trimRight(u8, iter.first(), &std.ascii.whitespace);
         if (std.mem.eql(u8, cmd, "vol")) {
             const vol = try std.fmt.parseFloat(f32, std.mem.trim(u8, iter.next().?, &std.ascii.whitespace));
