@@ -312,6 +312,7 @@ fn linkCore(b: *std.Build, module: *std.Build.Module) void {
             .target = target,
             .optimize = optimize,
         })) |dep| {
+            module.addIncludePath(dep.path("libdecor"));
             module.addIncludePath(dep.path("wayland"));
             module.addIncludePath(dep.path("wayland-protocols"));
         }
