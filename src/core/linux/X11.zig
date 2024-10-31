@@ -65,9 +65,6 @@ hidden_cursor: c.Cursor,
 // Mutable fields only used by main thread
 cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
 
-// Input state; written from main thread; read from any
-input_mu: std.Thread.RwLock = .{},
-
 // Mutable state fields; read/write by any thread
 title: [:0]const u8,
 display_mode: DisplayMode = .windowed,
@@ -521,9 +518,7 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
 
             switch (event.type) {
                 c.KeyPress => {
-                    x11.input_mu.lock();
                     x11.state.input_state.keys.set(@intFromEnum(key_event.key));
-                    x11.input_mu.unlock();
                     x11.state.pushEvent(.{ .key_press = key_event });
 
                     const codepoint = x11.libxkbcommon.xkb_keysym_to_utf32(@truncate(keysym));
@@ -532,9 +527,7 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
                     }
                 },
                 c.KeyRelease => {
-                    x11.input_mu.lock();
                     x11.state.input_state.keys.unset(@intFromEnum(key_event.key));
-                    x11.input_mu.unlock();
                     x11.state.pushEvent(.{ .key_release = key_event });
                 },
                 else => unreachable,
@@ -560,9 +553,7 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
                 .mods = toMachMods(event.xbutton.state),
             };
 
-            x11.input_mu.lock();
             x11.state.input_state.mouse_buttons.set(@intFromEnum(mouse_button.button));
-            x11.input_mu.unlock();
             x11.state.pushEvent(.{ .mouse_press = mouse_button });
         },
         c.ButtonRelease => {
@@ -574,9 +565,7 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
                 .mods = toMachMods(event.xbutton.state),
             };
 
-            x11.input_mu.lock();
             x11.state.input_state.mouse_buttons.unset(@intFromEnum(mouse_button.button));
-            x11.input_mu.unlock();
             x11.state.pushEvent(.{ .mouse_release = mouse_button });
         },
         c.ClientMessage => {
@@ -606,17 +595,13 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
         c.EnterNotify => {
             const x: f32 = @floatFromInt(event.xcrossing.x);
             const y: f32 = @floatFromInt(event.xcrossing.y);
-            x11.input_mu.lock();
             x11.state.input_state.mouse_position = .{ .x = x, .y = y };
-            x11.input_mu.unlock();
             x11.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         },
         c.MotionNotify => {
             const x: f32 = @floatFromInt(event.xmotion.x);
             const y: f32 = @floatFromInt(event.xmotion.y);
-            x11.input_mu.lock();
             x11.state.input_state.mouse_position = .{ .x = x, .y = y };
-            x11.input_mu.unlock();
             x11.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         },
         c.ConfigureNotify => {
