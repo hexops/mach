@@ -84,9 +84,11 @@ pub fn init(
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
 
-    // Xlibx11.XInitThreads must be called first
-    //
-    // if not, 'Unknown sequence number while processing queue' errors occur.
+    // Note: X11 (at least, older versions of it definitely) have a race condition with frame submission
+    // when the Vulkan presentation mode != .none; XInitThreads() resolves this. We use XInitThreads
+    // /solely/ to ensure we can use .double and .triple presentation modes, we do not use it for
+    // anything else and otherwise treat all X11 API calls as if they are not thread-safe as with all
+    // other native GUI APIs.
     _ = libx11.XInitThreads();
     const libgl: ?LibGL = LibGL.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
