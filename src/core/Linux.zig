@@ -49,7 +49,7 @@ backend: Backend,
 // these arrays are used as info messages to the user that some features are missing
 // please keep these up to date until we can remove them
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/title/cursor" };
-const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Keyboard input", "Changing display mode", "VSync", "Setting window border/title/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/title/cursor" };
 
 pub fn init(
     linux: *Linux,
@@ -87,31 +87,27 @@ pub fn init(
 
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
-        .x11 => blk: {
-            const x11 = X11.init(linux, core, options) catch |err| {
+        .x11 => {
+            X11.init(linux, core, options) catch |err| {
                 const err_msg = switch (err) {
                     error.LibraryNotFound => "Missing X11 library",
                     error.FailedToConnectToDisplay => "Failed to connect to X11 display",
                     else => "An unknown error occured while trying to connect to X11",
                 };
                 log.err("{s}\nFalling back to Wayland\n", .{err_msg});
-                linux.backend = .{ .wayland = try Wayland.init(linux, core, options) };
-                break :blk;
+                try Wayland.init(linux, core, options);
             };
-            linux.backend = .{ .x11 = x11 };
         },
-        .wayland => blk: {
-            const wayland = Wayland.init(linux, core, options) catch |err| {
+        .wayland => {
+            Wayland.init(linux, core, options) catch |err| {
                 const err_msg = switch (err) {
                     error.LibraryNotFound => "Missing Wayland library",
                     error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",
                 };
                 log.err("{s}\nFalling back to X11\n", .{err_msg});
-                linux.backend = .{ .x11 = try X11.init(linux, core, options) };
-                break :blk;
+                try X11.init(linux, core, options);
             };
-            linux.backend = .{ .wayland = wayland };
         },
     }
 
@@ -143,7 +139,7 @@ pub fn deinit(linux: *Linux) void {
 
 pub fn update(linux: *Linux) !void {
     switch (linux.backend) {
-        .wayland => {},
+        .wayland => try linux.backend.wayland.update(),
         .x11 => try linux.backend.x11.update(),
     }
     return;
