@@ -83,7 +83,7 @@ pub fn init(
     linux: *Linux,
     core: *Core.Mod,
     options: InitOptions,
-) !X11 {
+) !void {
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
 
@@ -152,7 +152,7 @@ pub fn init(
         .display = display,
         .window = @intCast(window),
     };
-    var x11 = X11{
+    linux.backend = .{ .x11 = X11{
         .core = @fieldParentPtr("platform", linux),
         .state = core.state(),
         .allocator = options.allocator,
@@ -188,7 +188,8 @@ pub fn init(
         .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .surface_descriptor = surface_descriptor,
         .libxkbcommon = try LibXkbCommon.load(),
-    };
+    } };
+    var x11 = &linux.backend.x11;
     _ = libx11.XrmInitialize();
     defer _ = libx11.XFreeColormap(display, colormap);
     for (0..2) |i| {
@@ -239,7 +240,6 @@ pub fn init(
     }
     // TODO: remove allocation
     x11.cursors[@intFromEnum(CursorShape.arrow)] = try x11.createStandardCursor(.arrow);
-    return x11;
 }
 
 pub fn deinit(

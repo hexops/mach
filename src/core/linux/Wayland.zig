@@ -75,42 +75,45 @@ pub fn init(
     linux: *Linux,
     core: *Core.Mod,
     options: InitOptions,
-) !Wayland {
+) !void {
     libwaylandclient_global = try LibWaylandClient.load();
-    var wl = Wayland{
-        .core = @fieldParentPtr("platform", linux),
-        .state = core.state(),
-        .libxkbcommon = try LibXkbCommon.load(),
-        .libwaylandclient = libwaylandclient_global,
-        .interfaces = Interfaces{},
-        .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
-        .title = try options.allocator.dupeZ(u8, options.title),
-        .size = &linux.size,
-        .modifiers = .{
-            .alt = false,
-            .caps_lock = false,
-            .control = false,
-            .num_lock = false,
-            .shift = false,
-            .super = false,
+    linux.backend = .{
+        .wayland = Wayland{
+            .core = @fieldParentPtr("platform", linux),
+            .state = core.state(),
+            .libxkbcommon = try LibXkbCommon.load(),
+            .libwaylandclient = libwaylandclient_global,
+            .interfaces = Interfaces{},
+            .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
+            .title = try options.allocator.dupeZ(u8, options.title),
+            .size = &linux.size,
+            .modifiers = .{
+                .alt = false,
+                .caps_lock = false,
+                .control = false,
+                .num_lock = false,
+                .shift = false,
+                .super = false,
+            },
+            .input_state = .{},
+            .modifier_indices = .{ // TODO: make sure these are always getting initialized, we don't want undefined behavior
+                .control_index = undefined,
+                .alt_index = undefined,
+                .shift_index = undefined,
+                .super_index = undefined,
+                .caps_lock_index = undefined,
+                .num_lock_index = undefined,
+            },
+            .surface_descriptor = undefined,
+            .surface = undefined,
         },
-        .input_state = .{},
-        .modifier_indices = .{ // TODO: make sure these are always getting initialized, we don't want undefined behavior
-            .control_index = undefined,
-            .alt_index = undefined,
-            .shift_index = undefined,
-            .super_index = undefined,
-            .caps_lock_index = undefined,
-            .num_lock_index = undefined,
-        },
-        .surface_descriptor = undefined,
-        .surface = undefined,
     };
+    var wl = &linux.backend.wayland;
     wl.xkb_context = wl.libxkbcommon.xkb_context_new(0) orelse return error.FailedToGetXkbContext;
     const registry = c.wl_display_get_registry(wl.display) orelse return error.FailedToGetDisplayRegistry;
 
     // TODO: handle error return value here
-    _ = c.wl_registry_add_listener(registry, &registry_listener.listener, &wl);
+    _ = c.wl_registry_add_listener(registry, &registry_listener.listener, wl);
 
     //Round trip to get all the registry objects
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
@@ -145,10 +148,10 @@ pub fn init(
     const toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
 
     // TODO: handle this return value
-    _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, &wl);
+    _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, wl);
 
     // TODO: handle this return value
-    _ = c.xdg_toplevel_add_listener(toplevel, &xdg_toplevel_listener.listener, &wl);
+    _ = c.xdg_toplevel_add_listener(toplevel, &xdg_toplevel_listener.listener, wl);
 
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
@@ -170,8 +173,6 @@ pub fn init(
     c.wl_surface_commit(wl.surface);
     // TODO: handle return value
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
-
-    return wl;
 }
 
 pub fn deinit(
@@ -182,6 +183,27 @@ pub fn deinit(
 }
 
 pub fn update(wl: *Wayland) !void {
+    while (wl.libwaylandclient.wl_display_flush(wl.display) == -1) {
+        if (std.posix.errno(-1) == std.posix.E.AGAIN) {
+            log.err("flush error", .{});
+            return error.FlushError;
+        }
+        var pollfd = [_]std.posix.pollfd{
+            std.posix.pollfd{
+                .fd = wl.libwaylandclient.wl_display_get_fd(wl.display),
+                .events = std.posix.POLL.OUT,
+                .revents = 0,
+            },
+        };
+        while (try std.posix.poll(&pollfd, 1) == -1) {
+            const errno = std.posix.errno(-1);
+            if (errno == std.posix.E.INTR or errno == std.posix.E.AGAIN) {
+                log.err("poll error", .{});
+                return error.PollError;
+            }
+        }
+    }
+
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
     wl.core.input.tick();
@@ -399,8 +421,9 @@ const keyboard_listener = struct {
         //Close the fd
         std.posix.close(fd);
 
+        //Release reference to old state and create new state
+        wl.libxkbcommon.xkb_state_unref(wl.xkb_state);
         const state = wl.libxkbcommon.xkb_state_new(keymap).?;
-        defer wl.libxkbcommon.xkb_state_unref(state);
 
         //this chain hurts me. why must C be this way.
         const locale = std.posix.getenv("LC_ALL") orelse std.posix.getenv("LC_CTYPE") orelse std.posix.getenv("LANG") orelse "C";
