@@ -265,7 +265,11 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         .format = .bgra8_unorm,
         .width = @intCast(state.platform.size.width),
         .height = @intCast(state.platform.size.height),
-        .present_mode = .mailbox,
+        .present_mode = switch (state.platform.vsync_mode) {
+            .none => .immediate,
+            .double => .fifo,
+            .triple => .mailbox,
+        },
     };
     state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
 
