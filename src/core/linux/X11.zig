@@ -86,6 +86,11 @@ pub fn init(
 ) !void {
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
+
+    // Xlibx11.XInitThreads must be called first
+    //
+    // if not, 'Unknown sequence number while processing queue' errors occur.
+    _ = libx11.XInitThreads();
     const libgl: ?LibGL = LibGL.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
         else => return err,
@@ -185,8 +190,6 @@ pub fn init(
         .libxkbcommon = try LibXkbCommon.load(),
     } };
     var x11 = &linux.backend.x11;
-    _ = libx11.XSetErrorHandler(errorHandler);
-    _ = libx11.XInitThreads();
     _ = libx11.XrmInitialize();
     defer _ = libx11.XFreeColormap(display, colormap);
     for (0..2) |i| {
@@ -441,12 +444,6 @@ const LibXkbCommon = struct {
         return lib;
     }
 };
-
-fn errorHandler(display: ?*c.Display, event: [*c]c.XErrorEvent) callconv(.C) c_int {
-    _ = display;
-    log.err("X11: error code {d}\n", .{event.*.error_code});
-    return 0;
-}
 
 fn createStandardCursor(x11: *X11, shape: CursorShape) !c.Cursor {
     if (x11.libxcursor) |libxcursor| {

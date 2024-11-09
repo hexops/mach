@@ -355,13 +355,18 @@ pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
         }
     }
 
-    state.platform.deinit();
+    // GPU backend must be released BEFORE platform deinit, otherwise we may enter a race
+    // where the GPU might try to present to the window server.
     state.swap_chain.release();
     state.queue.release();
     state.device.release();
     state.surface.release();
     state.adapter.release();
     state.instance.release();
+
+    // Deinit the platform
+    state.platform.deinit();
+
     state.events.deinit();
 }
 

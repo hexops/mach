@@ -70,12 +70,53 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
     build_options.addOption(Platform, "core_platform", core_platform);
 
+    var examples = [_]Example{
+        .{ .name = "core-custom-entrypoint", .deps = &.{} },
+        .{ .name = "core-triangle", .deps = &.{} },
+        .{ .name = "custom-renderer", .deps = &.{} },
+        .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
+        // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
+        .{ .name = "piano", .deps = &.{} },
+        .{ .name = "play-opus", .deps = &.{.assets} },
+        // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
+        .{ .name = "text", .deps = &.{.assets} },
+    };
+
+    var sysaudio_tests = [_]SysAudioTest{
+        .{ .name = "record" },
+        .{ .name = "sine" },
+    };
+
+    // Setup Steps
+    const docs_step = b.step("docs", "Generate docs");
+    for (&examples) |*example| {
+        example.run_step = b.step(
+            b.fmt("run-{s}", .{example.name}),
+            b.fmt("Run example: {s}", .{example.name}),
+        );
+    }
+    const test_step = b.step("test", "Test Run: Unit Tests");
+    for (&sysaudio_tests) |*sysaudio_test| {
+        sysaudio_test.run_step = b.step(
+            b.fmt("test-sysaudio-{s}", .{sysaudio_test.name}),
+            b.fmt("Test Run: sysaudio {s}", .{sysaudio_test.name}),
+        );
+    }
+
     const module = b.addModule("mach", .{
         .root_source_file = b.path("src/main.zig"),
         .optimize = optimize,
         .target = target,
     });
     module.addImport("build-options", build_options.createModule());
+
+    buildExamples(
+        b,
+        optimize,
+        target,
+        module,
+        &examples,
+    );
 
     if (want_mach) {
         // Linux gamemode requires libc.
@@ -98,7 +139,9 @@ pub fn build(b: *std.Build) !void {
         }
         if (b.lazyDependency("font_assets", .{})) |dep| module.addImport("font-assets", dep.module("font-assets"));
 
-        if (want_examples) try buildExamples(b, optimize, target, module);
+        if (want_examples) {
+            for (examples) |example| b.getInstallStep().dependOn(example.install_step);
+        }
     }
     if (want_core) {
         if (target.result.os.tag == .linux) {
@@ -117,30 +160,19 @@ pub fn build(b: *std.Build) !void {
             });
         }
         if (target.result.cpu.arch != .wasm32) {
-            if (want_examples) {
-                // TODO(build): make these 'tests' not 'examples'
-                inline for ([_][]const u8{
-                    "sine",
-                    "record",
-                }) |example| {
-                    const example_exe = b.addExecutable(.{
-                        .name = "sysaudio-" ++ example,
-                        .root_source_file = b.path("src/sysaudio/examples/" ++ example ++ ".zig"),
-                        .target = target,
-                        .optimize = optimize,
-                    });
-                    example_exe.root_module.addImport("mach", module);
+            for (&sysaudio_tests) |*sysaudio_test| {
+                const test_exe = b.addExecutable(.{
+                    .name = b.fmt("sysaudio-{s}", .{sysaudio_test.name}),
+                    .root_source_file = b.path(b.fmt("src/sysaudio/tests/{s}.zig", .{sysaudio_test.name})),
+                    .target = target,
+                    .optimize = optimize,
+                });
+                test_exe.root_module.addImport("mach", module);
 
-                    const example_compile_step = b.step("sysaudio-" ++ example, "Compile 'sysaudio-" ++ example ++ "' example");
-                    example_compile_step.dependOn(b.getInstallStep());
+                const run_cmd = b.addRunArtifact(test_exe);
+                if (b.args) |args| run_cmd.addArgs(args);
 
-                    const example_run_cmd = b.addRunArtifact(example_exe);
-                    example_run_cmd.step.dependOn(b.getInstallStep());
-                    if (b.args) |args| example_run_cmd.addArgs(args);
-
-                    const example_run_step = b.step("run-sysaudio-" ++ example, "Run '" ++ example ++ "' example");
-                    example_run_step.dependOn(&example_run_cmd.step);
-                }
+                sysaudio_test.run_step.dependOn(&run_cmd.step);
             }
         }
     }
@@ -189,7 +221,6 @@ pub fn build(b: *std.Build) !void {
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.
         const run_unit_tests = b.addRunArtifact(unit_tests);
-        const test_step = b.step("test", "Run unit tests");
         test_step.dependOn(&run_unit_tests.step);
 
         if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
@@ -210,7 +241,6 @@ pub fn build(b: *std.Build) !void {
             .install_dir = .prefix,
             .install_subdir = "docs",
         });
-        const docs_step = b.step("docs", "Generate docs");
         docs_step.dependOn(&install_docs.step);
     }
 }
@@ -282,7 +312,9 @@ fn linkCore(b: *std.Build, module: *std.Build.Module) void {
             .target = target,
             .optimize = optimize,
         })) |dep| {
-            module.linkLibrary(dep.artifact("wayland-headers"));
+            module.addIncludePath(dep.path("libdecor"));
+            module.addIncludePath(dep.path("wayland"));
+            module.addIncludePath(dep.path("wayland-protocols"));
         }
         if (b.lazyDependency("x11_headers", .{
             .target = target,
@@ -346,48 +378,35 @@ fn linkSysaudio(b: *std.Build, module: *std.Build.Module) void {
     }
 }
 
+const Dependency = enum {
+    assets,
+    freetype,
+    zigimg,
+};
+
+const Example = struct {
+    name: []const u8,
+    deps: []const Dependency = &.{},
+
+    install_step: *std.Build.Step = undefined,
+    run_step: *std.Build.Step = undefined,
+};
+
 fn buildExamples(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
     target: std.Build.ResolvedTarget,
     mach_mod: *std.Build.Module,
-) !void {
-    const Dependency = enum {
-        assets,
-        freetype,
-        zigimg,
-    };
-
-    for ([_]struct {
-        core: bool = false,
-        name: []const u8,
-        deps: []const Dependency = &.{},
-        has_assets: bool = false,
-    }{
-        // Mach core examples
-        .{ .core = true, .name = "custom-entrypoint", .deps = &.{} },
-        .{ .core = true, .name = "triangle", .deps = &.{} },
-
-        // Mach engine examples
-        // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
-        .{ .name = "custom-renderer", .deps = &.{} },
-        .{ .name = "glyphs", .deps = &.{ .freetype, .assets } },
-        .{ .name = "piano", .deps = &.{} },
-        .{ .name = "play-opus", .deps = &.{.assets} },
-        // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
-        .{ .name = "text", .deps = &.{.assets} },
-    }) |example| {
+    examples: []Example,
+) void {
+    for (examples) |*example| {
         const exe = b.addExecutable(.{
-            .name = if (example.core) b.fmt("core-{s}", .{example.name}) else example.name,
-            .root_source_file = if (example.core)
-                b.path(b.fmt("examples/core/{s}/main.zig", .{example.name}))
-            else
-                b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
+            .name = example.name,
+            .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
             .target = target,
             .optimize = optimize,
         });
         exe.root_module.addImport("mach", mach_mod);
-        b.installArtifact(exe);
 
         for (example.deps) |d| {
             switch (d) {
@@ -412,17 +431,20 @@ fn buildExamples(
             }
         }
 
-        const compile_step = b.step(example.name, b.fmt("Compile {s}", .{example.name}));
-        compile_step.dependOn(b.getInstallStep());
-
         const run_cmd = b.addRunArtifact(exe);
-        run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| run_cmd.addArgs(args);
 
-        const run_step = b.step(b.fmt("run-{s}", .{example.name}), b.fmt("Run {s}", .{example.name}));
-        run_step.dependOn(&run_cmd.step);
+        const installArtifact = b.addInstallArtifact(exe, .{});
+        example.install_step = &installArtifact.step;
+        run_cmd.step.dependOn(&installArtifact.step);
+        example.run_step.dependOn(&run_cmd.step);
     }
 }
+
+const SysAudioTest = struct {
+    name: []const u8,
+    run_step: *std.Build.Step = undefined,
+};
 
 comptime {
     const supported_zig = std.SemanticVersion.parse("0.14.0-dev.1911+3bf89f55c") catch unreachable;

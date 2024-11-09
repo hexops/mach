@@ -122,6 +122,10 @@ pub fn init(
     //Round trip to get all initial output events
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
+    if (wl.interfaces.zxdg_decoration_manager_v1 == null) {
+        return error.NoServerSideDecorationSupport;
+    }
+
     //Setup surface
     wl.surface = c.wl_compositor_create_surface(wl.interfaces.wl_compositor) orelse return error.UnableToCreateSurface;
     wl.surface_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromWaylandSurface);
