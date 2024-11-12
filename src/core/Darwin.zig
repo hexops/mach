@@ -130,26 +130,11 @@ pub fn init(
 
             const delegate = objc.mach.WindowDelegate.allocInit();
 
-            const Helper = struct {
-                pub fn cCallback_windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
-                    const self: *Darwin = block.context;
-                    const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
-
-                    self.size = .{
-                        .height = s.width,
-                        .width = s.height,
-                    };
-                    self.core.swap_chain_update.set();
-                    self.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
-                }
-            };
-
-            var blockLiteral_windowWillResize_toSize = objc.foundation.stackBlockLiteral(Helper.cCallback_windowWillResize_toSize, darwin, null, null);
-
+            var blockLiteral_windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.callback_windowWillResize_toSize, darwin, null, null);
             delegate.setBlock_windowWillResize_toSize(blockLiteral_windowWillResize_toSize.asBlock().copy());
 
             window.setDelegate(@ptrCast(delegate));
-        }
+        } else std.debug.panic("mach: window failed to initialize", .{});
     }
 
     darwin.* = .{
@@ -175,14 +160,12 @@ pub fn deinit(darwin: *Darwin) void {
     return;
 }
 
-pub fn update(self: *Darwin) !void {
-    if (self.window) |window| {
-        window.update();
-    }
+pub fn update(darwin: *Darwin) !void {
+    if (darwin.window) |window| window.update();
 }
 
-pub fn setTitle(self: *Darwin, title: [:0]const u8) void {
-    if (self.window) |window| {
+pub fn setTitle(darwin: *Darwin, title: [:0]const u8) void {
+    if (darwin.window) |window| {
         var string = objc.app_kit.String.allocInit();
         defer string.release();
         string = string.initWithUTF8String(title.ptr);
@@ -206,8 +189,8 @@ pub fn setVSync(_: *Darwin, _: VSyncMode) void {
     return;
 }
 
-pub fn setSize(self: *Darwin, size: Size) void {
-    if (self.window) |window| {
+pub fn setSize(darwin: *Darwin, size: Size) void {
+    if (darwin.window) |window| {
         var frame = window.frame();
         frame.size.height = @floatFromInt(size.height);
         frame.size.width = @floatFromInt(size.width);
@@ -222,3 +205,17 @@ pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
 pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
     return;
 }
+
+const WindowDelegateCallbacks = struct {
+    pub fn callback_windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
+        const darwin: *Darwin = block.context;
+        const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
+
+        darwin.size = .{
+            .height = s.width,
+            .width = s.height,
+        };
+        darwin.core.swap_chain_update.set();
+        darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+    }
+};
