@@ -21,8 +21,14 @@ const log = std.log.scoped(.mach);
 
 pub const Darwin = @This();
 
+// --------------------------
+// Module state
+// --------------------------
 allocator: std.mem.Allocator,
 core: *Core,
+
+// Core platform interface
+surface_descriptor: gpu.Surface.Descriptor,
 title: [:0]const u8,
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
@@ -32,8 +38,10 @@ border: bool,
 headless: bool,
 refresh_rate: u32,
 size: Size,
-surface_descriptor: gpu.Surface.Descriptor,
+
+// Internals
 window: ?*objc.app_kit.Window,
+state: *Core,
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
     const Args = @TypeOf(args_tuple);
@@ -60,6 +68,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     const delegate = objc.mach.AppDelegate.allocInit();
     delegate.setRunBlock(block_literal.asBlock().copy());
     ns_app.setDelegate(@ptrCast(delegate));
+
     _ = objc.app_kit.applicationMain(0, undefined);
 
     unreachable;
@@ -71,11 +80,10 @@ pub fn init(
     core: *Core.Mod,
     options: InitOptions,
 ) !void {
-    _ = core;
     var surface_descriptor = gpu.Surface.Descriptor{};
 
     // TODO: support UIKit.
-    var window: ?*objc.app_kit.Window = null;
+    var window_opt: ?*objc.app_kit.Window = null;
     if (!options.headless) {
         const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
         const layer = objc.quartz_core.MetalLayer.new();
@@ -86,23 +94,47 @@ pub fn init(
         surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
         const screen = objc.app_kit.Screen.mainScreen();
-        const rect = objc.core_graphics.Rect{ // TODO: use a meaningful rect
+
+        var rect = objc.core_graphics.Rect{
             .origin = .{ .x = 100, .y = 100 },
-            .size = .{ .width = 480, .height = 270 },
+            .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
         };
+
+        if (screen) |s| {
+            const frame = s.visibleFrame();
+            rect.origin.x = frame.size.width / 2.0 - @as(@TypeOf(rect.origin.x), @floatFromInt(options.size.width)) / 2.0;
+            rect.origin.y = frame.size.height / 2.0 - @as(@TypeOf(rect.origin.y), @floatFromInt(options.size.height)) / 2.0;
+        }
+
         const window_style =
             (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
             (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
             (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
             (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
             (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
-        window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(rect, window_style, objc.app_kit.BackingStoreBuffered, true, screen);
-        window.?.setReleasedWhenClosed(false);
-        if (window.?.contentView()) |view| {
-            view.setLayer(@ptrCast(layer));
-        }
-        window.?.setIsVisible(true);
-        window.?.makeKeyAndOrderFront(null);
+
+        window_opt = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
+            rect,
+            window_style,
+            objc.app_kit.BackingStoreBuffered,
+            true,
+            screen,
+        );
+        if (window_opt) |window| {
+            window.setReleasedWhenClosed(false);
+            if (window.contentView()) |view| {
+                view.setLayer(@ptrCast(layer));
+            }
+            window.setIsVisible(true);
+            window.makeKeyAndOrderFront(null);
+
+            const delegate = objc.mach.WindowDelegate.allocInit();
+
+            var blockLiteral_windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.callback_windowWillResize_toSize, darwin, null, null);
+            delegate.setBlock_windowWillResize_toSize(blockLiteral_windowWillResize_toSize.asBlock().copy());
+
+            window.setDelegate(@ptrCast(delegate));
+        } else std.debug.panic("mach: window failed to initialize", .{});
     }
 
     darwin.* = .{
@@ -118,7 +150,8 @@ pub fn init(
         .refresh_rate = 60, // TODO: set to something meaningful
         .size = options.size,
         .surface_descriptor = surface_descriptor,
-        .window = window,
+        .window = window_opt,
+        .state = core.state(),
     };
 }
 
@@ -127,12 +160,17 @@ pub fn deinit(darwin: *Darwin) void {
     return;
 }
 
-pub fn update(_: *Darwin) !void {
-    return;
+pub fn update(darwin: *Darwin) !void {
+    if (darwin.window) |window| window.update();
 }
 
-pub fn setTitle(_: *Darwin, _: [:0]const u8) void {
-    return;
+pub fn setTitle(darwin: *Darwin, title: [:0]const u8) void {
+    if (darwin.window) |window| {
+        var string = objc.app_kit.String.allocInit();
+        defer string.release();
+        string = string.initWithUTF8String(title.ptr);
+        window.setTitle(string);
+    }
 }
 
 pub fn setDisplayMode(_: *Darwin, _: DisplayMode) void {
@@ -151,8 +189,13 @@ pub fn setVSync(_: *Darwin, _: VSyncMode) void {
     return;
 }
 
-pub fn setSize(_: *Darwin, _: Size) void {
-    return;
+pub fn setSize(darwin: *Darwin, size: Size) void {
+    if (darwin.window) |window| {
+        var frame = window.frame();
+        frame.size.height = @floatFromInt(size.height);
+        frame.size.width = @floatFromInt(size.width);
+        window.setFrame_display_animate(frame, true, true);
+    }
 }
 
 pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
@@ -162,3 +205,17 @@ pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
 pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
     return;
 }
+
+const WindowDelegateCallbacks = struct {
+    pub fn callback_windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
+        const darwin: *Darwin = block.context;
+        const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
+
+        darwin.size = .{
+            .height = s.width,
+            .width = s.height,
+        };
+        darwin.core.swap_chain_update.set();
+        darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+    }
+};
