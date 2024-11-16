@@ -43,8 +43,6 @@ libxcursor: ?LibXCursor,
 libxkbcommon: LibXkbCommon,
 gl_ctx: ?*LibGL.Context,
 display: *c.Display,
-width: c_int,
-height: c_int,
 empty_event_pipe: [2]std.c.fd_t,
 wm_protocols: c.Atom,
 wm_delete_window: c.Atom,
@@ -59,21 +57,12 @@ net_wm_window_type_dock: c.Atom,
 root_window: c.Window,
 window: c.Window,
 backend_type: gpu.BackendType,
-refresh_rate: u32,
 hidden_cursor: c.Cursor,
 
 // Mutable fields only used by main thread
 cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
 
 // Mutable state fields; read/write by any thread
-title: [:0]const u8,
-display_mode: DisplayMode = .windowed,
-vsync_mode: VSyncMode = .triple,
-border: bool,
-headless: bool,
-size: *Core.Size,
-cursor_mode: CursorMode = .normal,
-cursor_shape: CursorShape = .arrow,
 surface_descriptor: *gpu.Surface.DescriptorFromXlibWindow,
 
 pub fn init(
@@ -139,7 +128,7 @@ pub fn init(
     };
     const blank_pixmap = libx11.XCreatePixmap(display, window, 1, 1, 1);
     var color = c.XColor{};
-    const refresh_rate: u16 = blk: {
+    linux.refresh_rate = blk: {
         if (libxrr != null) {
             const conf = libxrr.?.XRRGetScreenInfo(display, root_window);
             break :blk @intCast(libxrr.?.XRRConfigCurrentRate(conf));
@@ -162,8 +151,6 @@ pub fn init(
         .libxrr = libxrr,
         .empty_event_pipe = try std.posix.pipe(),
         .gl_ctx = null,
-        .width = window_attrs.width,
-        .height = window_attrs.height,
         .wm_protocols = libx11.XInternAtom(display, "WM_PROTOCOLS", c.False),
         .wm_delete_window = libx11.XInternAtom(display, "WM_DELETE_WINDOW", c.False),
         .net_wm_ping = libx11.XInternAtom(display, "NET_WM_PING", c.False),
@@ -178,12 +165,6 @@ pub fn init(
         .window = window,
         .hidden_cursor = libx11.XCreatePixmapCursor(display, blank_pixmap, blank_pixmap, &color, &color, 0, 0),
         .backend_type = try Core.detectBackendType(options.allocator),
-        .refresh_rate = refresh_rate,
-        .title = options.title,
-        .display_mode = .windowed,
-        .border = options.border,
-        .headless = options.headless,
-        .size = &linux.size,
         .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .surface_descriptor = surface_descriptor,
         .libxkbcommon = try LibXkbCommon.load(),
@@ -272,11 +253,11 @@ pub fn deinit(
 }
 
 // Called on the main thread
-pub fn update(x11: *X11) !void {
+pub fn update(x11: *X11, linux: *Linux) !void {
     while (c.QLength(x11.display) != 0) {
         var event: c.XEvent = undefined;
         _ = x11.libx11.XNextEvent(x11.display, &event);
-        x11.processEvent(&event);
+        x11.processEvent(linux, &event);
     }
     _ = x11.libx11.XFlush(x11.display);
 
@@ -508,7 +489,7 @@ fn getCursorPos(x11: *X11) Position {
     return .{ .x = @floatFromInt(cursor_x), .y = @floatFromInt(cursor_y) };
 }
 
-fn processEvent(x11: *X11, event: *c.XEvent) void {
+fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
     switch (event.type) {
         c.KeyPress, c.KeyRelease => {
             // TODO: key repeat event
@@ -607,16 +588,16 @@ fn processEvent(x11: *X11, event: *c.XEvent) void {
             x11.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         },
         c.ConfigureNotify => {
-            if (event.xconfigure.width != x11.size.width or
-                event.xconfigure.height != x11.size.height)
+            if (event.xconfigure.width != linux.size.width or
+                event.xconfigure.height != linux.size.height)
             {
-                x11.size.width = @intCast(event.xconfigure.width);
-                x11.size.height = @intCast(event.xconfigure.height);
+                linux.size.width = @intCast(event.xconfigure.width);
+                linux.size.height = @intCast(event.xconfigure.height);
                 x11.core.swap_chain_update.set();
                 x11.state.pushEvent(.{
                     .framebuffer_resize = .{
-                        .width = x11.size.width,
-                        .height = x11.size.height,
+                        .width = linux.size.width,
+                        .height = linux.size.height,
                     },
                 });
             }

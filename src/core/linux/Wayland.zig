@@ -47,8 +47,6 @@ export fn wl_proxy_destroy(proxy: ?*c.struct_wl_proxy) void {
 
 state: *Core,
 core: *Core,
-title: [:0]const u8,
-size: *Core.Size,
 surface_descriptor: *gpu.Surface.DescriptorFromWaylandSurface,
 configured: bool = false,
 
@@ -85,8 +83,6 @@ pub fn init(
             .libwaylandclient = libwaylandclient_global,
             .interfaces = Interfaces{},
             .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
-            .title = try options.allocator.dupeZ(u8, options.title),
-            .size = &linux.size,
             .modifiers = .{
                 .alt = false,
                 .caps_lock = false,
@@ -137,8 +133,8 @@ pub fn init(
             region,
             0,
             0,
-            @intCast(wl.size.width),
-            @intCast(wl.size.height),
+            @intCast(linux.size.width),
+            @intCast(linux.size.height),
         );
         c.wl_surface_set_opaque_region(wl.surface, region);
         c.wl_region_destroy(region);
@@ -160,7 +156,7 @@ pub fn init(
         // This space intentionally left blank
     }
 
-    c.xdg_toplevel_set_title(toplevel, wl.title);
+    c.xdg_toplevel_set_title(toplevel, options.title);
 
     const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
         wl.interfaces.zxdg_decoration_manager_v1,
@@ -182,7 +178,9 @@ pub fn deinit(
     linux.allocator.destroy(wl.surface_descriptor);
 }
 
-pub fn update(wl: *Wayland) !void {
+pub fn update(wl: *Wayland, linux: *Linux) !void {
+    _ = linux;
+
     while (wl.libwaylandclient.wl_display_flush(wl.display) == -1) {
         if (std.posix.errno(-1) == std.posix.E.AGAIN) {
             log.err("flush error", .{});
@@ -754,7 +752,7 @@ const xdg_surface_listener = struct {
             wl.configured = true;
         }
 
-        setContentAreaOpaque(wl, wl.size.*);
+        setContentAreaOpaque(wl, linux.size);
     }
 
     const listener = c.xdg_surface_listener{ .configure = @ptrCast(&xdgSurfaceHandleConfigure) };
@@ -769,10 +767,9 @@ const xdg_toplevel_listener = struct {
     fn xdgToplevelHandleConfigure(linux: *Linux, toplevel: ?*c.struct_xdg_toplevel, width: i32, height: i32, states: [*c]c.struct_wl_array) callconv(.C) void {
         _ = toplevel;
         _ = states;
-        const wl = &linux.backend.wayland;
 
         if (width > 0 and height > 0) {
-            wl.size.* = .{ .width = @intCast(width), .height = @intCast(height) };
+            linux.size = .{ .width = @intCast(width), .height = @intCast(height) };
         }
     }
 
