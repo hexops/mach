@@ -33,6 +33,7 @@ const Backend = union(BackendEnum) {
 pub const Linux = @This();
 
 allocator: std.mem.Allocator,
+title: [:0]const u8,
 
 display_mode: DisplayMode,
 vsync_mode: VSyncMode,
@@ -63,9 +64,12 @@ pub fn init(
     linux.refresh_rate = 60; // TODO: set to something meaningful
     linux.vsync_mode = .triple;
     linux.size = options.size;
+    linux.title = try options.allocator.dupeZ(u8, options.title);
+    linux.border = options.border;
+    linux.cursor_mode = .normal;
+    linux.cursor_shape = .arrow;
     if (!options.headless) {
-        // TODO: this function does nothing right now
-        setDisplayMode(linux, options.display_mode);
+        linux.display_mode = options.display_mode;
     }
 
     const desired_backend: BackendEnum = blk: {
@@ -130,6 +134,9 @@ pub fn init(
 
 pub fn deinit(linux: *Linux) void {
     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
+
+    linux.allocator.free(linux.title);
+
     switch (linux.backend) {
         .wayland => linux.backend.wayland.deinit(linux),
         .x11 => linux.backend.x11.deinit(linux),
@@ -140,8 +147,8 @@ pub fn deinit(linux: *Linux) void {
 
 pub fn update(linux: *Linux) !void {
     switch (linux.backend) {
-        .wayland => try linux.backend.wayland.update(),
-        .x11 => try linux.backend.x11.update(),
+        .wayland => try linux.backend.wayland.update(linux),
+        .x11 => try linux.backend.x11.update(linux),
     }
     return;
 }
