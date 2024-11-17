@@ -138,7 +138,7 @@ pub fn Objects(comptime T: type) type {
             objs.internal.mu.unlock();
         }
 
-        pub inline fn new(objs: *@This(), value: T) std.mem.Allocator.Error!ObjectID {
+        pub fn new(objs: *@This(), value: T) std.mem.Allocator.Error!ObjectID {
             const allocator = objs.internal.allocator;
             const data = &objs.internal.data;
             const dead = &objs.internal.dead;
@@ -184,50 +184,24 @@ pub fn Objects(comptime T: type) type {
 
         pub fn set(objs: *@This(), id: ObjectID, value: T) void {
             const data = &objs.internal.data;
-            const dead = &objs.internal.dead;
-            const generation = &objs.internal.generation;
 
-            const unpacked: PackedID = @bitCast(id);
-            if (unpacked.generation != generation.items[unpacked.index]) {
-                @panic("mach: set() called with an object that is no longer valid");
-            }
-            if (dead.isSet(unpacked.index)) {
-                @panic("mach: set() called on a dead object");
-            }
+            const unpacked = objs.validateAndUnpack(id, "set");
             data.set(unpacked.index, value);
         }
 
         pub fn get(objs: *@This(), id: ObjectID) ?T {
             const data = &objs.internal.data;
-            const dead = &objs.internal.dead;
-            const generation = &objs.internal.generation;
 
-            const unpacked: PackedID = @bitCast(id);
-            if (unpacked.generation != generation.items[unpacked.index]) {
-                @panic("mach: get() called with an object that is no longer valid");
-            }
-            if (dead.isSet(unpacked.index)) {
-                @panic("mach: get() called on a dead object");
-            }
+            const unpacked = objs.validateAndUnpack(id, "get");
             return data.get(unpacked.index);
         }
 
         pub fn delete(objs: *@This(), id: ObjectID) void {
             const data = &objs.internal.data;
             const dead = &objs.internal.dead;
-            const generation = &objs.internal.generation;
             const recycling_bin = &objs.internal.recycling_bin;
 
-            // TODO(object): decide whether to disable safety checks like this in some conditions,
-            // e.g. in release builds
-            const unpacked: PackedID = @bitCast(id);
-            if (unpacked.generation != generation.items[unpacked.index]) {
-                @panic("mach: delete() called with an object that is no longer valid");
-            }
-            if (dead.isSet(unpacked.index)) {
-                @panic("mach: delete() called on a dead object");
-            }
-
+            const unpacked = objs.validateAndUnpack(id, "delete");
             if (recycling_bin.items.len < recycling_bin.capacity) {
                 recycling_bin.appendAssumeCapacity(unpacked.index);
             } else objs.internal.thrown_on_the_floor += 1;
@@ -241,6 +215,22 @@ pub fn Objects(comptime T: type) type {
                 .index = 0,
                 .objs = objs,
             };
+        }
+
+        fn validateAndUnpack(objs: *@This(), id: ObjectID, comptime fn_name: []const u8) PackedID {
+            const dead = &objs.internal.dead;
+            const generation = &objs.internal.generation;
+
+            // TODO(object): decide whether to disable safety checks like this in some conditions,
+            // e.g. in release builds
+            const unpacked: PackedID = @bitCast(id);
+            if (unpacked.generation != generation.items[unpacked.index]) {
+                @panic("mach: " ++ fn_name ++ "() called with an object that is no longer valid");
+            }
+            if (dead.isSet(unpacked.index)) {
+                @panic("mach: " ++ fn_name ++ "() called on a dead object");
+            }
+            return unpacked;
         }
     };
 }
@@ -288,7 +278,7 @@ pub fn ModFunctionIDs(comptime Module: type) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -309,7 +299,7 @@ fn ModuleFunctionName2(comptime M: type) type {
         i += 1;
     }
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -347,7 +337,7 @@ pub fn Modules(module_lists: anytype) type {
                 i += 1;
             }
             return @Type(.{
-                .Enum = .{
+                .@"enum" = .{
                     .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
                     .fields = enum_fields,
                     .decls = &[_]std.builtin.Type.Declaration{},
@@ -360,13 +350,14 @@ pub fn Modules(module_lists: anytype) type {
             var m: @This() = .{
                 .mods = undefined,
             };
-            inline for (@typeInfo(@TypeOf(m.mods)).Struct.fields) |field| {
+            // TODO(object): errdefer release allocations made in this loop
+            inline for (@typeInfo(@TypeOf(m.mods)).@"struct".fields) |field| {
                 // TODO(objects): module-state-init
                 const Mod2 = @TypeOf(@field(m.mods, field.name));
                 var mod: Mod2 = undefined;
                 const module_name_id = try m.module_names.indexOrPut(allocator, @tagName(Mod2.mach_module));
-                inline for (@typeInfo(@TypeOf(mod)).Struct.fields) |mod_field| {
-                    if (@typeInfo(mod_field.type) == .Struct and @hasDecl(mod_field.type, "IsMachObjects")) {
+                inline for (@typeInfo(@TypeOf(mod)).@"struct".fields) |mod_field| {
+                    if (@typeInfo(mod_field.type) == .@"struct" and @hasDecl(mod_field.type, "IsMachObjects")) {
                         const object_name_id = try m.module_names.indexOrPut(allocator, mod_field.name);
 
                         // TODO: use packed struct(TypeID) here. Same thing, just get the type from central location
@@ -394,7 +385,7 @@ pub fn Modules(module_lists: anytype) type {
 
         pub fn Module(module_tag_or_type: anytype) type {
             const module_name: ModuleName = blk: {
-                if (@typeInfo(@TypeOf(module_tag_or_type)) == .EnumLiteral or @typeInfo(@TypeOf(module_tag_or_type)) == .Enum) break :blk @as(ModuleName, module_tag_or_type);
+                if (@typeInfo(@TypeOf(module_tag_or_type)) == .enum_literal or @typeInfo(@TypeOf(module_tag_or_type)) == .@"enum") break :blk @as(ModuleName, module_tag_or_type);
                 validate(module_tag_or_type);
                 break :blk module_tag_or_type.mach_module;
             };
@@ -423,7 +414,7 @@ pub fn Modules(module_lists: anytype) type {
                     const f = @field(module, @tagName(fn_name));
                     const F = @TypeOf(f);
 
-                    if (@typeInfo(F) == .Struct and @typeInfo(F).Struct.is_tuple) {
+                    if (@typeInfo(F) == .@"struct" and @typeInfo(F).@"struct".is_tuple) {
                         // Run a list of functions instead of a single function
                         // TODO: verify this is a mach.schedule() decl
                         if (module_name != .app) @compileLog(module_name);
@@ -438,9 +429,9 @@ pub fn Modules(module_lists: anytype) type {
 
                     // Inject arguments
                     var args: std.meta.ArgsTuple(F) = undefined;
-                    outer: inline for (@typeInfo(std.meta.ArgsTuple(F)).Struct.fields) |arg| {
-                        if (@typeInfo(arg.type) == .Pointer and
-                            @typeInfo(std.meta.Child(arg.type)) == .Struct and
+                    outer: inline for (@typeInfo(std.meta.ArgsTuple(F)).@"struct".fields) |arg| {
+                        if (@typeInfo(arg.type) == .pointer and
+                            @typeInfo(std.meta.Child(arg.type)) == .@"struct" and
                             comptime isValid(std.meta.Child(arg.type)))
                         {
                             // *Module argument
@@ -448,7 +439,7 @@ pub fn Modules(module_lists: anytype) type {
                             @field(args, arg.name) = &@field(m.mods, @tagName(std.meta.Child(arg.type).mach_module));
                             continue :outer;
                         }
-                        if (@typeInfo(arg.type) == .Struct and @hasDecl(arg.type, "IsMachMod")) {
+                        if (@typeInfo(arg.type) == .@"struct" and @hasDecl(arg.type, "IsMachMod")) {
                             const M = arg.type.Module;
                             var mv: Mod(M) = .{
                                 .id = undefined,
@@ -469,10 +460,10 @@ pub fn Modules(module_lists: anytype) type {
                         @compileError("mach: function " ++ debug_name ++ " has an invalid argument(" ++ arg.name ++ ") type: " ++ @typeName(arg.type));
                     }
 
-                    const Ret = @typeInfo(F).Fn.return_type orelse void;
+                    const Ret = @typeInfo(F).@"fn".return_type orelse void;
                     switch (@typeInfo(Ret)) {
                         // TODO: define error handling of runnable functions
-                        .ErrorUnion => @call(.auto, f, args) catch |err| std.debug.panic("error: {s}", .{@errorName(err)}),
+                        .error_union => @call(.auto, f, args) catch |err| std.debug.panic("error: {s}", .{@errorName(err)}),
                         else => @call(.auto, f, args),
                     }
                 }
@@ -504,12 +495,12 @@ pub fn Modules(module_lists: anytype) type {
 /// Validates that the given struct is a Mach module.
 fn validate(comptime module: anytype) void {
     if (!@hasDecl(module, "mach_module")) @compileError("mach: invalid module, missing `pub const mach_module = .foo_name;` declaration: " ++ @typeName(@TypeOf(module)));
-    if (@typeInfo(@TypeOf(module.mach_module)) != .EnumLiteral) @compileError("mach: invalid module, expected `pub const mach_module = .foo_name;` declaration, found: " ++ @typeName(@TypeOf(module.mach_module)));
+    if (@typeInfo(@TypeOf(module.mach_module)) != .enum_literal) @compileError("mach: invalid module, expected `pub const mach_module = .foo_name;` declaration, found: " ++ @typeName(@TypeOf(module.mach_module)));
 }
 
 fn isValid(comptime module: anytype) bool {
     if (!@hasDecl(module, "mach_module")) return false;
-    if (@typeInfo(@TypeOf(module.mach_module)) != .EnumLiteral) return false;
+    if (@typeInfo(@TypeOf(module.mach_module)) != .enum_literal) return false;
     return true;
 }
 
@@ -522,7 +513,7 @@ fn NameEnum(comptime mods: anytype) type {
         enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(module.mach_module), .value = i }};
     }
     return @Type(.{
-        .Enum = .{
+        .@"enum" = .{
             .tag_type = std.math.IntFittingRange(0, enum_fields.len - 1),
             .fields = enum_fields,
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -552,13 +543,13 @@ fn moduleTuple(comptime tuple: anytype) ModuleTuple(tuple) {
 
 /// Type-returning variant of merge()
 fn ModuleTuple(comptime tuple: anytype) type {
-    if (@typeInfo(@TypeOf(tuple)) != .Struct or !@typeInfo(@TypeOf(tuple)).Struct.is_tuple) {
+    if (@typeInfo(@TypeOf(tuple)) != .@"struct" or !@typeInfo(@TypeOf(tuple)).@"struct".is_tuple) {
         @compileError("Expected to find a tuple, found: " ++ @typeName(@TypeOf(tuple)));
     }
 
     var tuple_fields: []const std.builtin.Type.StructField = &[0]std.builtin.Type.StructField{};
     loop: inline for (tuple) |elem| {
-        if (@typeInfo(@TypeOf(elem)) == .Type and @typeInfo(elem) == .Struct) {
+        if (@typeInfo(@TypeOf(elem)) == .type and @typeInfo(elem) == .@"struct") {
             // Struct type
             validate(elem);
             for (tuple_fields) |field| if (@as(*const type, @ptrCast(field.default_value.?)).* == elem)
@@ -572,7 +563,7 @@ fn ModuleTuple(comptime tuple: anytype) type {
                 .is_comptime = false,
                 .alignment = if (@sizeOf(elem) > 0) @alignOf(elem) else 0,
             }};
-        } else if (@typeInfo(@TypeOf(elem)) == .Struct and @typeInfo(@TypeOf(elem)).Struct.is_tuple) {
+        } else if (@typeInfo(@TypeOf(elem)) == .@"struct" and @typeInfo(@TypeOf(elem)).@"struct".is_tuple) {
             // Nested tuple
             inline for (moduleTuple(elem)) |nested| {
                 validate(nested);
@@ -593,7 +584,7 @@ fn ModuleTuple(comptime tuple: anytype) type {
         }
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .is_tuple = true,
             .layout = .auto,
             .decls = &.{},
@@ -616,7 +607,7 @@ fn ModuleTypesByName(comptime modules: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
@@ -639,7 +630,7 @@ fn ModulesByName(comptime modules: anytype) type {
         }};
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .is_tuple = false,
             .fields = fields,
