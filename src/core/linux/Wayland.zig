@@ -4,6 +4,7 @@ const gpu = mach.gpu;
 const Linux = @import("../Linux.zig");
 const Core = @import("../../Core.zig");
 const InitOptions = Core.InitOptions;
+const KeyEvent = Core.KeyEvent;
 const log = std.log.scoped(.mach);
 
 pub const Wayland = @This();
@@ -58,7 +59,6 @@ libwaylandclient: LibWaylandClient,
 // input stuff
 keyboard: ?*c.wl_keyboard = null,
 pointer: ?*c.wl_pointer = null,
-input_state: Core.InputState,
 
 // keyboard stuff
 xkb_context: ?*c.xkb_context = null,
@@ -91,7 +91,6 @@ pub fn init(
                 .shift = false,
                 .super = false,
             },
-            .input_state = .{},
             .modifier_indices = .{ // TODO: make sure these are always getting initialized, we don't want undefined behavior
                 .control_index = undefined,
                 .alt_index = undefined,
@@ -481,16 +480,12 @@ const keyboard_listener = struct {
         _ = time;
         var wl = &linux.backend.wayland;
 
-        const key = toMachKey(scancode);
         const pressed = state == 1;
 
-        wl.input_state.keys.setValue(@intFromEnum(key), pressed);
+        const key_event = KeyEvent{ .key = toMachKey(scancode), .mods = wl.modifiers };
 
         if (pressed) {
-            wl.state.pushEvent(Core.Event{ .key_press = .{
-                .key = key,
-                .mods = wl.modifiers,
-            } });
+            wl.state.pushEvent(.{ .key_press = key_event });
 
             var keysyms: ?[*]c.xkb_keysym_t = undefined;
             //Get the keysym from the keycode (scancode + 8)
@@ -505,10 +500,7 @@ const keyboard_listener = struct {
                 }
             }
         } else {
-            wl.state.pushEvent(Core.Event{ .key_release = .{
-                .key = key,
-                .mods = wl.modifiers,
-            } });
+            wl.state.pushEvent(.{ .key_release = key_event });
         }
     }
 
@@ -638,7 +630,6 @@ const pointer_listener = struct {
         const y = c.wl_fixed_to_double(fixed_y);
 
         wl.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
-        wl.input_state.mouse_position = .{ .x = x, .y = y };
     }
 
     fn handlePointerButton(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, time: u32, button: u32, state: u32) callconv(.C) void {
@@ -649,20 +640,20 @@ const pointer_listener = struct {
 
         const mouse_button: Core.MouseButton = @enumFromInt(button - c.BTN_LEFT);
         const pressed = state == c.WL_POINTER_BUTTON_STATE_PRESSED;
-
-        wl.input_state.mouse_buttons.setValue(@intFromEnum(mouse_button), pressed);
+        const x = wl.state.input_state.mouse_position.x;
+        const y = wl.state.input_state.mouse_position.y;
 
         if (pressed) {
             wl.state.pushEvent(Core.Event{ .mouse_press = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
-                .pos = wl.input_state.mouse_position,
+                .pos = .{ .x = x, .y = y },
             } });
         } else {
             wl.state.pushEvent(Core.Event{ .mouse_release = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
-                .pos = wl.input_state.mouse_position,
+                .pos = .{ .x = x, .y = y },
             } });
         }
     }
