@@ -51,6 +51,7 @@ test {
     _ = math;
     _ = testing;
     _ = time;
+    _ = @import("mpsc.zig");
     std.testing.refAllDeclsRecursive(gamemode);
     std.testing.refAllDeclsRecursive(math);
 }
