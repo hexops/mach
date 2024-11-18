@@ -101,6 +101,7 @@ pub fn Pool(comptime Node: type) type {
                 if (@cmpxchgStrong(?*Node, &pool.head, head, &new_nodes[1], .acq_rel, .acquire)) |_| continue;
                 break;
             }
+            new_nodes[0].next = null;
             return &new_nodes[0];
         }
 
@@ -431,6 +432,7 @@ test "takeAll" {
         try std.testing.expectEqual(nodes.value, 1);
         try std.testing.expectEqual(nodes.next.?.value, 2);
         try std.testing.expectEqual(nodes.next.?.next.?.value, 3);
+        try std.testing.expectEqual(nodes.next.?.next.?.next, null);
         try std.testing.expect(queue.head == &queue.empty);
         try std.testing.expect(queue.tail == &queue.empty);
 
@@ -448,4 +450,24 @@ test "takeAll" {
     try std.testing.expectEqual(queue.pop(), null);
     try std.testing.expect(queue.head == &queue.empty);
     try std.testing.expect(queue.tail == &queue.empty);
+}
+
+test "single takeAll" {
+    const allocator = std.testing.allocator;
+
+    var queue: Queue(u32) = undefined;
+    try queue.init(allocator, 32);
+    defer queue.deinit(allocator);
+
+    try queue.push(allocator, 1);
+
+    if (queue.takeAll()) |nodes| {
+        try std.testing.expectEqual(nodes.value, 1);
+        try std.testing.expectEqual(nodes.next, null);
+        try std.testing.expect(queue.head == &queue.empty);
+        try std.testing.expect(queue.tail == &queue.empty);
+
+        // Then release held nodes
+        queue.releaseAll(nodes);
+    } else return error.TestUnexpectedNull;
 }
