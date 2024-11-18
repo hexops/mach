@@ -1,6 +1,7 @@
 const std = @import("std");
 const mach = @import("../main.zig");
 const StringTable = @import("StringTable.zig");
+const Graph = @import("graph.zig").Graph;
 
 /// An ID representing a mach object. This is an opaque identifier which effectively encodes:
 ///
@@ -54,6 +55,9 @@ pub fn Objects(comptime T: type) type {
             /// on the floor and forgotten about. This means there are dead items recorded by dead.set(index)
             /// which aren't in the recycling_bin, and the next call to new() may consider cleaning up.
             thrown_on_the_floor: u32 = 0,
+
+            /// Global pointer to object relations graph
+            graph: *Graph,
         },
 
         pub const IsMachObjects = void;
@@ -217,6 +221,7 @@ pub fn Objects(comptime T: type) type {
             };
         }
 
+        // TODO: this doesn't type check currently, but it should (verify id is from this pool of objects.)
         fn validateAndUnpack(objs: *@This(), id: ObjectID, comptime fn_name: []const u8) PackedID {
             const dead = &objs.internal.dead;
             const generation = &objs.internal.generation;
@@ -231,6 +236,59 @@ pub fn Objects(comptime T: type) type {
                 @panic("mach: " ++ fn_name ++ "() called on a dead object");
             }
             return unpacked;
+        }
+
+        /// Tells if the given object (which must be alive and valid) is from this pool of objects.
+        pub fn is(objs: *const @This(), id: ObjectID) bool {
+            const unpacked = objs.validateAndUnpack(id, "is");
+            return unpacked.type_id == objs.internal.type_id;
+        }
+
+        /// Get the parent of the child, or null.
+        ///
+        /// Object relations may cross the object-pool boundary; for example the parent or child of
+        /// an object in this pool may not itself be in this pool. It might be from a different
+        /// pool and a different type of object.
+        pub fn getParent(objs: *@This(), id: ObjectID) !?ObjectID {
+            return objs.internal.graph.getParent(objs.internal.allocator, id);
+        }
+
+        /// Set the parent of the child, or no-op if already the case.
+        ///
+        /// Object relations may cross the object-pool boundary; for example the parent or child of
+        /// an object in this pool may not itself be in this pool. It might be from a different
+        /// pool and a different type of object.
+        pub fn setParent(objs: *@This(), id: ObjectID, parent: ?ObjectID) !void {
+            try objs.internal.graph.setParent(objs.internal.allocator, id, parent orelse return objs.internal.graph.removeParent(objs.internal.allocator, id));
+        }
+
+        /// Get the children of the parent; returning a results.items slice which is read-only.
+        /// Call results.deinit() when you are done to return memory to the graph's memory pool for
+        /// reuse later.
+        ///
+        /// Object relations may cross the object-pool boundary; for example the parent or child of
+        /// an object in this pool may not itself be in this pool. It might be from a different
+        /// pool and a different type of object.
+        pub fn getChildren(objs: *@This(), id: ObjectID) !Graph.Results {
+            return objs.internal.graph.getChildren(objs.internal.allocator, id);
+        }
+
+        /// Add the given child to the parent, or no-op if already the case.
+        ///
+        /// Object relations may cross the object-pool boundary; for example the parent or child of
+        /// an object in this pool may not itself be in this pool. It might be from a different
+        /// pool and a different type of object.
+        pub fn addChild(objs: *@This(), id: ObjectID, child: ObjectID) !void {
+            return objs.internal.graph.addChild(objs.internal.allocator, id, child);
+        }
+
+        /// Remove the given child from the parent, or no-op if not the case.
+        ///
+        /// Object relations may cross the object-pool boundary; for example the parent or child of
+        /// an object in this pool may not itself be in this pool. It might be from a different
+        /// pool and a different type of object.
+        pub fn removeChild(objs: *@This(), id: ObjectID, child: ObjectID) !void {
+            return objs.internal.graph.removeChild(objs.internal.allocator, id, child);
         }
     };
 }
@@ -323,6 +381,7 @@ pub fn Modules(module_lists: anytype) type {
 
         module_names: StringTable = .{},
         object_names: StringTable = .{},
+        graph: Graph,
 
         /// Enum describing all declarations for a given comptime-known module.
         fn ModuleFunctionName(comptime module_name: ModuleName) type {
@@ -346,10 +405,19 @@ pub fn Modules(module_lists: anytype) type {
             });
         }
 
-        pub fn init(allocator: std.mem.Allocator) std.mem.Allocator.Error!@This() {
-            var m: @This() = .{
+        pub fn init(m: *@This(), allocator: std.mem.Allocator) std.mem.Allocator.Error!void {
+            m.* = .{
                 .mods = undefined,
+                .graph = undefined,
             };
+            try m.graph.init(allocator, .{
+                // TODO(object): measured preallocations
+                .queue_size = 32,
+                .nodes_size = 32,
+                .num_result_lists = 8,
+                .result_list_size = 8,
+            });
+
             // TODO(object): errdefer release allocations made in this loop
             inline for (@typeInfo(@TypeOf(m.mods)).@"struct".fields) |field| {
                 // TODO(objects): module-state-init
@@ -369,18 +437,17 @@ pub fn Modules(module_lists: anytype) type {
                         @field(mod, mod_field.name).internal = .{
                             .allocator = allocator,
                             .type_id = object_type_id,
+                            .graph = &m.graph,
                         };
                     }
                 }
                 @field(m.mods, field.name) = mod;
             }
-            return m;
         }
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
-            // TODO
-            _ = m;
-            _ = allocator;
+            m.graph.deinit(allocator);
+            // TODO: remainder of deinit
         }
 
         pub fn Module(module_tag_or_type: anytype) type {
@@ -638,22 +705,3 @@ fn ModulesByName(comptime modules: anytype) type {
         },
     });
 }
-
-// // Returns true if a and b are both functions and are equal
-// fn isFnAndEqual(comptime a: anytype, comptime b: anytype) bool {
-//     const A = @TypeOf(a);
-//     const B = @TypeOf(b);
-//     if (@typeInfo(A) != .Fn or @typeInfo(B) != .Fn) return false;
-//     const x = @typeInfo(A).Fn;
-//     const y = @typeInfo(B).Fn;
-//     if (x.calling_convention != y.calling_convention) return false;
-//     if (x.is_generic != y.is_generic) return false;
-//     if (x.is_var_args != y.is_var_args) return false;
-//     if ((x.return_type != null) != (y.return_type != null)) return false;
-//     if (x.return_type != null) if (x.return_type.? != y.return_type.?) return false;
-//     if (x.params.len != y.params.len) return false;
-//     if (x.params.ptr != y.params.ptr) return false;
-//     if (A != B) return false;
-//     if (a != b) return false;
-//     return true;
-// }
