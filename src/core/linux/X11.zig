@@ -34,7 +34,6 @@ pub const X11 = @This();
 
 allocator: std.mem.Allocator,
 core: *Core,
-state: *Core,
 
 libx11: LibX11,
 libxrr: ?LibXRR,
@@ -141,8 +140,7 @@ pub fn init(
         .window = @intCast(window),
     };
     linux.backend = .{ .x11 = X11{
-        .core = @fieldParentPtr("platform", linux),
-        .state = core.state(),
+        .core = core,
         .allocator = options.allocator,
         .display = display,
         .libx11 = libx11,
@@ -501,15 +499,15 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
 
             switch (event.type) {
                 c.KeyPress => {
-                    x11.state.pushEvent(.{ .key_press = key_event });
+                    x11.core.pushEvent(.{ .key_press = key_event });
 
                     const codepoint = x11.libxkbcommon.xkb_keysym_to_utf32(@truncate(keysym));
                     if (codepoint != 0) {
-                        x11.state.pushEvent(.{ .char_input = .{ .codepoint = @truncate(codepoint) } });
+                        x11.core.pushEvent(.{ .char_input = .{ .codepoint = @truncate(codepoint) } });
                     }
                 },
                 c.KeyRelease => {
-                    x11.state.pushEvent(.{ .key_release = key_event });
+                    x11.core.pushEvent(.{ .key_release = key_event });
                 },
                 else => unreachable,
             }
@@ -524,7 +522,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                     7 => .{ -1.0, 0.0 },
                     else => unreachable,
                 };
-                x11.state.pushEvent(.{ .mouse_scroll = .{ .xoffset = scroll[0], .yoffset = scroll[1] } });
+                x11.core.pushEvent(.{ .mouse_scroll = .{ .xoffset = scroll[0], .yoffset = scroll[1] } });
                 return;
             };
             const cursor_pos = x11.getCursorPos();
@@ -534,7 +532,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 .mods = toMachMods(event.xbutton.state),
             };
 
-            x11.state.pushEvent(.{ .mouse_press = mouse_button });
+            x11.core.pushEvent(.{ .mouse_press = mouse_button });
         },
         c.ButtonRelease => {
             const button = toMachButton(event.xbutton.button) orelse return;
@@ -545,7 +543,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 .mods = toMachMods(event.xbutton.state),
             };
 
-            x11.state.pushEvent(.{ .mouse_release = mouse_button });
+            x11.core.pushEvent(.{ .mouse_release = mouse_button });
         },
         c.ClientMessage => {
             if (event.xclient.message_type == c.None) return;
@@ -555,7 +553,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 if (protocol == c.None) return;
 
                 if (protocol == x11.wm_delete_window) {
-                    x11.state.pushEvent(.close);
+                    x11.core.pushEvent(.close);
                 } else if (protocol == x11.net_wm_ping) {
                     // The window manager is pinging the application to ensure
                     // it's still responding to events
@@ -574,12 +572,12 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
         c.EnterNotify => {
             const x: f32 = @floatFromInt(event.xcrossing.x);
             const y: f32 = @floatFromInt(event.xcrossing.y);
-            x11.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
+            x11.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         },
         c.MotionNotify => {
             const x: f32 = @floatFromInt(event.xmotion.x);
             const y: f32 = @floatFromInt(event.xmotion.y);
-            x11.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
+            x11.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
         },
         c.ConfigureNotify => {
             if (event.xconfigure.width != linux.size.width or
@@ -588,7 +586,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 linux.size.width = @intCast(event.xconfigure.width);
                 linux.size.height = @intCast(event.xconfigure.height);
                 x11.core.swap_chain_update.set();
-                x11.state.pushEvent(.{
+                x11.core.pushEvent(.{
                     .framebuffer_resize = .{
                         .width = linux.size.width,
                         .height = linux.size.height,
@@ -605,7 +603,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 return;
             }
 
-            x11.state.pushEvent(.focus_gained);
+            x11.core.pushEvent(.focus_gained);
         },
         c.FocusOut => {
             if (event.xfocus.mode == c.NotifyGrab or
@@ -616,7 +614,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 return;
             }
 
-            x11.state.pushEvent(.focus_lost);
+            x11.core.pushEvent(.focus_lost);
         },
         else => {},
     }

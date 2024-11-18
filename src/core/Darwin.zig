@@ -41,7 +41,6 @@ size: Size,
 
 // Internals
 window: ?*objc.app_kit.Window,
-state: *Core,
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
     const Args = @TypeOf(args_tuple);
@@ -139,7 +138,7 @@ pub fn init(
 
     darwin.* = .{
         .allocator = options.allocator,
-        .core = @fieldParentPtr("platform", darwin),
+        .core = core,
         .title = options.title,
         .display_mode = options.display_mode,
         .vsync_mode = .none,
@@ -151,7 +150,6 @@ pub fn init(
         .size = options.size,
         .surface_descriptor = surface_descriptor,
         .window = window_opt,
-        .state = core.state(),
     };
 }
 

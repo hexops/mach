@@ -208,9 +208,9 @@ pub fn init(core: *Core) !void {
         .label = "main swap chain",
         .usage = options.swap_chain_usage,
         .format = .bgra8_unorm,
-        .width = @intCast(state.platform.size.width),
-        .height = @intCast(state.platform.size.height),
-        .present_mode = switch (state.platform.vsync_mode) {
+        .width = @intCast(core.platform.size.width),
+        .height = @intCast(core.platform.size.height),
+        .present_mode = switch (core.platform.vsync_mode) {
             .none => .immediate,
             .double => .fifo,
             .triple => .mailbox,
@@ -258,7 +258,7 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 
     // The user wants mach.Core to take control of the main loop.
     if (supports_non_blocking) {
-        while (core.state().state != .exited) {
+        while (core.state != .exited) {
             core_mod.run(core.on_tick.?);
             core_mod.call(.presentFrame);
         }
@@ -580,7 +580,7 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
     // if (num_windows > 1) @panic("mach: Core currently only supports a single window");
 
     _ = try core.platform.update();
-    mach.sysgpu.Impl.deviceTick(state.device);
+    mach.sysgpu.Impl.deviceTick(core.device);
     core.swap_chain.present();
 
     // Update swapchain for the next frame

@@ -44,7 +44,6 @@ surrogate: u16 = 0,
 dinput: *w.IDirectInput8W,
 saved_window_rect: w.RECT,
 surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
-state: *Core,
 
 // ------------------------------
 // Platform interface
@@ -54,9 +53,8 @@ pub fn init(
     core: *Core,
     options: InitOptions,
 ) !void {
-    self.state = core.state();
     self.allocator = options.allocator;
-    self.core = @fieldParentPtr("platform", self);
+    self.core = core;
     self.size = options.size;
     self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
 
@@ -301,7 +299,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
 
     switch (msg) {
         w.WM_CLOSE => {
-            self.state.pushEvent(.close);
+            self.core.pushEvent(.close);
             return 0;
         },
         w.WM_SIZE => {
@@ -323,7 +321,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             if (vkey == w.VK_PROCESSKEY) return 0;
 
             if (msg == w.WM_SYSKEYDOWN and vkey == w.VK_F4) {
-                self.state.pushEvent(.close);
+                self.core.pushEvent(.close);
                 return 0;
             }
 
@@ -347,20 +345,20 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const key = keyFromScancode(scancode);
             if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
                 if (flags & w.KF_REPEAT == 0)
-                    self.state.pushEvent(.{
+                    self.core.pushEvent(.{
                         .key_press = .{
                             .key = key,
                             .mods = mods,
                         },
                     })
                 else
-                    self.state.pushEvent(.{
+                    self.core.pushEvent(.{
                         .key_repeat = .{
                             .key = key,
                             .mods = mods,
                         },
                     });
-            } else self.state.pushEvent(.{
+            } else self.core.pushEvent(.{
                 .key_release = .{
                     .key = key,
                     .mods = mods,
@@ -383,7 +381,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             }
             var iter = std.unicode.Utf16LeIterator.init(chars);
             if (iter.nextCodepoint()) |codepoint| {
-                self.state.pushEvent(.{ .char_input = .{ .codepoint = codepoint.? } });
+                self.core.pushEvent(.{ .char_input = .{ .codepoint = codepoint.? } });
             } else |err| {
                 err catch {};
             }
@@ -414,14 +412,14 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 w.WM_MBUTTONDOWN,
                 w.WM_RBUTTONDOWN,
                 w.WM_XBUTTONDOWN,
-                => self.state.pushEvent(.{
+                => self.core.pushEvent(.{
                     .mouse_press = .{
                         .button = button,
                         .mods = mods,
                         .pos = .{ .x = x, .y = y },
                     },
                 }),
-                else => self.state.pushEvent(.{
+                else => self.core.pushEvent(.{
                     .mouse_release = .{
                         .button = button,
                         .mods = mods,
@@ -435,7 +433,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_MOUSEMOVE => {
             const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
             const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
-            self.state.pushEvent(.{
+            self.core.pushEvent(.{
                 .mouse_motion = .{
                     .pos = .{
                         .x = x,
@@ -450,7 +448,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const wheel_high_word: u16 = @truncate((wParam >> 16) & 0xffff);
             const delta_y: f32 = @as(f32, @floatFromInt(@as(i16, @bitCast(wheel_high_word)))) / WHEEL_DELTA;
 
-            self.state.pushEvent(.{
+            self.core.pushEvent(.{
                 .mouse_scroll = .{
                     .xoffset = 0,
                     .yoffset = delta_y,
@@ -459,11 +457,11 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_SETFOCUS => {
-            self.state.pushEvent(.{ .focus_gained = {} });
+            self.core.pushEvent(.{ .focus_gained = {} });
             return 0;
         },
         w.WM_KILLFOCUS => {
-            self.state.pushEvent(.{ .focus_lost = {} });
+            self.core.pushEvent(.{ .focus_lost = {} });
             return 0;
         },
         else => return w.DefWindowProcW(wnd, msg, wParam, lParam),
