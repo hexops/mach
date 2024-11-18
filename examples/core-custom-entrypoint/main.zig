@@ -11,7 +11,8 @@ pub fn main() !void {
     const allocator = std.heap.c_allocator;
 
     // The set of Mach modules our application may use.
-    var mods = try Modules.init(allocator);
+    var mods: Modules = undefined;
+    try mods.init(allocator);
 
     // On some platforms, you can drive the mach.Core main loop yourself - but this isn't possible
     // on all platforms. If mach.Core.non_blocking is set to true, and the platform supports
