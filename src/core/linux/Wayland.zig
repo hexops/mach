@@ -46,7 +46,6 @@ export fn wl_proxy_destroy(proxy: ?*c.struct_wl_proxy) void {
     return @call(.always_tail, libwaylandclient_global.wl_proxy_destroy, .{proxy});
 }
 
-state: *Core,
 core: *Core,
 surface_descriptor: *gpu.Surface.DescriptorFromWaylandSurface,
 configured: bool = false,
@@ -77,8 +76,7 @@ pub fn init(
     libwaylandclient_global = try LibWaylandClient.load();
     linux.backend = .{
         .wayland = Wayland{
-            .core = @fieldParentPtr("platform", linux),
-            .state = core.state(),
+            .core = core,
             .libxkbcommon = try LibXkbCommon.load(),
             .libwaylandclient = libwaylandclient_global,
             .interfaces = Interfaces{},
@@ -462,7 +460,7 @@ const keyboard_listener = struct {
         _ = keys;
         const wl = &linux.backend.wayland;
 
-        wl.state.pushEvent(.focus_gained);
+        wl.core.pushEvent(.focus_gained);
     }
 
     fn keyboardHandleLeave(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, surface: ?*c.struct_wl_surface) callconv(.C) void {
@@ -471,7 +469,7 @@ const keyboard_listener = struct {
         _ = surface;
         const wl = &linux.backend.wayland;
 
-        wl.state.pushEvent(.focus_lost);
+        wl.core.pushEvent(.focus_lost);
     }
 
     fn keyboardHandleKey(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, time: u32, scancode: u32, state: u32) callconv(.C) void {
@@ -485,7 +483,7 @@ const keyboard_listener = struct {
         const key_event = KeyEvent{ .key = toMachKey(scancode), .mods = wl.modifiers };
 
         if (pressed) {
-            wl.state.pushEvent(.{ .key_press = key_event });
+            wl.core.pushEvent(.{ .key_press = key_event });
 
             var keysyms: ?[*]c.xkb_keysym_t = undefined;
             //Get the keysym from the keycode (scancode + 8)
@@ -496,11 +494,11 @@ const keyboard_listener = struct {
                 //Try to convert that keysym to a unicode codepoint
                 const codepoint = wl.libxkbcommon.xkb_keysym_to_utf32(keysym);
                 if (codepoint != 0) {
-                    wl.state.pushEvent(Core.Event{ .char_input = .{ .codepoint = @truncate(codepoint) } });
+                    wl.core.pushEvent(Core.Event{ .char_input = .{ .codepoint = @truncate(codepoint) } });
                 }
             }
         } else {
-            wl.state.pushEvent(.{ .key_release = key_event });
+            wl.core.pushEvent(.{ .key_release = key_event });
         }
     }
 
@@ -629,7 +627,7 @@ const pointer_listener = struct {
         const x = c.wl_fixed_to_double(fixed_x);
         const y = c.wl_fixed_to_double(fixed_y);
 
-        wl.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
+        wl.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
     }
 
     fn handlePointerButton(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, time: u32, button: u32, state: u32) callconv(.C) void {
@@ -644,13 +642,13 @@ const pointer_listener = struct {
         const y = wl.state.input_state.mouse_position.y;
 
         if (pressed) {
-            wl.state.pushEvent(Core.Event{ .mouse_press = .{
+            wl.core.pushEvent(Core.Event{ .mouse_press = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
                 .pos = .{ .x = x, .y = y },
             } });
         } else {
-            wl.state.pushEvent(Core.Event{ .mouse_release = .{
+            wl.core.pushEvent(Core.Event{ .mouse_release = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
                 .pos = .{ .x = x, .y = y },
