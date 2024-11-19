@@ -100,16 +100,10 @@ pub fn init(
 
         const screen = objc.app_kit.Screen.mainScreen();
 
-        var rect = objc.core_graphics.Rect{
-            .origin = .{ .x = 100, .y = 100 },
+        const rect = objc.core_graphics.Rect{
+            .origin = .{ .x = 0, .y = 0 },
             .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
         };
-
-        if (screen) |s| {
-            const frame = s.visibleFrame();
-            rect.origin.x = frame.size.width / 2.0 - @as(@TypeOf(rect.origin.x), @floatFromInt(options.size.width)) / 2.0;
-            rect.origin.y = frame.size.height / 2.0 - @as(@TypeOf(rect.origin.y), @floatFromInt(options.size.height)) / 2.0;
-        }
 
         const window_style =
             (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
@@ -139,6 +133,7 @@ pub fn init(
                 view.setBlock_keyUp(keyUp.asBlock().copy());
             }
             window.setContentView(@ptrCast(view));
+            window.center();
             window.setIsVisible(true);
             window.makeKeyAndOrderFront(null);
 
