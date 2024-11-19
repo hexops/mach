@@ -127,7 +127,7 @@ fn tick(core: *mach.Core.Mod, app: *Mod) !void {
 fn updateWindowTitle(core: *mach.Core.Mod) !void {
     try core.state().printTitle(
         core.state().main_window,
-        "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
+        "core-triangle [ {d}fps ] [ Input {d}hz ]",
         .{
             // TODO(Core)
             core.state().frameRate(),
