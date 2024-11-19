@@ -249,7 +249,6 @@ const ViewCallbacks = struct {
 
         const mach_key = machKeyFromKeycode(event.keyCode());
         const mach_modifier = machModifierFromModifierFlag(event.modifierFlags());
-        std.log.debug("Mach key pressed: {any} modifier: {any}", .{ mach_key, mach_modifier });
         darwin.state.pushEvent(.{ .key_press = .{ .key = mach_key, .mods = mach_modifier } });
     }
 
@@ -258,10 +257,7 @@ const ViewCallbacks = struct {
 
         const mach_key = machKeyFromKeycode(event.keyCode());
         const mach_modifier = machModifierFromModifierFlag(event.modifierFlags());
-
         darwin.state.pushEvent(.{ .key_press = .{ .key = mach_key, .mods = mach_modifier } });
-
-        std.log.debug("Mach key released: {any} modifier: {any}", .{ mach_key, mach_modifier });
     }
 };
 
