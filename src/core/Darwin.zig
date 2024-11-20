@@ -235,18 +235,24 @@ const WindowDelegateCallbacks = struct {
     pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Darwin)) callconv(.C) bool {
         const darwin: *Darwin = block.context;
         darwin.state.pushEvent(.close);
-        return true;
+        return false;
     }
 };
 
 const ViewCallbacks = struct {
     pub fn keyDown(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
         const darwin: *Darwin = block.context;
-
-        darwin.state.pushEvent(.{ .key_press = .{
-            .key = machKeyFromKeycode(event.keyCode()),
-            .mods = machModifierFromModifierFlag(event.modifierFlags()),
-        } });
+        if (event.isARepeat()) {
+            darwin.state.pushEvent(.{ .key_repeat = .{
+                .key = machKeyFromKeycode(event.keyCode()),
+                .mods = machModifierFromModifierFlag(event.modifierFlags()),
+            } });
+        } else {
+            darwin.state.pushEvent(.{ .key_press = .{
+                .key = machKeyFromKeycode(event.keyCode()),
+                .mods = machModifierFromModifierFlag(event.modifierFlags()),
+            } });
+        }
     }
 
     pub fn keyUp(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
