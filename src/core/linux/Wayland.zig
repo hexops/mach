@@ -53,6 +53,7 @@ configured: bool = false,
 
 display: *c.wl_display,
 surface: *c.wl_surface,
+toplevel: *c.xdg_toplevel,
 interfaces: Interfaces,
 libwaylandclient: LibWaylandClient,
 
@@ -101,6 +102,7 @@ pub fn init(
             },
             .surface_descriptor = undefined,
             .surface = undefined,
+            .toplevel = undefined,
         },
     };
     var wl = &linux.backend.wayland;
@@ -140,13 +142,13 @@ pub fn init(
     }
 
     const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
-    const toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
+    wl.toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
 
     // TODO: handle this return value
     _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, linux);
 
     // TODO: handle this return value
-    _ = c.xdg_toplevel_add_listener(toplevel, &xdg_toplevel_listener.listener, linux);
+    _ = c.xdg_toplevel_add_listener(wl.toplevel, &xdg_toplevel_listener.listener, linux);
 
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
@@ -155,11 +157,11 @@ pub fn init(
         // This space intentionally left blank
     }
 
-    c.xdg_toplevel_set_title(toplevel, options.title);
+    c.xdg_toplevel_set_title(wl.toplevel, options.title);
 
     const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
         wl.interfaces.zxdg_decoration_manager_v1,
-        toplevel,
+        wl.toplevel,
     ) orelse return error.UnableToGetToplevelDecoration;
 
     c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
@@ -204,6 +206,10 @@ pub fn update(wl: *Wayland, linux: *Linux) !void {
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
     wl.core.input.tick();
+}
+
+pub fn setTitle(wl: *Wayland, title: [:0]const u8) void {
+    c.xdg_toplevel_set_title(wl.toplevel, title);
 }
 
 const LibXkbCommon = struct {

@@ -267,6 +267,10 @@ pub fn update(x11: *X11, linux: *Linux) !void {
     x11.core.input.tick();
 }
 
+pub fn setTitle(x11: *X11, title: [:0]const u8) void {
+    _ = x11.libx11.XStoreName(x11.display, x11.window, title);
+}
+
 const LibX11 = struct {
     handle: std.DynLib,
     XInitThreads: *const @TypeOf(c.XInitThreads),
