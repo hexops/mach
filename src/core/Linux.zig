@@ -49,8 +49,8 @@ backend: Backend,
 
 // these arrays are used as info messages to the user that some features are missing
 // please keep these up to date until we can remove them
-const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/title/cursor" };
-const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/title/cursor" };
+const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/cursor" };
 
 pub fn init(
     linux: *Linux,
@@ -128,8 +128,6 @@ pub fn init(
     // warn about incomplete features
     // TODO: remove this when linux is not missing major features
     try warnAboutIncompleteFeatures(linux.backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, options.allocator);
-
-    return;
 }
 
 pub fn deinit(linux: *Linux) void {
@@ -141,8 +139,6 @@ pub fn deinit(linux: *Linux) void {
         .wayland => linux.backend.wayland.deinit(linux),
         .x11 => linux.backend.x11.deinit(linux),
     }
-
-    return;
 }
 
 pub fn update(linux: *Linux) !void {
@@ -150,11 +146,19 @@ pub fn update(linux: *Linux) !void {
         .wayland => try linux.backend.wayland.update(linux),
         .x11 => try linux.backend.x11.update(linux),
     }
-    return;
 }
 
-pub fn setTitle(_: *Linux, _: [:0]const u8) void {
-    return;
+pub fn setTitle(linux: *Linux, title: [:0]const u8) void {
+    const new_title = linux.allocator.dupeZ(u8, title) catch {
+        log.err("Failed to reallocate memory for new window title", .{});
+        return;
+    };
+    linux.allocator.free(linux.title);
+    linux.title = new_title;
+    switch (linux.backend) {
+        .wayland => linux.backend.wayland.setTitle(linux.title),
+        .x11 => linux.backend.x11.setTitle(linux.title),
+    }
 }
 
 pub fn setDisplayMode(_: *Linux, _: DisplayMode) void {
