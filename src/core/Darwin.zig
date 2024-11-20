@@ -70,7 +70,8 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     delegate.setRunBlock(block_literal.asBlock().copy());
     ns_app.setDelegate(@ptrCast(delegate));
 
-    _ = objc.app_kit.applicationMain(0, undefined);
+    ns_app.run();
+    //_ = objc.app_kit.applicationMain(0, undefined);
 
     unreachable;
     // TODO: support UIKit.
@@ -93,13 +94,13 @@ pub fn init(
         const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
         const layer = objc.quartz_core.MetalLayer.new();
         defer layer.release();
+        layer.setDisplaySyncEnabled(true);
         metal_descriptor.* = .{
             .layer = layer,
         };
         surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
         const screen = objc.app_kit.Screen.mainScreen();
-
         const rect = objc.core_graphics.Rect{
             .origin = .{ .x = 0, .y = 0 },
             .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
@@ -227,13 +228,13 @@ const WindowDelegateCallbacks = struct {
             .height = s.width,
             .width = s.height,
         };
-        darwin.core.swap_chain_update.set();
-        darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+        darwin.state.swap_chain_update.set();
+        darwin.state.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
     }
 
     pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Darwin)) callconv(.C) bool {
         const darwin: *Darwin = block.context;
-        darwin.core.pushEvent(.close);
+        darwin.state.pushEvent(.close);
         return true;
     }
 };
@@ -242,17 +243,19 @@ const ViewCallbacks = struct {
     pub fn keyDown(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
         const darwin: *Darwin = block.context;
 
-        const mach_key = machKeyFromKeycode(event.keyCode());
-        const mach_modifier = machModifierFromModifierFlag(event.modifierFlags());
-        darwin.state.pushEvent(.{ .key_press = .{ .key = mach_key, .mods = mach_modifier } });
+        darwin.state.pushEvent(.{ .key_press = .{
+            .key = machKeyFromKeycode(event.keyCode()),
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
     }
 
     pub fn keyUp(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
         const darwin: *Darwin = block.context;
 
-        const mach_key = machKeyFromKeycode(event.keyCode());
-        const mach_modifier = machModifierFromModifierFlag(event.modifierFlags());
-        darwin.state.pushEvent(.{ .key_press = .{ .key = mach_key, .mods = mach_modifier } });
+        darwin.state.pushEvent(.{ .key_release = .{
+            .key = machKeyFromKeycode(event.keyCode()),
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
     }
 };
 
