@@ -46,9 +46,6 @@ empty_event_pipe: [2]std.c.fd_t,
 wm_protocols: c.Atom,
 wm_delete_window: c.Atom,
 net_wm_ping: c.Atom,
-net_wm_state_fullscreen: c.Atom,
-net_wm_state: c.Atom,
-net_wm_state_above: c.Atom,
 net_wm_bypass_compositor: c.Atom,
 motif_wm_hints: c.Atom,
 net_wm_window_type: c.Atom,
@@ -152,9 +149,6 @@ pub fn init(
         .wm_protocols = libx11.XInternAtom(display, "WM_PROTOCOLS", c.False),
         .wm_delete_window = libx11.XInternAtom(display, "WM_DELETE_WINDOW", c.False),
         .net_wm_ping = libx11.XInternAtom(display, "NET_WM_PING", c.False),
-        .net_wm_state_fullscreen = libx11.XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", c.False),
-        .net_wm_state = libx11.XInternAtom(display, "_NET_WM_STATE", c.False),
-        .net_wm_state_above = libx11.XInternAtom(display, "_NET_WM_STATE_ABOVE", c.False),
         .net_wm_window_type = libx11.XInternAtom(display, "_NET_WM_WINDOW_TYPE", c.False),
         .net_wm_window_type_dock = libx11.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DOCK", c.False),
         .net_wm_bypass_compositor = libx11.XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", c.False),
@@ -267,6 +261,129 @@ pub fn update(x11: *X11, linux: *Linux) !void {
 
 pub fn setTitle(x11: *X11, title: [:0]const u8) void {
     _ = x11.libx11.XStoreName(x11.display, x11.window, title);
+}
+
+pub fn setDisplayMode(x11: *X11, linux: *Linux, display_mode: DisplayMode) void {
+    const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
+    const wm_fullscreen = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
+    switch (display_mode) {
+        .windowed => {
+            var atoms = std.BoundedArray(c.Atom, 5){};
+            if (display_mode == .fullscreen) {
+                atoms.append(wm_fullscreen) catch unreachable;
+            }
+            atoms.append(x11.motif_wm_hints) catch unreachable;
+            // TODO
+            // if (x11.floating) {
+            //     atoms.append(x11.net_wm_state_above) catch unreachable;
+            // }
+            _ = x11.libx11.XChangeProperty(
+                x11.display,
+                x11.window,
+                wm_state,
+                c.XA_ATOM,
+                32,
+                c.PropModeReplace,
+                @ptrCast(atoms.slice()),
+                @intCast(atoms.len),
+            );
+            x11.setFullscreen(false);
+            x11.setDecorated(linux.border);
+            x11.setFloating(false);
+            _ = x11.libx11.XMapWindow(x11.display, x11.window);
+            _ = x11.libx11.XFlush(x11.display);
+        },
+        .fullscreen => {
+            x11.setFullscreen(true);
+            _ = x11.libx11.XFlush(x11.display);
+        },
+        .borderless => {
+            x11.setDecorated(false);
+            x11.setFloating(true);
+            x11.setFullscreen(false);
+            _ = x11.libx11.XResizeWindow(
+                x11.display,
+                x11.window,
+                @intCast(c.DisplayWidth(x11.display, c.DefaultScreen(x11.display))),
+                @intCast(c.DisplayHeight(x11.display, c.DefaultScreen(x11.display))),
+            );
+            _ = x11.libx11.XFlush(x11.display);
+        },
+    }
+}
+
+fn setFullscreen(x11: *X11, enabled: bool) void {
+    const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
+    const wm_fullscreen = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
+    x11.sendEventToWM(wm_state, &.{ @intFromBool(enabled), @intCast(wm_fullscreen), 0, 1 });
+    // Force composition OFF to reduce overhead
+    const compositing_disable_on: c_long = @intFromBool(enabled);
+    const bypass_compositor = x11.libx11.XInternAtom(x11.display, "_NET_WM_BYPASS_COMPOSITOR", c.False);
+    if (bypass_compositor != c.None) {
+        _ = x11.libx11.XChangeProperty(
+            x11.display,
+            x11.window,
+            bypass_compositor,
+            c.XA_CARDINAL,
+            32,
+            c.PropModeReplace,
+            @ptrCast(&compositing_disable_on),
+            1,
+        );
+    }
+}
+
+fn setFloating(x11: *X11, enabled: bool) void {
+    const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
+    const wm_above = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_ABOVE", c.False);
+    const net_wm_state_remove = 0;
+    const net_wm_state_add = 1;
+    const action: c_long = if (enabled) net_wm_state_add else net_wm_state_remove;
+    x11.sendEventToWM(wm_state, &.{ action, @intCast(wm_above), 0, 1 });
+}
+
+fn sendEventToWM(x11: *X11, message_type: c.Atom, data: []const c_long) void {
+    var ev = std.mem.zeroes(c.XEvent);
+    ev.type = c.ClientMessage;
+    ev.xclient.window = x11.window;
+    ev.xclient.message_type = message_type;
+    ev.xclient.format = 32;
+    @memcpy(ev.xclient.data.l[0..data.len], data);
+    _ = x11.libx11.XSendEvent(
+        x11.display,
+        x11.root_window,
+        c.False,
+        c.SubstructureNotifyMask | c.SubstructureRedirectMask,
+        &ev,
+    );
+    _ = x11.libx11.XFlush(x11.display);
+}
+
+fn setDecorated(x11: *X11, enabled: bool) void {
+    const MWMHints = struct {
+        flags: u32,
+        functions: u32,
+        decorations: u32,
+        input_mode: i32,
+        status: u32,
+    };
+    const hints = MWMHints{
+        .functions = 0,
+        .flags = 2,
+        .decorations = if (enabled) 1 else 0,
+        .input_mode = 0,
+        .status = 0,
+    };
+    _ = x11.libx11.XChangeProperty(
+        x11.display,
+        x11.window,
+        x11.motif_wm_hints,
+        x11.motif_wm_hints,
+        32,
+        c.PropModeReplace,
+        @ptrCast(&hints),
+        5,
+    );
 }
 
 const LibX11 = struct {
