@@ -161,8 +161,13 @@ pub fn setTitle(linux: *Linux, title: [:0]const u8) void {
     }
 }
 
-pub fn setDisplayMode(_: *Linux, _: DisplayMode) void {
-    return;
+pub fn setDisplayMode(linux: *Linux, display_mode: DisplayMode) void {
+    // const old_display_mode = linux.display_mode;
+    linux.display_mode = display_mode;
+    switch (linux.backend) {
+        .wayland => linux.backend.wayland.setDisplayMode(display_mode),
+        .x11 => linux.backend.x11.setDisplayMode(linux, display_mode),
+    }
 }
 
 pub fn setBorder(_: *Linux, _: bool) void {

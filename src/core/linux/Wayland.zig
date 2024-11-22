@@ -5,6 +5,7 @@ const Linux = @import("../Linux.zig");
 const Core = @import("../../Core.zig");
 const InitOptions = Core.InitOptions;
 const KeyEvent = Core.KeyEvent;
+const DisplayMode = Core.DisplayMode;
 const log = std.log.scoped(.mach);
 
 pub const Wayland = @This();
@@ -210,6 +211,11 @@ pub fn update(wl: *Wayland, linux: *Linux) !void {
 
 pub fn setTitle(wl: *Wayland, title: [:0]const u8) void {
     c.xdg_toplevel_set_title(wl.toplevel, title);
+}
+
+pub fn setDisplayMode(wl: *Wayland, display_mode: DisplayMode) void {
+    _ = wl;
+    _ = display_mode;
 }
 
 const LibXkbCommon = struct {
