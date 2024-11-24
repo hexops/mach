@@ -14,9 +14,9 @@ const Mat4x4 = math.Mat4x4;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-pub const name = .mach_gfx_text;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_gfx_text;
 
+// TODO(object)
 pub const components = .{
     .transform = .{ .type = Mat4x4, .description = 
     \\ The text model transformation matrix. Text is measured in pixel units, starting from

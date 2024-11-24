@@ -17,7 +17,8 @@ string_table: std.HashMapUnmanaged(u32, void, IndexContext, std.hash_map.default
 
 pub const Index = u32;
 
-/// Returns the index of a string key, if it exists.
+/// Returns the index of a string key, if it exists
+/// complexity: hashmap lookup
 pub fn index(table: *StringTable, key: []const u8) ?Index {
     const slice_context: SliceAdapter = .{ .string_bytes = &table.string_bytes };
     const found_entry = table.string_table.getEntryAdapted(key, slice_context);
@@ -25,7 +26,8 @@ pub fn index(table: *StringTable, key: []const u8) ?Index {
     return null;
 }
 
-/// Returns the index of a string key, inserting if not exists.
+/// Returns the index of a string key, inserting if not exists
+/// complexity: hashmap lookup / update
 pub fn indexOrPut(table: *StringTable, allocator: std.mem.Allocator, key: []const u8) !Index {
     const slice_context: SliceAdapter = .{ .string_bytes = &table.string_bytes };
     const index_context: IndexContext = .{ .string_bytes = &table.string_bytes };
@@ -39,6 +41,7 @@ pub fn indexOrPut(table: *StringTable, allocator: std.mem.Allocator, key: []cons
 }
 
 /// Returns a null-terminated string given the index
+/// complexity: O(1)
 pub fn string(table: *StringTable, idx: Index) [:0]const u8 {
     return std.mem.span(@as([*:0]const u8, @ptrCast(table.string_bytes.items.ptr)) + idx);
 }

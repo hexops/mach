@@ -4,6 +4,8 @@ const gpu = mach.gpu;
 const Linux = @import("../Linux.zig");
 const Core = @import("../../Core.zig");
 const InitOptions = Core.InitOptions;
+const KeyEvent = Core.KeyEvent;
+const DisplayMode = Core.DisplayMode;
 const log = std.log.scoped(.mach);
 
 pub const Wayland = @This();
@@ -45,22 +47,19 @@ export fn wl_proxy_destroy(proxy: ?*c.struct_wl_proxy) void {
     return @call(.always_tail, libwaylandclient_global.wl_proxy_destroy, .{proxy});
 }
 
-state: *Core,
 core: *Core,
-title: [:0]const u8,
-size: *Core.Size,
 surface_descriptor: *gpu.Surface.DescriptorFromWaylandSurface,
 configured: bool = false,
 
 display: *c.wl_display,
 surface: *c.wl_surface,
+toplevel: *c.xdg_toplevel,
 interfaces: Interfaces,
 libwaylandclient: LibWaylandClient,
 
 // input stuff
 keyboard: ?*c.wl_keyboard = null,
 pointer: ?*c.wl_pointer = null,
-input_state: Core.InputState,
 
 // keyboard stuff
 xkb_context: ?*c.xkb_context = null,
@@ -73,20 +72,17 @@ modifier_indices: KeyModInd,
 
 pub fn init(
     linux: *Linux,
-    core: *Core.Mod,
+    core: *Core,
     options: InitOptions,
 ) !void {
     libwaylandclient_global = try LibWaylandClient.load();
     linux.backend = .{
         .wayland = Wayland{
-            .core = @fieldParentPtr("platform", linux),
-            .state = core.state(),
+            .core = core,
             .libxkbcommon = try LibXkbCommon.load(),
             .libwaylandclient = libwaylandclient_global,
             .interfaces = Interfaces{},
             .display = libwaylandclient_global.wl_display_connect(null) orelse return error.FailedToConnectToDisplay,
-            .title = try options.allocator.dupeZ(u8, options.title),
-            .size = &linux.size,
             .modifiers = .{
                 .alt = false,
                 .caps_lock = false,
@@ -95,7 +91,6 @@ pub fn init(
                 .shift = false,
                 .super = false,
             },
-            .input_state = .{},
             .modifier_indices = .{ // TODO: make sure these are always getting initialized, we don't want undefined behavior
                 .control_index = undefined,
                 .alt_index = undefined,
@@ -106,6 +101,7 @@ pub fn init(
             },
             .surface_descriptor = undefined,
             .surface = undefined,
+            .toplevel = undefined,
         },
     };
     var wl = &linux.backend.wayland;
@@ -113,7 +109,7 @@ pub fn init(
     const registry = c.wl_display_get_registry(wl.display) orelse return error.FailedToGetDisplayRegistry;
 
     // TODO: handle error return value here
-    _ = c.wl_registry_add_listener(registry, &registry_listener.listener, wl);
+    _ = c.wl_registry_add_listener(registry, &registry_listener.listener, linux);
 
     //Round trip to get all the registry objects
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
@@ -137,21 +133,21 @@ pub fn init(
             region,
             0,
             0,
-            @intCast(wl.size.width),
-            @intCast(wl.size.height),
+            @intCast(linux.size.width),
+            @intCast(linux.size.height),
         );
         c.wl_surface_set_opaque_region(wl.surface, region);
         c.wl_region_destroy(region);
     }
 
     const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
-    const toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
+    wl.toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
 
     // TODO: handle this return value
-    _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, wl);
+    _ = c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, linux);
 
     // TODO: handle this return value
-    _ = c.xdg_toplevel_add_listener(toplevel, &xdg_toplevel_listener.listener, wl);
+    _ = c.xdg_toplevel_add_listener(wl.toplevel, &xdg_toplevel_listener.listener, linux);
 
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
@@ -160,11 +156,11 @@ pub fn init(
         // This space intentionally left blank
     }
 
-    c.xdg_toplevel_set_title(toplevel, wl.title);
+    c.xdg_toplevel_set_title(wl.toplevel, options.title);
 
     const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
         wl.interfaces.zxdg_decoration_manager_v1,
-        toplevel,
+        wl.toplevel,
     ) orelse return error.UnableToGetToplevelDecoration;
 
     c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
@@ -182,7 +178,9 @@ pub fn deinit(
     linux.allocator.destroy(wl.surface_descriptor);
 }
 
-pub fn update(wl: *Wayland) !void {
+pub fn update(wl: *Wayland, linux: *Linux) !void {
+    _ = linux;
+
     while (wl.libwaylandclient.wl_display_flush(wl.display) == -1) {
         if (std.posix.errno(-1) == std.posix.E.AGAIN) {
             log.err("flush error", .{});
@@ -207,6 +205,15 @@ pub fn update(wl: *Wayland) !void {
     _ = wl.libwaylandclient.wl_display_roundtrip(wl.display);
 
     wl.core.input.tick();
+}
+
+pub fn setTitle(wl: *Wayland, title: [:0]const u8) void {
+    c.xdg_toplevel_set_title(wl.toplevel, title);
+}
+
+pub fn setDisplayMode(wl: *Wayland, display_mode: DisplayMode) void {
+    _ = wl;
+    _ = display_mode;
 }
 
 const LibXkbCommon = struct {
@@ -317,8 +324,9 @@ const KeyModInd = struct {
 };
 
 const registry_listener = struct {
-    fn registryHandleGlobal(wl: *Wayland, registry: ?*c.struct_wl_registry, name: u32, interface_ptr: [*:0]const u8, version: u32) callconv(.C) void {
+    fn registryHandleGlobal(linux: *Linux, registry: ?*c.struct_wl_registry, name: u32, interface_ptr: [*:0]const u8, version: u32) callconv(.C) void {
         const interface = std.mem.span(interface_ptr);
+        const wl = &linux.backend.wayland;
 
         if (std.mem.eql(u8, "wl_compositor", interface)) {
             wl.interfaces.wl_compositor = @ptrCast(c.wl_registry_bind(
@@ -364,7 +372,7 @@ const registry_listener = struct {
             ) orelse @panic("uh idk how to proceed"));
 
             // TODO: handle return value
-            _ = c.xdg_wm_base_add_listener(wl.interfaces.xdg_wm_base, &xdg_wm_base_listener.listener, wl);
+            _ = c.xdg_wm_base_add_listener(wl.interfaces.xdg_wm_base, &xdg_wm_base_listener.listener, linux);
         } else if (std.mem.eql(u8, "zxdg_decoration_manager_v1", interface)) {
             wl.interfaces.zxdg_decoration_manager_v1 = @ptrCast(c.wl_registry_bind(
                 registry,
@@ -381,12 +389,12 @@ const registry_listener = struct {
             ) orelse @panic("uh idk how to proceed"));
 
             // TODO: handle return value
-            _ = c.wl_seat_add_listener(wl.interfaces.wl_seat, &seat_listener.listener, wl);
+            _ = c.wl_seat_add_listener(wl.interfaces.wl_seat, &seat_listener.listener, linux);
         }
     }
 
-    fn registryHandleGlobalRemove(wl: *Wayland, registry: ?*c.struct_wl_registry, name: u32) callconv(.C) void {
-        _ = wl;
+    fn registryHandleGlobalRemove(linux: *Linux, registry: ?*c.struct_wl_registry, name: u32) callconv(.C) void {
+        _ = linux;
         _ = registry;
         _ = name;
     }
@@ -400,8 +408,9 @@ const registry_listener = struct {
 };
 
 const keyboard_listener = struct {
-    fn keyboardHandleKeymap(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, format: u32, fd: i32, keymap_size: u32) callconv(.C) void {
+    fn keyboardHandleKeymap(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, format: u32, fd: i32, keymap_size: u32) callconv(.C) void {
         _ = keyboard;
+        const wl = &linux.backend.wayland;
 
         if (format != c.WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
             @panic("TODO");
@@ -456,38 +465,37 @@ const keyboard_listener = struct {
         wl.modifier_indices.num_lock_index = wl.libxkbcommon.xkb_keymap_mod_get_index(keymap, "Mod2");
     }
 
-    fn keyboardHandleEnter(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, serial: u32, surface: ?*c.struct_wl_surface, keys: [*c]c.struct_wl_array) callconv(.C) void {
+    fn keyboardHandleEnter(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, surface: ?*c.struct_wl_surface, keys: [*c]c.struct_wl_array) callconv(.C) void {
         _ = keyboard;
         _ = serial;
         _ = surface;
         _ = keys;
+        const wl = &linux.backend.wayland;
 
-        wl.state.pushEvent(.focus_gained);
+        wl.core.pushEvent(.focus_gained);
     }
 
-    fn keyboardHandleLeave(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, serial: u32, surface: ?*c.struct_wl_surface) callconv(.C) void {
+    fn keyboardHandleLeave(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, surface: ?*c.struct_wl_surface) callconv(.C) void {
         _ = keyboard;
         _ = serial;
         _ = surface;
+        const wl = &linux.backend.wayland;
 
-        wl.state.pushEvent(.focus_lost);
+        wl.core.pushEvent(.focus_lost);
     }
 
-    fn keyboardHandleKey(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, serial: u32, time: u32, scancode: u32, state: u32) callconv(.C) void {
+    fn keyboardHandleKey(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, time: u32, scancode: u32, state: u32) callconv(.C) void {
         _ = keyboard;
         _ = serial;
         _ = time;
+        var wl = &linux.backend.wayland;
 
-        const key = toMachKey(scancode);
         const pressed = state == 1;
 
-        wl.input_state.keys.setValue(@intFromEnum(key), pressed);
+        const key_event = KeyEvent{ .key = toMachKey(scancode), .mods = wl.modifiers };
 
         if (pressed) {
-            wl.state.pushEvent(Core.Event{ .key_press = .{
-                .key = key,
-                .mods = wl.modifiers,
-            } });
+            wl.core.pushEvent(.{ .key_press = key_event });
 
             var keysyms: ?[*]c.xkb_keysym_t = undefined;
             //Get the keysym from the keycode (scancode + 8)
@@ -498,20 +506,18 @@ const keyboard_listener = struct {
                 //Try to convert that keysym to a unicode codepoint
                 const codepoint = wl.libxkbcommon.xkb_keysym_to_utf32(keysym);
                 if (codepoint != 0) {
-                    wl.state.pushEvent(Core.Event{ .char_input = .{ .codepoint = @truncate(codepoint) } });
+                    wl.core.pushEvent(Core.Event{ .char_input = .{ .codepoint = @truncate(codepoint) } });
                 }
             }
         } else {
-            wl.state.pushEvent(Core.Event{ .key_release = .{
-                .key = key,
-                .mods = wl.modifiers,
-            } });
+            wl.core.pushEvent(.{ .key_release = key_event });
         }
     }
 
-    fn keyboardHandleModifiers(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, serial: u32, mods_depressed: u32, mods_latched: u32, mods_locked: u32, group: u32) callconv(.C) void {
+    fn keyboardHandleModifiers(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, serial: u32, mods_depressed: u32, mods_latched: u32, mods_locked: u32, group: u32) callconv(.C) void {
         _ = keyboard;
         _ = serial;
+        var wl = &linux.backend.wayland;
 
         if (wl.keymap == null)
             return;
@@ -544,8 +550,8 @@ const keyboard_listener = struct {
         }
     }
 
-    fn keyboardHandleRepeatInfo(wl: *Wayland, keyboard: ?*c.struct_wl_keyboard, rate: i32, delay: i32) callconv(.C) void {
-        _ = wl;
+    fn keyboardHandleRepeatInfo(linux: *Linux, keyboard: ?*c.struct_wl_keyboard, rate: i32, delay: i32) callconv(.C) void {
+        _ = linux;
         _ = keyboard;
         _ = rate;
         _ = delay;
@@ -562,101 +568,102 @@ const keyboard_listener = struct {
 };
 
 const pointer_listener = struct {
-    fn handlePointerAxis(wl: *Wayland, pointer: ?*c.struct_wl_pointer, time: u32, axis: u32, value: c.wl_fixed_t) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxis(linux: *Linux, pointer: ?*c.struct_wl_pointer, time: u32, axis: u32, value: c.wl_fixed_t) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = time;
         _ = axis;
         _ = value;
     }
 
-    fn handlePointerFrame(wl: *Wayland, pointer: ?*c.struct_wl_pointer) callconv(.C) void {
-        _ = wl;
+    fn handlePointerFrame(linux: *Linux, pointer: ?*c.struct_wl_pointer) callconv(.C) void {
+        _ = linux;
         _ = pointer;
     }
 
-    fn handlePointerAxisSource(wl: *Wayland, pointer: ?*c.struct_wl_pointer, axis_source: u32) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxisSource(linux: *Linux, pointer: ?*c.struct_wl_pointer, axis_source: u32) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = axis_source;
     }
 
-    fn handlePointerAxisStop(wl: *Wayland, pointer: ?*c.struct_wl_pointer, time: u32, axis: u32) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxisStop(linux: *Linux, pointer: ?*c.struct_wl_pointer, time: u32, axis: u32) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = time;
         _ = axis;
     }
 
-    fn handlePointerAxisDiscrete(wl: *Wayland, pointer: ?*c.struct_wl_pointer, axis: u32, discrete: i32) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxisDiscrete(linux: *Linux, pointer: ?*c.struct_wl_pointer, axis: u32, discrete: i32) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = axis;
         _ = discrete;
     }
 
-    fn handlePointerAxisValue120(wl: *Wayland, pointer: ?*c.struct_wl_pointer, axis: u32, value_120: i32) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxisValue120(linux: *Linux, pointer: ?*c.struct_wl_pointer, axis: u32, value_120: i32) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = axis;
         _ = value_120;
     }
 
-    fn handlePointerAxisRelativeDirection(wl: *Wayland, pointer: ?*c.struct_wl_pointer, axis: u32, direction: u32) callconv(.C) void {
-        _ = wl;
+    fn handlePointerAxisRelativeDirection(linux: *Linux, pointer: ?*c.struct_wl_pointer, axis: u32, direction: u32) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = axis;
         _ = direction;
     }
 
-    fn handlePointerEnter(wl: *Wayland, pointer: ?*c.struct_wl_pointer, serial: u32, surface: ?*c.struct_wl_surface, fixed_x: c.wl_fixed_t, fixed_y: c.wl_fixed_t) callconv(.C) void {
+    fn handlePointerEnter(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, surface: ?*c.struct_wl_surface, fixed_x: c.wl_fixed_t, fixed_y: c.wl_fixed_t) callconv(.C) void {
         _ = fixed_x;
         _ = fixed_y;
-        _ = wl;
+        _ = linux;
         _ = pointer;
         _ = serial;
         _ = surface;
     }
 
-    fn handlePointerLeave(wl: *Wayland, pointer: ?*c.struct_wl_pointer, serial: u32, surface: ?*c.struct_wl_surface) callconv(.C) void {
-        _ = wl;
+    fn handlePointerLeave(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, surface: ?*c.struct_wl_surface) callconv(.C) void {
+        _ = linux;
         _ = pointer;
         _ = serial;
         _ = surface;
     }
 
-    fn handlePointerMotion(wl: *Wayland, pointer: ?*c.struct_wl_pointer, serial: u32, fixed_x: c.wl_fixed_t, fixed_y: c.wl_fixed_t) callconv(.C) void {
+    fn handlePointerMotion(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, fixed_x: c.wl_fixed_t, fixed_y: c.wl_fixed_t) callconv(.C) void {
         _ = pointer;
         _ = serial;
+        var wl = &linux.backend.wayland;
 
         const x = c.wl_fixed_to_double(fixed_x);
         const y = c.wl_fixed_to_double(fixed_y);
 
-        wl.state.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
-        wl.input_state.mouse_position = .{ .x = x, .y = y };
+        wl.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
     }
 
-    fn handlePointerButton(wl: *Wayland, pointer: ?*c.struct_wl_pointer, serial: u32, time: u32, button: u32, state: u32) callconv(.C) void {
+    fn handlePointerButton(linux: *Linux, pointer: ?*c.struct_wl_pointer, serial: u32, time: u32, button: u32, state: u32) callconv(.C) void {
         _ = pointer;
         _ = serial;
         _ = time;
+        var wl = &linux.backend.wayland;
 
         const mouse_button: Core.MouseButton = @enumFromInt(button - c.BTN_LEFT);
         const pressed = state == c.WL_POINTER_BUTTON_STATE_PRESSED;
-
-        wl.input_state.mouse_buttons.setValue(@intFromEnum(mouse_button), pressed);
+        const x = wl.state.input_state.mouse_position.x;
+        const y = wl.state.input_state.mouse_position.y;
 
         if (pressed) {
-            wl.state.pushEvent(Core.Event{ .mouse_press = .{
+            wl.core.pushEvent(Core.Event{ .mouse_press = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
-                .pos = wl.input_state.mouse_position,
+                .pos = .{ .x = x, .y = y },
             } });
         } else {
-            wl.state.pushEvent(Core.Event{ .mouse_release = .{
+            wl.core.pushEvent(Core.Event{ .mouse_release = .{
                 .button = mouse_button,
                 .mods = wl.modifiers,
-                .pos = wl.input_state.mouse_position,
+                .pos = .{ .x = x, .y = y },
             } });
         }
     }
@@ -677,18 +684,20 @@ const pointer_listener = struct {
 };
 
 const seat_listener = struct {
-    fn seatHandleName(wl: *Wayland, seat: ?*c.struct_wl_seat, name_ptr: [*:0]const u8) callconv(.C) void {
-        _ = wl;
+    fn seatHandleName(linux: *Linux, seat: ?*c.struct_wl_seat, name_ptr: [*:0]const u8) callconv(.C) void {
+        _ = linux;
         _ = seat;
         _ = name_ptr;
     }
 
-    fn seatHandleCapabilities(wl: *Wayland, seat: ?*c.struct_wl_seat, caps: c.wl_seat_capability) callconv(.C) void {
+    fn seatHandleCapabilities(linux: *Linux, seat: ?*c.struct_wl_seat, caps: c.wl_seat_capability) callconv(.C) void {
+        const wl = &linux.backend.wayland;
+
         if ((caps & c.WL_SEAT_CAPABILITY_KEYBOARD) != 0) {
             wl.keyboard = c.wl_seat_get_keyboard(seat);
 
             // TODO: handle return value
-            _ = c.wl_keyboard_add_listener(wl.keyboard, &keyboard_listener.listener, wl);
+            _ = c.wl_keyboard_add_listener(wl.keyboard, &keyboard_listener.listener, linux);
         }
 
         if ((caps & c.WL_SEAT_CAPABILITY_TOUCH) != 0) {
@@ -699,7 +708,7 @@ const seat_listener = struct {
             wl.pointer = c.wl_seat_get_pointer(seat);
 
             // TODO: handle return value
-            _ = c.wl_pointer_add_listener(wl.pointer, &pointer_listener.listener, wl);
+            _ = c.wl_pointer_add_listener(wl.pointer, &pointer_listener.listener, linux);
         }
 
         // Delete keyboard if its no longer in the seat
@@ -725,8 +734,8 @@ const seat_listener = struct {
 };
 
 const xdg_wm_base_listener = struct {
-    fn wmBaseHandlePing(wl: *Wayland, wm_base: ?*c.struct_xdg_wm_base, serial: u32) callconv(.C) void {
-        _ = wl;
+    fn wmBaseHandlePing(linux: *Linux, wm_base: ?*c.struct_xdg_wm_base, serial: u32) callconv(.C) void {
+        _ = linux;
         c.xdg_wm_base_pong(wm_base, serial);
     }
 
@@ -734,8 +743,9 @@ const xdg_wm_base_listener = struct {
 };
 
 const xdg_surface_listener = struct {
-    fn xdgSurfaceHandleConfigure(wl: *Wayland, xdg_surface: ?*c.struct_xdg_surface, serial: u32) callconv(.C) void {
+    fn xdgSurfaceHandleConfigure(linux: *Linux, xdg_surface: ?*c.struct_xdg_surface, serial: u32) callconv(.C) void {
         c.xdg_surface_ack_configure(xdg_surface, serial);
+        var wl = &linux.backend.wayland;
 
         if (wl.configured) {
             c.wl_surface_commit(wl.surface);
@@ -743,24 +753,24 @@ const xdg_surface_listener = struct {
             wl.configured = true;
         }
 
-        setContentAreaOpaque(wl, wl.size.*);
+        setContentAreaOpaque(wl, linux.size);
     }
 
     const listener = c.xdg_surface_listener{ .configure = @ptrCast(&xdgSurfaceHandleConfigure) };
 };
 
 const xdg_toplevel_listener = struct {
-    fn xdgToplevelHandleClose(wl: *Wayland, toplevel: ?*c.struct_xdg_toplevel) callconv(.C) void {
-        _ = wl;
+    fn xdgToplevelHandleClose(linux: *Linux, toplevel: ?*c.struct_xdg_toplevel) callconv(.C) void {
+        _ = linux;
         _ = toplevel;
     }
 
-    fn xdgToplevelHandleConfigure(wl: *Wayland, toplevel: ?*c.struct_xdg_toplevel, width: i32, height: i32, states: [*c]c.struct_wl_array) callconv(.C) void {
+    fn xdgToplevelHandleConfigure(linux: *Linux, toplevel: ?*c.struct_xdg_toplevel, width: i32, height: i32, states: [*c]c.struct_wl_array) callconv(.C) void {
         _ = toplevel;
         _ = states;
 
         if (width > 0 and height > 0) {
-            wl.size.* = .{ .width = @intCast(width), .height = @intCast(height) };
+            linux.size = .{ .width = @intCast(width), .height = @intCast(height) };
         }
     }
 

@@ -15,6 +15,12 @@ const Vec3 = math.Vec3;
 const Mat3x3 = math.Mat3x3;
 const Mat4x4 = math.Mat4x4;
 
+const App = @This();
+
+pub const mach_module = .app;
+
+pub const mach_systems = .{ .start, .init, .deinit, .tick, .end_frame, .audio_state_change };
+
 // TODO: banish global allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
@@ -36,42 +42,26 @@ frame_encoder: *gpu.CommandEncoder = undefined,
 frame_render_pass: *gpu.RenderPassEncoder = undefined,
 sfx: mach.Audio.Opus,
 
-// Define the globally unique name of our module. You can use any name here, but keep in mind no
-// two modules in the program can have the same name.
-pub const name = .app;
-pub const Mod = mach.Mod(@This());
-
-pub const systems = .{
-    .start = .{ .handler = start },
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .tick = .{ .handler = tick },
-    .end_frame = .{ .handler = endFrame },
-    .audio_state_change = .{ .handler = audioStateChange },
-};
-
 fn deinit(
-    core: *mach.Core.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    audio: *mach.Audio.Mod,
+    audio: *mach.Audio,
 ) !void {
     text_pipeline.schedule(.deinit);
     sprite_pipeline.schedule(.deinit);
-    core.schedule(.deinit);
     audio.schedule(.deinit);
 }
 
 fn start(
-    audio: *mach.Audio.Mod,
+    audio: *mach.Audio,
     text_pipeline: *gfx.TextPipeline.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    core: *mach.Core.Mod,
-    app: *Mod,
+    core: *mach.Core,
+    app: *App,
 ) !void {
     // If you want to try fullscreen:
-    // try core.set(core.state().main_window, .fullscreen, true);
+    // try core.set(core.main_window, .fullscreen, true);
 
     core.schedule(.init);
     audio.schedule(.init);
@@ -83,20 +73,21 @@ fn start(
 
 fn init(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
-    audio: *mach.Audio.Mod,
+    core: *mach.Core,
+    audio: *mach.Audio,
     text_pipeline: *gfx.TextPipeline.Mod,
     text_style: *gfx.TextStyle.Mod,
     text: *gfx.Text.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
-    app: *Mod,
+    app: *App,
+    app_mod: mach.Mod(App),
 ) !void {
-    core.state().on_tick = app.system(.tick);
-    core.state().on_exit = app.system(.deinit);
+    core.on_tick = app_mod.id.tick;
+    core.on_exit = app_mod.id.deinit;
 
     // Configure the audio module to run our audio_state_change system when entities audio finishes
     // playing
-    audio.state().on_state_change = app.system(.audio_state_change);
+    audio.on_state_change = app_audio_state_change.id;
 
     // Create a sprite rendering pipeline
     const allocator = gpa.allocator();
@@ -127,7 +118,8 @@ fn init(
     , .{});
     text.schedule(.update);
 
-    const window_height: f32 = @floatFromInt(core.get(core.state().main_window, .height).?);
+    const win = core.windows.get(core.main_window).?;
+    const window_height: f32 = @floatFromInt(win.height);
     const info_text = try entities.new();
     try text.set(info_text, .pipeline, text_rendering_pipeline);
     try text.set(info_text, .transform, Mat4x4.translate(vec3(0, (window_height / 2.0) - 50.0, 0)));
@@ -154,14 +146,13 @@ fn init(
         .pipeline = pipeline,
         .sfx = sfx,
     });
-    core.schedule(.start);
 }
 
 fn audioStateChange(entities: *mach.Entities.Mod) !void {
     // Find audio entities that are no longer playing
     var q = try entities.query(.{
         .ids = mach.Entities.Mod.read(.id),
-        .playings = mach.Audio.Mod.read(.playing),
+        .playings = mach.Audio.read(.playing),
     });
     while (q.next()) |v| {
         for (v.ids, v.playings) |id, playing| {
@@ -175,18 +166,18 @@ fn audioStateChange(entities: *mach.Entities.Mod) !void {
 
 fn tick(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     sprite: *gfx.Sprite.Mod,
     sprite_pipeline: *gfx.SpritePipeline.Mod,
     text: *gfx.Text.Mod,
     text_pipeline: *gfx.TextPipeline.Mod,
-    app: *Mod,
-    audio: *mach.Audio.Mod,
+    app: *App,
+    audio: *mach.Audio,
 ) !void {
     // TODO(important): event polling should occur in mach.Core module and get fired as ECS events.
     // TODO(Core)
-    var gotta_go_fast = app.state().gotta_go_fast;
-    while (core.state().nextEvent()) |event| {
+    var gotta_go_fast = app.gotta_go_fast;
+    while (core.nextEvent()) |event| {
         switch (event) {
             .key_press => |ev| {
                 switch (ev.key) {
@@ -200,52 +191,53 @@ fn tick(
                     else => {},
                 }
             },
-            .close => core.schedule(.exit),
+            .close => core.exit(),
             else => {},
         }
     }
-    app.state().gotta_go_fast = gotta_go_fast;
+    app.gotta_go_fast = gotta_go_fast;
 
     // Every second, update the frame rate
-    if (app.state().fps_timer.read() >= 1.0) {
-        app.state().frame_rate = app.state().frame_count;
-        app.state().fps_timer.reset();
-        app.state().frame_count = 0;
+    if (app.fps_timer.read() >= 1.0) {
+        app.frame_rate = app.frame_count;
+        app.fps_timer.reset();
+        app.frame_count = 0;
     }
 
     try gfx.Text.allocPrintText(
         text,
-        app.state().info_text,
-        app.state().info_text_style,
+        app.info_text,
+        app.info_text_style,
         "[ FPS: {d} ]\n[ Sprites spawned: {d} ]",
-        .{ app.state().frame_rate, app.state().num_sprites_spawned },
+        .{ app.frame_rate, app.num_sprites_spawned },
     );
     text.schedule(.update);
 
-    // var player_transform = sprite.get(app.state().player, .transform).?;
+    // var player_transform = sprite.get(app.player, .transform).?;
     // var player_pos = player_transform.translation();
-    const window_width: f32 = @floatFromInt(core.get(core.state().main_window, .width).?);
+    const win = core.windows.get(core.main_window).?;
+    const window_width: f32 = @floatFromInt(win.width);
 
     const entities_per_second: f32 = @floatFromInt(
-        app.state().rand.random().intRangeAtMost(usize, 0, if (gotta_go_fast) 50 else 10),
+        app.rand.random().intRangeAtMost(usize, 0, if (gotta_go_fast) 50 else 10),
     );
-    if (app.state().spawn_timer.read() > 1.0 / entities_per_second) {
+    if (app.spawn_timer.read() > 1.0 / entities_per_second) {
         // Spawn new entities
-        _ = app.state().spawn_timer.lap();
+        _ = app.spawn_timer.lap();
 
         var new_pos = vec3(-(window_width / 2), 0, 0);
-        new_pos.v[1] += app.state().rand.random().floatNorm(f32) * 50;
+        new_pos.v[1] += app.rand.random().floatNorm(f32) * 50;
 
         const new_entity = try entities.new();
         try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos));
         try sprite.set(new_entity, .size, vec2(32, 32));
         try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-        try sprite.set(new_entity, .pipeline, app.state().pipeline);
-        app.state().num_sprites_spawned += 1;
+        try sprite.set(new_entity, .pipeline, app.pipeline);
+        app.num_sprites_spawned += 1;
     }
 
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.state().timer.lap();
+    const delta_time = app.timer.lap();
 
     // Move entities to the right, and make them smaller the further they travel
     var q = try entities.query(.{
@@ -263,11 +255,11 @@ fn tick(
 
                 // Play a new SFX
                 const e = try entities.new();
-                try audio.set(e, .samples, app.state().sfx.samples);
-                try audio.set(e, .channels, app.state().sfx.channels);
+                try audio.set(e, .samples, app.sfx.samples);
+                try audio.set(e, .channels, app.sfx.channels);
                 try audio.set(e, .index, 0);
                 try audio.set(e, .playing, true);
-                app.state().score += 1;
+                app.score += 1;
             } else {
                 var transform = Mat4x4.ident;
                 transform = transform.mul(&Mat4x4.translate(location.add(&vec3(speed * delta_time, (speed / 2.0) * delta_time * progression, 0))));
@@ -284,12 +276,12 @@ fn tick(
     text_pipeline.schedule(.pre_render);
 
     // Create a command encoder for this frame
-    const label = @tagName(name) ++ ".tick";
-    app.state().frame_encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    const label = @tagName(mach_module) ++ ".tick";
+    app.frame_encoder = core.device.createCommandEncoder(&.{ .label = label });
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Begin render pass
@@ -300,45 +292,42 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    app.state().frame_render_pass = app.state().frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+    app.frame_render_pass = app.frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
     }));
 
     // Render our sprite batch
-    sprite_pipeline.state().render_pass = app.state().frame_render_pass;
+    sprite_pipeline.state().render_pass = app.frame_render_pass;
     sprite_pipeline.schedule(.render);
 
     // Render our text batch
-    text_pipeline.state().render_pass = app.state().frame_render_pass;
+    text_pipeline.state().render_pass = app.frame_render_pass;
     text_pipeline.schedule(.render);
 
     // Finish the frame once rendering is done.
     app.schedule(.end_frame);
 
-    app.state().time += delta_time;
+    app.time += delta_time;
 }
 
-fn endFrame(app: *Mod, core: *mach.Core.Mod) !void {
+fn endFrame(app: *App, core: *mach.Core) !void {
     // Finish render pass
-    app.state().frame_render_pass.end();
-    const label = @tagName(name) ++ ".endFrame";
-    var command = app.state().frame_encoder.finish(&.{ .label = label });
-    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
+    app.frame_render_pass.end();
+    const label = @tagName(mach_module) ++ ".endFrame";
+    var command = app.frame_encoder.finish(&.{ .label = label });
+    core.queue.submit(&[_]*gpu.CommandBuffer{command});
     command.release();
-    app.state().frame_encoder.release();
-    app.state().frame_render_pass.release();
+    app.frame_encoder.release();
+    app.frame_render_pass.release();
 
-    // Present the frame
-    core.schedule(.present_frame);
-
-    app.state().frame_count += 1;
+    app.frame_count += 1;
 }
 
 // TODO: move this helper into gfx module
-fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture {
-    const device = core.state().device;
-    const queue = core.state().queue;
+fn loadTexture(core: *mach.Core, allocator: std.mem.Allocator) !*gpu.Texture {
+    const device = core.device;
+    const queue = core.queue;
 
     // Load the image from memory
     var img = try zigimg.Image.fromMemory(allocator, assets.sprites_sheet_png);
@@ -346,7 +335,7 @@ fn loadTexture(core: *mach.Core.Mod, allocator: std.mem.Allocator) !*gpu.Texture
     const img_size = gpu.Extent3D{ .width = @as(u32, @intCast(img.width)), .height = @as(u32, @intCast(img.height)) };
 
     // Create a GPU texture
-    const label = @tagName(name) ++ ".loadTexture";
+    const label = @tagName(mach_module) ++ ".loadTexture";
     const texture = device.createTexture(&.{
         .label = label,
         .size = img_size,

@@ -6,6 +6,8 @@ const mach = @import("main.zig");
 const gpu = mach.gpu;
 const log = std.log.scoped(.mach);
 
+const Core = @This();
+
 // Whether or not you can drive the main loop in a non-blocking fashion, or if the underlying
 // platform must take control and drive the main loop itself.
 pub const supports_non_blocking = switch (build_options.core_platform) {
@@ -26,102 +28,43 @@ const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 /// A panic will occur if `supports_non_blocking == false` for the platform.
 pub var non_blocking = false;
 
-pub const name = .mach_core;
+pub const mach_module = .mach_core;
 
-pub const Mod = mach.Mod(@This());
+pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
 
-pub const systems = .{
-    .init = .{ .handler = init, .description = 
-    \\ Initialize mach.Core
-    },
+windows: mach.Objects(struct {
+    // Window title string
+    // TODO: document how to set this using a format string
+    // TODO: allocation/free strategy
+    title: []const u8,
 
-    .start = .{ .handler = start, .description = 
-    \\ Indicates mach.Core should start its loop and begin scheduling your .app.tick system to run.
-    \\
-    \\ You should register core.state().on_tick and core.state().on_exit callbacks before scheduling
-    \\ this to run.
-    },
+    // Texture format of the framebuffer (read-only)
+    framebuffer_format: gpu.Texture.Format,
 
-    .update = .{ .handler = update, .description = 
-    \\ TODO
-    },
+    // Width of the framebuffer in texels (read-only)
+    framebuffer_width: u32,
 
-    .present_frame = .{ .handler = presentFrame, .description = 
-    \\ Send this when rendering has finished and the swapchain should be presented.
-    },
+    // Height of the framebuffer in texels (read-only)
+    framebuffer_height: u32,
 
-    .exit = .{ .handler = exit, .description = 
-    \\ Send this when you would like to exit the application.
-    \\
-    \\ When the next .present_frame runs, then core.state().on_exit will be scheduled to run giving
-    \\ your app a chance to deinitialize itself after the last frame has been rendered, and
-    \\ core.state().on_tick will no longer be sent.
-    \\
-    \\ When core.state().on_exit runs, it must schedule .mach_core.deinit to run which will cause
-    \\ the app to finish.
-    },
+    // Width of the window in virtual pixels (read-only)
+    width: u32,
 
-    .deinit = .{ .handler = deinit, .description = 
-    \\ Send this once your app is fully deinitialized and you are ready for mach.Core to exit for
-    \\ good.
-    },
+    // Height of the window in virtual pixels (read-only)
+    height: u32,
 
-    .started = .{ .handler = fn () void, .description = 
-    \\ An interrupt signal that mach.Core sends once it has started. This is an interrupt signal to
-    \\ be used by the application entrypoint.
-    },
-
-    .frame_finished = .{ .handler = fn () void, .description = 
-    \\ An interrupt signal that mach.Core sends once a frame has been finished. This is an interrupt
-    \\ signal to be used by the application entrypoint.
-    },
-};
-
-pub const components = .{
-    .title = .{ .type = [:0]u8, .description = 
-    \\ Window title slice. Can be set with a format string and arguments via:
-    \\
-    \\ ```
-    \\ try core.state().printTitle(core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
-    \\ ```
-    \\
-    \\ If setting this component yourself, ensure the buffer is allocated using core.state().allocator
-    \\ as it will be freed for you as part of the .deinit event.
-    },
-
-    .framebuffer_format = .{ .type = gpu.Texture.Format, .description = 
-    \\ The texture format of the framebuffer
-    },
-
-    .framebuffer_width = .{ .type = u32, .description = 
-    \\ The width of the framebuffer in texels
-    },
-
-    .framebuffer_height = .{ .type = u32, .description = 
-    \\ The height of the framebuffer in texels
-    },
-
-    .width = .{ .type = u32, .description = 
-    \\ The width of the window in virtual pixels
-    },
-
-    .height = .{ .type = u32, .description = 
-    \\ The height of the window in virtual pixels
-    },
-
-    .fullscreen = .{ .type = bool, .description = 
-    \\ Whether the window should be fullscreen (only respected at .start time)
-    },
-};
+    /// Whether the window is fullscreen (read-only)
+    fullscreen: bool,
+}),
 
 /// Callback system invoked per tick (e.g. per-frame)
-on_tick: ?mach.AnySystem = null,
+on_tick: ?mach.FunctionID = null,
 
 /// Callback system invoked when application is exiting
-on_exit: ?mach.AnySystem = null,
+on_exit: ?mach.FunctionID = null,
 
 /// Main window of the application
-main_window: mach.EntityID,
+main_window: mach.ObjectID,
 
 /// Current state of the application
 state: enum {
@@ -153,12 +96,7 @@ events: EventQueue,
 input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
 
-fn update(core: *Mod, entities: *mach.Entities.Mod) !void {
-    _ = core;
-    _ = entities;
-}
-
-fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
+pub fn init(core: *Core) !void {
     // TODO: this needs to be removed.
     const options: InitOptions = .{
         .allocator = std.heap.c_allocator,
@@ -168,10 +106,15 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
     // TODO: fix all leaks and use options.allocator
     try mach.sysgpu.Impl.init(allocator, .{});
 
-    const main_window = try entities.new();
-    try core.set(main_window, .fullscreen, false);
-    try core.set(main_window, .width, 1920 / 2);
-    try core.set(main_window, .height, 1080 / 2);
+    const main_window = try core.windows.new(.{
+        .title = options.title, // TODO
+        .framebuffer_format = undefined, // TODO: null?
+        .framebuffer_width = undefined, // TODO: null?
+        .framebuffer_height = undefined, // TODO: null?
+        .width = 1920 / 2,
+        .height = 1080 / 2,
+        .fullscreen = false,
+    });
 
     // Copy window title into owned buffer.
     var title: [256:0]u8 = undefined;
@@ -185,7 +128,10 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
 
     // TODO: remove undefined initialization (disgusting!)
     const platform: Platform = undefined;
-    core.init(.{
+    core.* = .{
+        // Note: since core.windows is initialized for us already, we just copy the pointer.
+        .windows = core.windows,
+
         .allocator = allocator,
         .main_window = main_window,
         .events = events,
@@ -204,20 +150,19 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         .surface = undefined,
         .swap_chain = undefined,
         .descriptor = undefined,
-    });
-    const state = core.state();
+    };
 
-    try Platform.init(&state.platform, core, options);
+    try Platform.init(&core.platform, core, options);
 
-    state.instance = gpu.createInstance(null) orelse {
+    core.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
         std.process.exit(1);
     };
-    state.surface = state.instance.createSurface(&state.platform.surface_descriptor);
+    core.surface = core.instance.createSurface(&core.platform.surface_descriptor);
 
     var response: RequestAdapterResponse = undefined;
-    state.instance.requestAdapter(&gpu.RequestAdapterOptions{
-        .compatible_surface = state.surface,
+    core.instance.requestAdapter(&gpu.RequestAdapterOptions{
+        .compatible_surface = core.surface,
         .power_preference = options.power_preference,
         .force_fallback_adapter = .false,
     }, &response, requestAdapterCallback);
@@ -241,10 +186,10 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         props.driver_description,
     });
 
-    state.adapter = response.adapter.?;
+    core.adapter = response.adapter.?;
 
     // Create a device with default limits/features.
-    state.device = response.adapter.?.createDevice(&.{
+    core.device = response.adapter.?.createDevice(&.{
         .required_features_count = if (options.required_features) |v| @as(u32, @intCast(v.len)) else 0,
         .required_features = if (options.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
         .required_limits = if (options.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
@@ -256,45 +201,49 @@ fn init(core: *Mod, entities: *mach.Entities.Mod) !void {
         log.err("failed to create GPU device\n", .{});
         std.process.exit(1);
     };
-    state.device.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
-    state.queue = state.device.getQueue();
+    core.device.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
+    core.queue = core.device.getQueue();
 
-    state.descriptor = gpu.SwapChain.Descriptor{
+    core.descriptor = gpu.SwapChain.Descriptor{
         .label = "main swap chain",
         .usage = options.swap_chain_usage,
         .format = .bgra8_unorm,
-        .width = @intCast(state.platform.size.width),
-        .height = @intCast(state.platform.size.height),
-        .present_mode = switch (state.platform.vsync_mode) {
+        .width = @intCast(core.platform.size.width),
+        .height = @intCast(core.platform.size.height),
+        .present_mode = switch (core.platform.vsync_mode) {
             .none => .immediate,
             .double => .fifo,
             .triple => .mailbox,
         },
     };
-    state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
+    core.swap_chain = core.device.createSwapChain(core.surface, &core.descriptor);
 
     // TODO(important): update this information upon framebuffer resize events
-    try core.set(state.main_window, .framebuffer_format, state.descriptor.format);
-    try core.set(state.main_window, .framebuffer_width, state.descriptor.width);
-    try core.set(state.main_window, .framebuffer_height, state.descriptor.height);
-    try core.set(state.main_window, .width, state.platform.size.width);
-    try core.set(state.main_window, .height, state.platform.size.height);
+    var w = core.windows.get(core.main_window).?;
+    w.framebuffer_format = core.descriptor.format;
+    w.framebuffer_width = core.descriptor.width;
+    w.framebuffer_height = core.descriptor.height;
+    w.width = core.platform.size.width;
+    w.height = core.platform.size.height;
+    core.windows.set(core.main_window, w);
 
-    state.frame = .{ .target = 0 };
-    state.input = .{ .target = 1 };
-    try state.frame.start();
-    try state.input.start();
+    core.frame = .{ .target = 0 };
+    core.input = .{ .target = 1 };
+    try core.frame.start();
+    try core.input.start();
 }
 
-pub fn start(core: *Mod) !void {
-    if (core.state().on_tick == null) @panic("core.state().on_tick callback system must be registered");
-    if (core.state().on_exit == null) @panic("core.state().on_exit callback system must be registered");
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) void {
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
+}
 
-    // Signal that mach.Core has started.
-    core.schedule(.started);
+pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
+    if (core.on_tick == null) @panic("core.on_tick callback must be set");
+    if (core.on_exit == null) @panic("core.on_exit callback must be set");
 
-    // Schedule the next app tick to run.
-    core.scheduleAny(core.state().on_tick.?);
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
 
     // If the user doesn't want mach.Core to take control of the main loop, we bail out - the next
     // app tick is already scheduled to run in the future and they'll .present_frame to return
@@ -308,22 +257,18 @@ pub fn start(core: *Mod) !void {
     }
 
     // The user wants mach.Core to take control of the main loop.
-
-    // TODO: we already have stack space since we are an executing system, so in theory we could
-    // deduplicate this allocation and just use 'our current stack space' - but accessing it from
-    // the dispatcher is tricky.
-    const stack_space = try core.state().allocator.alloc(u8, 8 * 1024 * 1024);
-
     if (supports_non_blocking) {
-        while (core.state().state != .exited) {
-            dispatch(stack_space);
+        while (core.state != .exited) {
+            core_mod.run(core.on_tick.?);
+            core_mod.call(.presentFrame);
         }
+
         // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
         // platform APIs never returning.)
         std.process.exit(0);
     } else {
         // Platform drives the main loop.
-        Platform.run(platform_update_callback, .{ &mach.mods.mod.mach_core, stack_space });
+        Platform.run(platform_update_callback, .{ core, core_mod });
 
         // Platform.run should be marked noreturn, so this shouldn't ever run. But just in case we
         // accidentally introduce a different Platform.run in the future, we put an exit here for
@@ -332,46 +277,39 @@ pub fn start(core: *Mod) !void {
     }
 }
 
-fn dispatch(stack_space: []u8) void {
-    mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished) catch {
-        @panic("Dispatch in Core failed");
-    };
+fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
+    core_mod.run(core.on_tick.?);
+    core_mod.call(.presentFrame);
+
+    return core.state != .exited;
 }
 
-fn platform_update_callback(core: *Mod, stack_space: []u8) !bool {
-    // Execute systems until .mach_core.frame_finished is dispatched, signalling a frame was
-    // finished.
-    try mach.mods.dispatchUntil(stack_space, .mach_core, .frame_finished);
+pub fn deinit(core: *Core) !void {
+    core.state = .exited;
 
-    return core.state().state != .exited;
-}
-
-pub fn deinit(entities: *mach.Entities.Mod, core: *Mod) !void {
-    const state = core.state();
-    state.state = .exited;
-
-    var q = try entities.query(.{
-        .titles = Mod.read(.title),
-    });
-    while (q.next()) |v| {
-        for (v.titles) |title| {
-            state.allocator.free(title);
-        }
-    }
+    // TODO(object)(window-title)
+    // var q = try entities.query(.{
+    //     .titles = Mod.read(.title),
+    // });
+    // while (q.next()) |v| {
+    //     for (v.titles) |title| {
+    //         state.allocator.free(title);
+    //     }
+    // }
 
     // GPU backend must be released BEFORE platform deinit, otherwise we may enter a race
     // where the GPU might try to present to the window server.
-    state.swap_chain.release();
-    state.queue.release();
-    state.device.release();
-    state.surface.release();
-    state.adapter.release();
-    state.instance.release();
+    core.swap_chain.release();
+    core.queue.release();
+    core.device.release();
+    core.surface.release();
+    core.adapter.release();
+    core.instance.release();
 
     // Deinit the platform
-    state.platform.deinit();
+    core.platform.deinit();
 
-    state.events.deinit();
+    core.events.deinit();
 }
 
 /// Returns the next event until there are no more available. You should check for events during
@@ -415,42 +353,49 @@ pub fn outOfMemory(core: *@This()) bool {
     return true;
 }
 
-/// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
-/// advised to use the `core.title` buffer for this purpose, e.g.:
-///
-/// ```
-/// const title = try std.fmt.bufPrintZ(&core.title, "Hello, world!", .{});
-/// core.setTitle(title);
-/// ```
-pub inline fn setTitle(core: *@This(), value: [:0]const u8) void {
-    return core.platform.setTitle(value);
-}
+// TODO(object)
+// /// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
+// /// advised to use the `core.title` buffer for this purpose, e.g.:
+// ///
+// /// ```
+// /// const title = try std.fmt.bufPrintZ(&core.title, "Hello, world!", .{});
+// /// core.setTitle(title);
+// /// ```
+// pub inline fn setTitle(core: *@This(), value: [:0]const u8) void {
+//     return core.platform.setTitle(value);
+// }
 
-/// Set the window mode
-pub inline fn setDisplayMode(core: *@This(), mode: DisplayMode) void {
-    return core.platform.setDisplayMode(mode);
-}
+// TODO(object)
+// /// Set the window mode
+// pub inline fn setDisplayMode(core: *@This(), mode: DisplayMode) void {
+//     return core.platform.setDisplayMode(mode);
+// }
 
-/// Returns the window mode
-pub inline fn displayMode(core: *@This()) DisplayMode {
-    return core.platform.display_mode;
-}
+// TODO(object)
+// /// Returns the window mode
+// pub inline fn displayMode(core: *@This()) DisplayMode {
+//     return core.platform.display_mode;
+// }
 
-pub inline fn setBorder(core: *@This(), value: bool) void {
-    return core.platform.setBorder(value);
-}
+// TODO(object)
+// pub inline fn setBorder(core: *@This(), value: bool) void {
+//     return core.platform.setBorder(value);
+// }
 
-pub inline fn border(core: *@This()) bool {
-    return core.platform.border;
-}
+// TODO(object)
+// pub inline fn border(core: *@This()) bool {
+//     return core.platform.border;
+// }
 
-pub inline fn setHeadless(core: *@This(), value: bool) void {
-    return core.platform.setHeadless(value);
-}
+// TODO(object)
+// pub inline fn setHeadless(core: *@This(), value: bool) void {
+//     return core.platform.setHeadless(value);
+// }
 
-pub inline fn headless(core: *@This()) bool {
-    return core.platform.headless;
-}
+// TODO(object)
+// pub inline fn headless(core: *@This()) bool {
+//     return core.platform.headless;
+// }
 
 pub fn keyPressed(core: *@This(), key: Key) bool {
     return core.input_state.isKeyPressed(key);
@@ -472,230 +417,246 @@ pub fn mousePosition(core: *@This()) Position {
     return core.input_state.mouse_position;
 }
 
-/// Set refresh rate synchronization mode. Default `.triple`
-///
-/// Calling this function also implicitly calls setFrameRateLimit for you:
-/// ```
-/// .none   => setFrameRateLimit(0) // unlimited
-/// .double => setFrameRateLimit(0) // unlimited
-/// .triple => setFrameRateLimit(2 * max_monitor_refresh_rate)
-/// ```
-pub inline fn setVSync(core: *@This(), mode: VSyncMode) void {
-    return core.platform.setVSync(mode);
-}
+// TODO(object)
+// /// Set refresh rate synchronization mode. Default `.triple`
+// ///
+// /// Calling this function also implicitly calls setFrameRateLimit for you:
+// /// ```
+// /// .none   => setFrameRateLimit(0) // unlimited
+// /// .double => setFrameRateLimit(0) // unlimited
+// /// .triple => setFrameRateLimit(2 * max_monitor_refresh_rate)
+// /// ```
+// pub inline fn setVSync(core: *@This(), mode: VSyncMode) void {
+//     return core.platform.setVSync(mode);
+// }
 
-/// Returns refresh rate synchronization mode.
-pub inline fn vsync(core: *@This()) VSyncMode {
-    return core.platform.vsync_mode;
-}
+// TODO(object)
+// /// Returns refresh rate synchronization mode.
+// pub inline fn vsync(core: *@This()) VSyncMode {
+//     return core.platform.vsync_mode;
+// }
 
-/// Sets the frame rate limit. Default 0 (unlimited)
-///
-/// This is applied *in addition* to the vsync mode.
-pub inline fn setFrameRateLimit(core: *@This(), limit: u32) void {
-    core.frame.target = limit;
-}
+// TODO(object)
+// /// Sets the frame rate limit. Default 0 (unlimited)
+// ///
+// /// This is applied *in addition* to the vsync mode.
+// pub inline fn setFrameRateLimit(core: *@This(), limit: u32) void {
+//     core.frame.target = limit;
+// }
 
-/// Returns the frame rate limit, or zero if unlimited.
-pub inline fn frameRateLimit(core: *@This()) u32 {
-    return core.frame.target;
-}
+// TODO(object)
+// /// Returns the frame rate limit, or zero if unlimited.
+// pub inline fn frameRateLimit(core: *@This()) u32 {
+//     return core.frame.target;
+// }
 
-/// Set the window size, in subpixel units.
-pub inline fn setSize(core: *@This(), value: Size) void {
-    return core.platform.setSize(value);
-}
+// TODO(object)
+// /// Set the window size, in subpixel units.
+// pub inline fn setSize(core: *@This(), value: Size) void {
+//     return core.platform.setSize(value);
+// }
 
-/// Returns the window size, in subpixel units.
-pub inline fn size(core: *@This()) Size {
-    return core.platform.size;
-}
+// TODO(object)
+// /// Returns the window size, in subpixel units.
+// pub inline fn size(core: *@This()) Size {
+//     return core.platform.size;
+// }
 
-pub inline fn setCursorMode(core: *@This(), mode: CursorMode) void {
-    return core.platform.setCursorMode(mode);
-}
+// TODO(object)
+// pub inline fn setCursorMode(core: *@This(), mode: CursorMode) void {
+//     return core.platform.setCursorMode(mode);
+// }
 
-pub inline fn cursorMode(core: *@This()) CursorMode {
-    return core.platform.cursorMode();
-}
+// TODO(object)
+// pub inline fn cursorMode(core: *@This()) CursorMode {
+//     return core.platform.cursorMode();
+// }
 
-pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
-    return core.platform.setCursorShape(cursor);
-}
+// TODO(object)
+// pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
+//     return core.platform.setCursorShape(cursor);
+// }
 
-pub inline fn cursorShape(core: *@This()) CursorShape {
-    return core.platform.cursorShape();
-}
+// TODO(object)
+// pub inline fn cursorShape(core: *@This()) CursorShape {
+//     return core.platform.cursorShape();
+// }
 
-/// Sets the minimum target frequency of the input handling thread.
-///
-/// Input handling (the main thread) runs at a variable frequency. The thread blocks until there are
-/// input events available, or until it needs to unblock in order to achieve the minimum target
-/// frequency which is your collaboration point of opportunity with the main thread.
-///
-/// For example, by default (`setInputFrequency(1)`) mach-core will aim to invoke `updateMainThread`
-/// at least once per second (but potentially much more, e.g. once per every mouse movement or
-/// keyboard button press.) If you were to increase the input frequency to say 60hz e.g.
-/// `setInputFrequency(60)` then mach-core will aim to invoke your `updateMainThread` 60 times per
-/// second.
-///
-/// An input frequency of zero implies unlimited, in which case the main thread will busy-wait.
-///
-/// # Multithreaded mach-core behavior
-///
-/// On some platforms, mach-core is able to handle input and rendering independently for
-/// improved performance and responsiveness.
-///
-/// | Platform | Threading       |
-/// |----------|-----------------|
-/// | Desktop  | Multi threaded  |
-/// | Browser  | Single threaded |
-/// | Mobile   | TBD             |
-///
-/// On single-threaded platforms, `update` and the (optional) `updateMainThread` callback are
-/// invoked in sequence, one after the other, on the same thread.
-///
-/// On multi-threaded platforms, `init` and `deinit` are called on the main thread, while `update`
-/// is called on a separate rendering thread. The (optional) `updateMainThread` callback can be
-/// used in cases where you must run a function on the main OS thread (such as to open a native
-/// file dialog on macOS, since many system GUI APIs must be run on the main OS thread.) It is
-/// advised you do not use this callback to run any code except when absolutely neccessary, as
-/// it is in direct contention with input handling.
-///
-/// APIs which are not accessible from a specific thread are declared as such, otherwise can be
-/// called from any thread as they are internally synchronized.
-pub inline fn setInputFrequency(core: *@This(), input_frequency: u32) void {
-    core.input.target = input_frequency;
-}
+// TODO(object)
+// /// Sets the minimum target frequency of the input handling thread.
+// ///
+// /// Input handling (the main thread) runs at a variable frequency. The thread blocks until there are
+// /// input events available, or until it needs to unblock in order to achieve the minimum target
+// /// frequency which is your collaboration point of opportunity with the main thread.
+// ///
+// /// For example, by default (`setInputFrequency(1)`) mach-core will aim to invoke `updateMainThread`
+// /// at least once per second (but potentially much more, e.g. once per every mouse movement or
+// /// keyboard button press.) If you were to increase the input frequency to say 60hz e.g.
+// /// `setInputFrequency(60)` then mach-core will aim to invoke your `updateMainThread` 60 times per
+// /// second.
+// ///
+// /// An input frequency of zero implies unlimited, in which case the main thread will busy-wait.
+// ///
+// /// # Multithreaded mach-core behavior
+// ///
+// /// On some platforms, mach-core is able to handle input and rendering independently for
+// /// improved performance and responsiveness.
+// ///
+// /// | Platform | Threading       |
+// /// |----------|-----------------|
+// /// | Desktop  | Multi threaded  |
+// /// | Browser  | Single threaded |
+// /// | Mobile   | TBD             |
+// ///
+// /// On single-threaded platforms, `update` and the (optional) `updateMainThread` callback are
+// /// invoked in sequence, one after the other, on the same thread.
+// ///
+// /// On multi-threaded platforms, `init` and `deinit` are called on the main thread, while `update`
+// /// is called on a separate rendering thread. The (optional) `updateMainThread` callback can be
+// /// used in cases where you must run a function on the main OS thread (such as to open a native
+// /// file dialog on macOS, since many system GUI APIs must be run on the main OS thread.) It is
+// /// advised you do not use this callback to run any code except when absolutely neccessary, as
+// /// it is in direct contention with input handling.
+// ///
+// /// APIs which are not accessible from a specific thread are declared as such, otherwise can be
+// /// called from any thread as they are internally synchronized.
+// pub inline fn setInputFrequency(core: *@This(), input_frequency: u32) void {
+//     core.input.target = input_frequency;
+// }
 
-/// Returns the input frequency, or zero if unlimited (busy-waiting mode)
-pub inline fn inputFrequency(core: *@This()) u32 {
-    return core.input.target;
-}
+// TODO(object)
+// /// Returns the input frequency, or zero if unlimited (busy-waiting mode)
+// pub inline fn inputFrequency(core: *@This()) u32 {
+//     return core.input.target;
+// }
 
-/// Returns the actual number of frames rendered (`update` calls that returned) in the last second.
-///
-/// This is updated once per second.
-pub inline fn frameRate(core: *@This()) u32 {
-    return core.frame.rate;
-}
+// TODO(object)
+// /// Returns the actual number of frames rendered (`update` calls that returned) in the last second.
+// ///
+// /// This is updated once per second.
+// pub inline fn frameRate(core: *@This()) u32 {
+//     return core.frame.rate;
+// }
 
-/// Returns the actual number of input thread iterations in the last second. See setInputFrequency
-/// for what this means.
-///
-/// This is updated once per second.
-pub inline fn inputRate(core: *@This()) u32 {
-    return core.input.rate;
-}
+// TODO(object)
+// /// Returns the actual number of input thread iterations in the last second. See setInputFrequency
+// /// for what this means.
+// ///
+// /// This is updated once per second.
+// pub inline fn inputRate(core: *@This()) u32 {
+//     return core.input.rate;
+// }
 
-/// Returns the underlying native NSWindow pointer
-///
-/// May only be called on macOS.
-pub fn nativeWindowCocoa(core: *@This()) *anyopaque {
-    return core.platform.nativeWindowCocoa();
-}
+// TODO(object)
+// /// Returns the underlying native NSWindow pointer
+// ///
+// /// May only be called on macOS.
+// pub fn nativeWindowCocoa(core: *@This()) *anyopaque {
+//     return core.platform.nativeWindowCocoa();
+// }
 
-/// Returns the underlying native Windows' HWND pointer
-///
-/// May only be called on Windows.
-pub fn nativeWindowWin32(core: *@This()) std.os.windows.HWND {
-    return core.platform.nativeWindowWin32();
-}
+// TODO(object)
+// /// Returns the underlying native Windows' HWND pointer
+// ///
+// /// May only be called on Windows.
+// pub fn nativeWindowWin32(core: *@This()) std.os.windows.HWND {
+//     return core.platform.nativeWindowWin32();
+// }
 
-fn presentFrame(core: *Mod, entities: *mach.Entities.Mod) !void {
-    const state: *@This() = core.state();
+pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
+    // TODO(object)(window-title)
+    // // Update windows title
+    // var num_windows: usize = 0;
+    // var q = try entities.query(.{
+    //     .ids = mach.Entities.Mod.read(.id),
+    //     .titles = Mod.read(.title),
+    // });
+    // while (q.next()) |v| {
+    //     for (v.ids, v.titles) |_, title| {
+    //         num_windows += 1;
+    //         state.platform.setTitle(title);
+    //     }
+    // }
+    // if (num_windows > 1) @panic("mach: Core currently only supports a single window");
 
-    // Update windows title
-    var num_windows: usize = 0;
-    var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
-        .titles = Mod.read(.title),
-    });
-    while (q.next()) |v| {
-        for (v.ids, v.titles) |_, title| {
-            num_windows += 1;
-            state.platform.setTitle(title);
-        }
-    }
-    if (num_windows > 1) @panic("mach: Core currently only supports a single window");
-
-    _ = try state.platform.update();
-    mach.sysgpu.Impl.deviceTick(state.device);
-    state.swap_chain.present();
+    _ = try core.platform.update();
+    mach.sysgpu.Impl.deviceTick(core.device);
+    core.swap_chain.present();
 
     // Update swapchain for the next frame
-    if (state.swap_chain_update.isSet()) blk: {
-        state.swap_chain_update.reset();
+    if (core.swap_chain_update.isSet()) blk: {
+        core.swap_chain_update.reset();
 
-        switch (state.platform.vsync_mode) {
-            .triple => state.frame.target = 2 * state.platform.refresh_rate,
-            else => state.frame.target = 0,
+        switch (core.platform.vsync_mode) {
+            .triple => core.frame.target = 2 * core.platform.refresh_rate,
+            else => core.frame.target = 0,
         }
 
-        if (state.platform.size.width == 0 or state.platform.size.height == 0) break :blk;
+        if (core.platform.size.width == 0 or core.platform.size.height == 0) break :blk;
 
-        state.descriptor.present_mode = switch (state.platform.vsync_mode) {
+        core.descriptor.present_mode = switch (core.platform.vsync_mode) {
             .none => .immediate,
             .double => .fifo,
             .triple => .mailbox,
         };
-        state.descriptor.width = @intCast(state.platform.size.width);
-        state.descriptor.height = @intCast(state.platform.size.height);
-        state.swap_chain.release();
-        state.swap_chain = state.device.createSwapChain(state.surface, &state.descriptor);
+        core.descriptor.width = @intCast(core.platform.size.width);
+        core.descriptor.height = @intCast(core.platform.size.height);
+        core.swap_chain.release();
+        core.swap_chain = core.device.createSwapChain(core.surface, &core.descriptor);
     }
 
     // TODO(important): update this information in response to resize events rather than
     // after frame submission
-    try core.set(state.main_window, .framebuffer_format, state.descriptor.format);
-    try core.set(state.main_window, .framebuffer_width, state.descriptor.width);
-    try core.set(state.main_window, .framebuffer_height, state.descriptor.height);
-    try core.set(state.main_window, .width, state.platform.size.width);
-    try core.set(state.main_window, .height, state.platform.size.height);
+    var win = core.windows.get(core.main_window).?;
+    win.framebuffer_format = core.descriptor.format;
+    win.framebuffer_width = core.descriptor.width;
+    win.framebuffer_height = core.descriptor.height;
+    win.width = core.platform.size.width;
+    win.height = core.platform.size.height;
+    core.windows.set(core.main_window, win);
 
-    // Signal that the frame was finished.
-    core.schedule(.frame_finished);
+    // Record to frame rate frequency monitor that a frame was finished.
+    core.frame.tick();
 
-    switch (core.state().state) {
-        .running => core.scheduleAny(core.state().on_tick.?),
+    switch (core.state) {
+        .running => {},
         .exiting => {
-            core.scheduleAny(core.state().on_exit.?);
-            core.state().state = .deinitializing;
+            core.state = .deinitializing;
+            core_mod.run(core.on_exit.?);
+            core_mod.call(.deinit);
         },
         .deinitializing => {},
         .exited => @panic("application not running"),
     }
-
-    // Record to frame rate frequency monitor that a frame was finished.
-    state.frame.tick();
 }
 
-/// Prints into the window title buffer using a format string and arguments. e.g.
-///
-/// ```
-/// try core.state().printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
-/// ```
-pub fn printTitle(
-    core: *@This(),
-    window_id: mach.EntityID,
-    comptime fmt: []const u8,
-    args: anytype,
-) !void {
-    _ = window_id;
-    // Allocate and assign a new window title slice.
-    const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
-    defer core.allocator.free(slice);
-    core.setTitle(slice);
+// TODO(object)(window-title)
+// /// Prints into the window title buffer using a format string and arguments. e.g.
+// ///
+// /// ```
+// /// try core.state().printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
+// /// ```
+// pub fn printTitle(
+//     core: *@This(),
+//     window_id: mach.EntityID,
+//     comptime fmt: []const u8,
+//     args: anytype,
+// ) !void {
+//     _ = window_id;
+//     // Allocate and assign a new window title slice.
+//     const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
+//     defer core.allocator.free(slice);
+//     core.setTitle(slice);
 
-    // TODO: This function does not have access to *core.Mod to update
-    // try core.Mod.set(window_id, .title, slice);
+//     // TODO: This function does not have access to *core.Mod to update
+//     // try core.Mod.set(window_id, .title, slice);
+// }
+
+pub fn exit(core: *Core) void {
+    core.state = .exiting;
 }
 
-fn exit(core: *Mod) void {
-    core.state().state = .exiting;
-}
-
-pub inline fn requestAdapterCallback(
+inline fn requestAdapterCallback(
     context: *RequestAdapterResponse,
     status: gpu.RequestAdapterStatus,
     adapter: ?*gpu.Adapter,
@@ -761,7 +722,8 @@ const Platform = switch (build_options.core_platform) {
     .null => @import("core/Null.zig"),
 };
 
-// TODO: this needs to be removed.
+// TODO(object): this struct should not exist
+// TODO: this should not be here, it is exposed because the platform implementations need it.
 pub const InitOptions = struct {
     allocator: std.mem.Allocator,
     is_app: bool = false,
@@ -1078,7 +1040,7 @@ pub const Position = struct {
     y: f64,
 };
 
-pub const RequestAdapterResponse = struct {
+const RequestAdapterResponse = struct {
     status: gpu.RequestAdapterStatus,
     adapter: ?*gpu.Adapter,
     message: ?[*:0]const u8,

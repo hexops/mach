@@ -13,20 +13,16 @@ pipeline: *gpu.RenderPipeline,
 bind_groups: [num_bind_groups]*gpu.BindGroup,
 uniform_buffer: *gpu.Buffer,
 
-pub const name = .renderer;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .renderer;
 
+// TODO(object)
 pub const components = .{
     .position = .{ .type = Vec3 },
     .rotation = .{ .type = Vec3 },
     .scale = .{ .type = f32 },
 };
 
-pub const systems = .{
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .render_frame = .{ .handler = renderFrame },
-};
+pub const mach_systems = .{ .init, .deinit, .render_frame };
 
 const UniformBufferObject = extern struct {
     offset: Vec3,
@@ -34,17 +30,17 @@ const UniformBufferObject = extern struct {
 };
 
 fn init(
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     renderer: *Mod,
 ) !void {
-    const device = core.state().device;
+    const device = core.device;
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Fragment state
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = core.get(core.state().main_window, .framebuffer_format).?,
+        .format = core.windows.get(core.main_window).?.framebuffer_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
@@ -54,7 +50,7 @@ fn init(
         .targets = &.{color_target},
     });
 
-    const label = @tagName(name) ++ ".init";
+    const label = @tagName(mach_module) ++ ".init";
     const uniform_buffer = device.createBuffer(&.{
         .label = label ++ " uniform buffer",
         .usage = .{ .copy_dst = true, .uniform = true },
@@ -116,17 +112,17 @@ fn deinit(
 
 fn renderFrame(
     entities: *mach.Entities.Mod,
-    core: *mach.Core.Mod,
+    core: *mach.Core,
     renderer: *Mod,
 ) !void {
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.state().swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(name) ++ ".tick";
-    const encoder = core.state().device.createCommandEncoder(&.{ .label = label });
+    const label = @tagName(mach_module) ++ ".tick";
+    const encoder = core.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Update uniform buffer
@@ -173,8 +169,5 @@ fn renderFrame(
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.state().queue.submit(&[_]*gpu.CommandBuffer{command});
-
-    // Present the frame
-    core.schedule(.present_frame);
+    core.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

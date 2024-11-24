@@ -4,9 +4,9 @@ const mach = @import("../main.zig");
 const gpu = mach.gpu;
 const math = mach.math;
 
-pub const name = .mach_gfx_sprite_pipeline;
-pub const Mod = mach.Mod(@This());
+pub const mach_module = .mach_gfx_sprite_pipeline;
 
+// TODO(object)
 pub const components = .{
     .texture = .{ .type = *gpu.Texture, .description = 
     \\ Texture to use when rendering. The default shader can handle only one texture input.
