@@ -22,8 +22,8 @@
             .lazy = true,
         },
         .mach_objc = .{
-            .url = "https://pkg.machengine.org/mach-objc/690fafc4549df0eb331e6d5a3ca8a3f94b763a56.tar.gz",
-            .hash = "122001bacb21ad7eb237531fb218962270a178c52893bbfd9c5ce493232747e652e2",
+            .url = "https://pkg.machengine.org/mach-objc/fd52ff337499dc155b05fbf86b6555234c92d82c.tar.gz",
+            .hash = "1220d3edb15b9661b9126363f04c82c604306108baa277bb709849717acfb161e1a0",
             .lazy = true,
         },
         .xcode_frameworks = .{

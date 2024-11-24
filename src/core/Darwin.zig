@@ -226,13 +226,13 @@ const WindowDelegateCallbacks = struct {
             .height = s.width,
             .width = s.height,
         };
-        darwin.state.swap_chain_update.set();
-        darwin.state.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+        darwin.core.swap_chain_update.set();
+        darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
     }
 
     pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Darwin)) callconv(.C) bool {
         const darwin: *Darwin = block.context;
-        darwin.state.pushEvent(.close);
+        darwin.core.pushEvent(.close);
         return false;
     }
 };
@@ -241,12 +241,12 @@ const ViewCallbacks = struct {
     pub fn keyDown(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
         const darwin: *Darwin = block.context;
         if (event.isARepeat()) {
-            darwin.state.pushEvent(.{ .key_repeat = .{
+            darwin.core.pushEvent(.{ .key_repeat = .{
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         } else {
-            darwin.state.pushEvent(.{ .key_press = .{
+            darwin.core.pushEvent(.{ .key_press = .{
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
@@ -256,7 +256,7 @@ const ViewCallbacks = struct {
     pub fn keyUp(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
         const darwin: *Darwin = block.context;
 
-        darwin.state.pushEvent(.{ .key_release = .{
+        darwin.core.pushEvent(.{ .key_release = .{
             .key = machKeyFromKeycode(event.keyCode()),
             .mods = machModifierFromModifierFlag(event.modifierFlags()),
         } });
