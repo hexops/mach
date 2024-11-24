@@ -64,11 +64,13 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 
     // `NSApplicationMain()` and `UIApplicationMain()` never return, so there's no point in trying to add any kind of cleanup work here.
     const ns_app = objc.app_kit.Application.sharedApplication();
+
     const delegate = objc.mach.AppDelegate.allocInit();
     delegate.setRunBlock(block_literal.asBlock().copy());
     ns_app.setDelegate(@ptrCast(delegate));
 
-    _ = objc.app_kit.applicationMain(0, undefined);
+    ns_app.run();
+    //_ = objc.app_kit.applicationMain(0, undefined);
 
     unreachable;
     // TODO: support UIKit.
@@ -84,26 +86,24 @@ pub fn init(
     // TODO: support UIKit.
     var window_opt: ?*objc.app_kit.Window = null;
     if (!options.headless) {
+        // If the application is not headless, we need to make the application a genuine UI application
+        // by setting the activation policy, this moves the process to foreground
+        _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
+
         const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
         const layer = objc.quartz_core.MetalLayer.new();
         defer layer.release();
+        layer.setDisplaySyncEnabled(true);
         metal_descriptor.* = .{
             .layer = layer,
         };
         surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
         const screen = objc.app_kit.Screen.mainScreen();
-
-        var rect = objc.core_graphics.Rect{
-            .origin = .{ .x = 100, .y = 100 },
+        const rect = objc.core_graphics.Rect{
+            .origin = .{ .x = 0, .y = 0 },
             .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
         };
-
-        if (screen) |s| {
-            const frame = s.visibleFrame();
-            rect.origin.x = frame.size.width / 2.0 - @as(@TypeOf(rect.origin.x), @floatFromInt(options.size.width)) / 2.0;
-            rect.origin.y = frame.size.height / 2.0 - @as(@TypeOf(rect.origin.y), @floatFromInt(options.size.height)) / 2.0;
-        }
 
         const window_style =
             (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
@@ -116,23 +116,36 @@ pub fn init(
             rect,
             window_style,
             objc.app_kit.BackingStoreBuffered,
-            true,
+            false,
             screen,
         );
         if (window_opt) |window| {
             window.setReleasedWhenClosed(false);
-            if (window.contentView()) |view| {
-                view.setLayer(@ptrCast(layer));
+
+            var view = objc.mach.View.allocInit();
+            view.setLayer(@ptrCast(layer));
+
+            {
+                var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, darwin, null, null);
+                view.setBlock_keyDown(keyDown.asBlock().copy());
+
+                var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, darwin, null, null);
+                view.setBlock_keyUp(keyUp.asBlock().copy());
             }
+            window.setContentView(@ptrCast(view));
+            window.center();
             window.setIsVisible(true);
             window.makeKeyAndOrderFront(null);
 
             const delegate = objc.mach.WindowDelegate.allocInit();
+            defer window.setDelegate(@ptrCast(delegate));
+            { // Set WindowDelegate blocks
+                var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, darwin, null, null);
+                delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
 
-            var blockLiteral_windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.callback_windowWillResize_toSize, darwin, null, null);
-            delegate.setBlock_windowWillResize_toSize(blockLiteral_windowWillResize_toSize.asBlock().copy());
-
-            window.setDelegate(@ptrCast(delegate));
+                var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, darwin, null, null);
+                delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
+            }
         } else std.debug.panic("mach: window failed to initialize", .{});
     }
 
@@ -205,7 +218,7 @@ pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
 }
 
 const WindowDelegateCallbacks = struct {
-    pub fn callback_windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
+    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
         const darwin: *Darwin = block.context;
         const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
 
@@ -216,4 +229,186 @@ const WindowDelegateCallbacks = struct {
         darwin.core.swap_chain_update.set();
         darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
     }
+
+    pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Darwin)) callconv(.C) bool {
+        const darwin: *Darwin = block.context;
+        darwin.core.pushEvent(.close);
+        return false;
+    }
 };
+
+const ViewCallbacks = struct {
+    pub fn keyDown(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
+        const darwin: *Darwin = block.context;
+        if (event.isARepeat()) {
+            darwin.core.pushEvent(.{ .key_repeat = .{
+                .key = machKeyFromKeycode(event.keyCode()),
+                .mods = machModifierFromModifierFlag(event.modifierFlags()),
+            } });
+        } else {
+            darwin.core.pushEvent(.{ .key_press = .{
+                .key = machKeyFromKeycode(event.keyCode()),
+                .mods = machModifierFromModifierFlag(event.modifierFlags()),
+            } });
+        }
+    }
+
+    pub fn keyUp(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
+        const darwin: *Darwin = block.context;
+
+        darwin.core.pushEvent(.{ .key_release = .{
+            .key = machKeyFromKeycode(event.keyCode()),
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
+    }
+};
+
+fn machModifierFromModifierFlag(modifier_flag: usize) Core.KeyMods {
+    var modifier: Core.KeyMods = .{
+        .alt = false,
+        .caps_lock = false,
+        .control = false,
+        .num_lock = false,
+        .shift = false,
+        .super = false,
+    };
+
+    if (modifier_flag & objc.app_kit.EventModifierFlagOption != 0)
+        modifier.alt = true;
+
+    if (modifier_flag & objc.app_kit.EventModifierFlagCapsLock != 0)
+        modifier.caps_lock = true;
+
+    if (modifier_flag & objc.app_kit.EventModifierFlagControl != 0)
+        modifier.control = true;
+
+    if (modifier_flag & objc.app_kit.EventModifierFlagShift != 0)
+        modifier.shift = true;
+
+    if (modifier_flag & objc.app_kit.EventModifierFlagCommand != 0)
+        modifier.super = true;
+
+    return modifier;
+}
+
+fn machKeyFromKeycode(keycode: c_ushort) Core.Key {
+    comptime var table: [256]Key = undefined;
+    comptime for (&table, 1..) |*ptr, i| {
+        ptr.* = switch (i) {
+            0x35 => .escape,
+            0x12 => .one,
+            0x13 => .two,
+            0x14 => .three,
+            0x15 => .four,
+            0x17 => .five,
+            0x16 => .six,
+            0x1A => .seven,
+            0x1C => .eight,
+            0x19 => .nine,
+            0x1D => .zero,
+            0x1B => .minus,
+            0x18 => .equal,
+            0x33 => .backspace,
+            0x30 => .tab,
+            0x0C => .q,
+            0x0D => .w,
+            0x0E => .e,
+            0x0F => .r,
+            0x11 => .t,
+            0x10 => .y,
+            0x20 => .u,
+            0x22 => .i,
+            0x1F => .o,
+            0x23 => .p,
+            0x21 => .left_bracket,
+            0x1E => .right_bracket,
+            0x24 => .enter,
+            0x3B => .left_control,
+            0x00 => .a,
+            0x01 => .s,
+            0x02 => .d,
+            0x03 => .f,
+            0x05 => .g,
+            0x04 => .h,
+            0x26 => .j,
+            0x28 => .k,
+            0x25 => .l,
+            0x29 => .semicolon,
+            0x27 => .apostrophe,
+            0x32 => .grave,
+            0x38 => .left_shift,
+            //0x2A => .backslash, // Iso backslash instead?
+            0x06 => .z,
+            0x07 => .x,
+            0x08 => .c,
+            0x09 => .v,
+            0x0B => .b,
+            0x2D => .n,
+            0x2E => .m,
+            0x2B => .comma,
+            0x2F => .period,
+            0x2C => .slash,
+            0x3C => .right_shift,
+            0x43 => .kp_multiply,
+            0x3A => .left_alt,
+            0x31 => .space,
+            0x39 => .caps_lock,
+            0x7A => .f1,
+            0x78 => .f2,
+            0x63 => .f3,
+            0x76 => .f4,
+            0x60 => .f5,
+            0x61 => .f6,
+            0x62 => .f7,
+            0x64 => .f8,
+            0x65 => .f9,
+            0x6D => .f10,
+            0x59 => .kp_7,
+            0x5B => .kp_8,
+            0x5C => .kp_9,
+            0x4E => .kp_subtract,
+            0x56 => .kp_4,
+            0x57 => .kp_5,
+            0x58 => .kp_6,
+            0x45 => .kp_add,
+            0x53 => .kp_1,
+            0x54 => .kp_2,
+            0x55 => .kp_3,
+            0x52 => .kp_0,
+            0x41 => .kp_decimal,
+            0x69 => .print,
+            0x2A => .iso_backslash,
+            0x67 => .f11,
+            0x6F => .f12,
+            0x51 => .kp_equal,
+            //0x64 => .f13, GLFW doesnt have a f13?
+            0x6B => .f14,
+            0x71 => .f15,
+            0x6A => .f16,
+            0x40 => .f17,
+            0x4F => .f18,
+            0x50 => .f19,
+            0x5A => .f20,
+            0x4C => .kp_enter,
+            0x3E => .right_control,
+            0x4B => .kp_divide,
+            0x3D => .right_alt,
+            0x47 => .num_lock,
+            0x73 => .home,
+            0x7E => .up,
+            0x74 => .page_up,
+            0x7B => .left,
+            0x7C => .right,
+            0x77 => .end,
+            0x7D => .down,
+            0x79 => .page_down,
+            0x72 => .insert,
+            0x75 => .delete,
+            0x37 => .left_super,
+            0x36 => .right_super,
+            0x6E => .menu,
+            else => .unknown,
+        };
+    };
+    return if (keycode > 0 and keycode <= table.len) table[keycode - 1] else if (keycode == 0) .a else .unknown;
+}
