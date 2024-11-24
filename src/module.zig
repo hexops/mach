@@ -31,6 +31,7 @@ pub fn Objects(comptime T: type) type {
             allocator: std.mem.Allocator,
 
             /// Mutex to be held when operating on these objects.
+            /// TODO(object): replace with RwLock and update website docs to indicate this
             mu: std.Thread.Mutex = .{},
 
             /// A registered ID indicating the type of objects being represented. This can be
