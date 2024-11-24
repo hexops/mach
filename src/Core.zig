@@ -30,7 +30,7 @@ pub var non_blocking = false;
 
 pub const mach_module = .mach_core;
 
-pub const mach_systems = .{ .main, .init, .presentFrame, .deinit };
+pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
 
 windows: mach.Objects(struct {
     // Window title string
