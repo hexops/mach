@@ -650,8 +650,8 @@ const pointer_listener = struct {
 
         const mouse_button: Core.MouseButton = @enumFromInt(button - c.BTN_LEFT);
         const pressed = state == c.WL_POINTER_BUTTON_STATE_PRESSED;
-        const x = wl.state.input_state.mouse_position.x;
-        const y = wl.state.input_state.mouse_position.y;
+        const x = wl.core.input_state.mouse_position.x;
+        const y = wl.core.input_state.mouse_position.y;
 
         if (pressed) {
             wl.core.pushEvent(Core.Event{ .mouse_press = .{
