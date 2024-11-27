@@ -222,11 +222,17 @@ const WindowDelegateCallbacks = struct {
         const darwin: *Darwin = block.context;
         const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
 
+        // TODO: Eventually we need to be able to tie a window here with the window Objects in core, and treat the windows
+        // as a list, rather than a single main window
         darwin.size = .{
             .height = s.width,
             .width = s.height,
         };
         darwin.core.swap_chain_update.set();
+
+        darwin.core.windows.setRaw(darwin.core.main_window, .width, s.width);
+        darwin.core.windows.setRaw(darwin.core.main_window, .height, s.height);
+
         darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
     }
 
