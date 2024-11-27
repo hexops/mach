@@ -32,7 +32,10 @@ pub const mach_module = .mach_core;
 
 pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
 
+// Set track_fields to true so that when these field values change, we know about it
+// and can update the platform windows.
 windows: mach.Objects(
+    .{ .track_fields = true },
     struct {
         /// Window title string
         // TODO: document how to set this using a format string
@@ -56,9 +59,6 @@ windows: mach.Objects(
 
         /// Whether the window is fullscreen (read-only)
         fullscreen: bool,
-    },
-    .{
-        .track_fields = true,
     },
 ),
 
@@ -298,9 +298,6 @@ fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
                 .height = main_window.height,
             });
         }
-
-        core.windows.setUpdated(core.main_window, .width, false);
-        core.windows.setUpdated(core.main_window, .height, false);
     }
 
     return core.state != .exited;

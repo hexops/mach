@@ -206,8 +206,6 @@ pub fn setSize(darwin: *Darwin, size: Size) void {
         frame.size.height = @floatFromInt(size.height);
         frame.size.width = @floatFromInt(size.width);
         window.setFrame_display_animate(frame, true, true);
-
-        std.log.debug("setSize successfully called", .{});
     }
 }
 
