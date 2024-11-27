@@ -68,8 +68,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             /// Global pointer to object relations graph
             graph: *Graph,
 
-            /// This is mach's way of determining which fields are updated and
-            /// need to trigger some other logic
+            /// A bitset per-field used to track field changes. Only used if options.track_fields == true.
             updated: ?std.ArrayListUnmanaged(std.bit_set.DynamicBitSetUnmanaged) = if (options.track_fields) .{} else null,
         },
 
@@ -317,7 +316,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             return unpacked;
         }
 
-        /// Returns true if the field has an `updated` bit set in internal, then sets the bit
+        /// Returns true if the field has an `updated` bit set in internal, after setting the bit
         /// back to false.
         pub fn updated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
             if (options.track_fields) {
