@@ -346,9 +346,9 @@ pub fn Objects(comptime T: type, options: ObjectsOptions) type {
             return false;
         }
 
-        /// Returns true if the field has an `updated` bit set in internal.
+        /// Sets an internal bit for the field indicating it has been updated.
         ///
-        /// Internal functions may set this bit back to false.
+        /// Internal functions may use this as a signal.
         pub fn setUpdated(objs: *@This(), id: ObjectID, field_name: anytype, value: bool) void {
             if (options.track_fields) {
                 const unpacked = objs.validateAndUnpack(id, "setUpdated");
