@@ -37,7 +37,7 @@ pub fn init(
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = core.windows.get(core.main_window).?.framebuffer_format,
+        .format = core.windows.get(core.main_window, .framebuffer_format).?,
         .blend = &blend,
     };
 
