@@ -30,7 +30,7 @@ pub var non_blocking = false;
 
 pub const mach_module = .mach_core;
 
-pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
+pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .processWindowUpdates, .deinit };
 
 // Set track_fields to true so that when these field values change, we know about it
 // and can update the platform windows.
@@ -244,6 +244,7 @@ pub fn init(core: *Core) !void {
 pub fn tick(core: *Core, core_mod: mach.Mod(Core)) void {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
+    core_mod.call(.processWindowUpdates);
 }
 
 pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
@@ -288,7 +289,12 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
+    core_mod.call(.processWindowUpdates);
 
+    return core.state != .exited;
+}
+
+pub fn processWindowUpdates(core: *Core) void {
     if (core.windows.updated(core.main_window, .width) or core.windows.updated(core.main_window, .height)) {
         const window = core.windows.getAll(core.main_window);
 
@@ -299,8 +305,6 @@ fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
             });
         }
     }
-
-    return core.state != .exited;
 }
 
 pub fn deinit(core: *Core) !void {
