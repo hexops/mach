@@ -232,7 +232,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         ///
         /// Unlike set(), this method does not respect any mach.Objects tracking
         /// options, so changes made to an object through this method will not be tracked.
-        pub fn setRaw(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T), value: anytype) void {
+        pub fn setRaw(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T), value: std.meta.FieldType(T, field_name)) void {
             const data = &objs.internal.data;
             const unpacked = objs.validateAndUnpack(id, "setRaw");
 
@@ -246,7 +246,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         ///
         /// Unlike setAllRaw, this method respects mach.Objects tracking
         /// and changes made to an object through this method will be tracked.
-        pub fn set(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T), value: anytype) void {
+        pub fn set(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T), value: std.meta.FieldType(T, field_name)) void {
             const data = &objs.internal.data;
             const unpacked = objs.validateAndUnpack(id, "set");
 
@@ -262,7 +262,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         }
 
         /// Get a single field.
-        pub fn get(objs: *@This(), id: ObjectID, field_name: anytype) ?std.meta.FieldType(T, field_name) {
+        pub fn get(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T)) ?std.meta.FieldType(T, field_name) {
             const data = &objs.internal.data;
 
             const unpacked = objs.validateAndUnpack(id, "get");
