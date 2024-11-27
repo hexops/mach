@@ -32,30 +32,35 @@ pub const mach_module = .mach_core;
 
 pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
 
-windows: mach.Objects(struct {
-    // Window title string
-    // TODO: document how to set this using a format string
-    // TODO: allocation/free strategy
-    title: []const u8,
+windows: mach.Objects(
+    struct {
+        /// Window title string
+        // TODO: document how to set this using a format string
+        // TODO: allocation/free strategy
+        title: []const u8,
 
-    // Texture format of the framebuffer (read-only)
-    framebuffer_format: gpu.Texture.Format,
+        /// Texture format of the framebuffer (read-only)
+        framebuffer_format: gpu.Texture.Format,
 
-    // Width of the framebuffer in texels (read-only)
-    framebuffer_width: u32,
+        /// Width of the framebuffer in texels (read-only)
+        framebuffer_width: u32,
 
-    // Height of the framebuffer in texels (read-only)
-    framebuffer_height: u32,
+        /// Height of the framebuffer in texels (read-only)
+        framebuffer_height: u32,
 
-    // Width of the window in virtual pixels (read-only)
-    width: u32,
+        /// Width of the window in virtual pixels (read-only)
+        width: u32,
 
-    // Height of the window in virtual pixels (read-only)
-    height: u32,
+        /// Height of the window in virtual pixels (read-only)
+        height: u32,
 
-    /// Whether the window is fullscreen (read-only)
-    fullscreen: bool,
-}),
+        /// Whether the window is fullscreen (read-only)
+        fullscreen: bool,
+    },
+    .{
+        .track_fields = true,
+    },
+),
 
 /// Callback system invoked per tick (e.g. per-frame)
 on_tick: ?mach.FunctionID = null,
@@ -218,14 +223,17 @@ pub fn init(core: *Core) !void {
     };
     core.swap_chain = core.device.createSwapChain(core.surface, &core.descriptor);
 
+    core.windows.setRaw(core.main_window, .framebuffer_format, core.descriptor.format);
+    core.windows.setRaw(core.main_window, .framebuffer_width, core.descriptor.width);
+    core.windows.setRaw(core.main_window, .framebuffer_height, core.descriptor.height);
     // TODO(important): update this information upon framebuffer resize events
-    var w = core.windows.get(core.main_window).?;
-    w.framebuffer_format = core.descriptor.format;
-    w.framebuffer_width = core.descriptor.width;
-    w.framebuffer_height = core.descriptor.height;
-    w.width = core.platform.size.width;
-    w.height = core.platform.size.height;
-    core.windows.set(core.main_window, w);
+    // var w = core.windows.get(core.main_window).?;
+    // w.framebuffer_format = core.descriptor.format;
+    // w.framebuffer_width = core.descriptor.width;
+    // w.framebuffer_height = core.descriptor.height;
+    // w.width = core.platform.size.width;
+    // w.height = core.platform.size.height;
+    // core.windows.setAll(core.main_window, w);
 
     core.frame = .{ .target = 0 };
     core.input = .{ .target = 1 };
@@ -280,6 +288,20 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
+
+    if (core.windows.updated(core.main_window, .width) or core.windows.updated(core.main_window, .height)) {
+        const window = core.windows.getAll(core.main_window);
+
+        if (window) |main_window| {
+            core.platform.setSize(.{
+                .width = main_window.width,
+                .height = main_window.height,
+            });
+        }
+
+        core.windows.setUpdated(core.main_window, .width, false);
+        core.windows.setUpdated(core.main_window, .height, false);
+    }
 
     return core.state != .exited;
 }
@@ -607,13 +629,13 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
 
     // TODO(important): update this information in response to resize events rather than
     // after frame submission
-    var win = core.windows.get(core.main_window).?;
-    win.framebuffer_format = core.descriptor.format;
-    win.framebuffer_width = core.descriptor.width;
-    win.framebuffer_height = core.descriptor.height;
-    win.width = core.platform.size.width;
-    win.height = core.platform.size.height;
-    core.windows.set(core.main_window, win);
+    // var win = core.windows.getAll(core.main_window).?;
+    // win.framebuffer_format = core.descriptor.format;
+    // win.framebuffer_width = core.descriptor.width;
+    // win.framebuffer_height = core.descriptor.height;
+    // win.width = core.platform.size.width;
+    // win.height = core.platform.size.height;
+    // core.windows.setAll(core.main_window, win);
 
     // Record to frame rate frequency monitor that a frame was finished.
     core.frame.tick();
