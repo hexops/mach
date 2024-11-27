@@ -25,7 +25,13 @@ const PackedObjectTypeID = packed struct(u16) {
     object_name_id: u6,
 };
 
-pub fn Objects(comptime T: type) type {
+pub const ObjectsOptions = struct {
+    /// If this option is true, the internal field `update` will
+    /// contain a list of bitsets representing each object field
+    track_fields: bool = false,
+};
+
+pub fn Objects(comptime T: type, options: ObjectsOptions) type {
     return struct {
         internal: struct {
             allocator: std.mem.Allocator,
@@ -59,6 +65,10 @@ pub fn Objects(comptime T: type) type {
 
             /// Global pointer to object relations graph
             graph: *Graph,
+
+            /// This is mach's way of determining which fields are updated and
+            /// need to trigger some other logic
+            updated: std.ArrayListUnmanaged(std.bit_set.DynamicBitSetUnmanaged) = .{},
         },
 
         pub const IsMachObjects = void;
@@ -149,6 +159,7 @@ pub fn Objects(comptime T: type) type {
             const dead = &objs.internal.dead;
             const generation = &objs.internal.generation;
             const recycling_bin = &objs.internal.recycling_bin;
+            const _updated = &objs.internal.updated;
 
             // The recycling bin should always be big enough, but we check at this point if 10% of
             // all objects have been thrown on the floor. If they have, we find them and grow the
@@ -176,10 +187,16 @@ pub fn Objects(comptime T: type) type {
             try dead.resize(allocator, data.capacity, true);
             try generation.ensureUnusedCapacity(allocator, 1);
 
+            if (options.track_fields) {
+                try _updated.ensureUnusedCapacity(allocator, 1);
+                _updated.appendAssumeCapacity(try std.bit_set.DynamicBitSetUnmanaged.initEmpty(allocator, @typeInfo(T).@"struct".fields.len));
+            }
+
             const index = data.len;
             data.appendAssumeCapacity(value);
             dead.unset(index);
             generation.appendAssumeCapacity(0);
+
             return @bitCast(PackedID{
                 .type_id = objs.internal.type_id,
                 .generation = 0,
@@ -187,17 +204,95 @@ pub fn Objects(comptime T: type) type {
             });
         }
 
-        pub fn set(objs: *@This(), id: ObjectID, value: T) void {
+        /// This function will set all fields of an object.
+        ///
+        /// Note that this function has no tracking, and will not trigger
+        /// any internal mach functions.
+        ///
+        /// Example: core.windows.setAllRaw(id, value) will NOT trigger the Platform
+        /// to update the window's size, etc.
+        pub fn setAllRaw(objs: *@This(), id: ObjectID, value: T) void {
             const data = &objs.internal.data;
 
-            const unpacked = objs.validateAndUnpack(id, "set");
+            const unpacked = objs.validateAndUnpack(id, "setAllRaw");
             data.set(unpacked.index, value);
         }
 
-        pub fn get(objs: *@This(), id: ObjectID) ?T {
+        /// This function will set all fields of an object.
+        ///
+        /// Note that this function also sets a bit set value
+        /// for each field, informing mach that the field has
+        /// been updated and can be passed to internals that need it.
+        ///
+        /// Example: core.windows.setAll(id, value) can trigger the Platform
+        /// to update the window's size, etc.
+        pub fn setAll(objs: *@This(), id: ObjectID, value: T) void {
+            const data = &objs.internal.data;
+
+            const unpacked = objs.validateAndUnpack(id, "setAll");
+            data.set(unpacked.index, value);
+
+            if (options.track_fields)
+                objs.internal.updated.items[unpacked.index].setAll();
+        }
+
+        /// This function will set a single field of an object.
+        ///
+        /// Note that this function has no tracking, and will not trigger
+        /// any internal mach functions.
+        ///
+        /// Example: core.windows.setRaw(id, .width, value) will NOT trigger the Platform
+        /// to update the window's size.
+        pub fn setRaw(objs: *@This(), id: ObjectID, comptime field_name: anytype, value: anytype) void {
+            if (@typeInfo(@TypeOf(field_name)) != .enum_literal) @compileError("mach: invalid field name, expected `.field` enum literal, found: " ++ @typeName(@TypeOf(field_name)));
+
+            const data = &objs.internal.data;
+            const unpacked = objs.validateAndUnpack(id, "setRaw");
+
+            var current = data.get(unpacked.index);
+            @field(current, @tagName(field_name)) = value;
+
+            data.set(unpacked.index, current);
+        }
+
+        /// This function will set a single field of an object.
+        ///
+        /// Note that this function also sets a bit set value
+        /// for each object field, informing mach that the field has
+        /// been updated and can be passed to internals that need it.
+        ///
+        /// Example: core.windows.set(id, .width, value) will trigger the Platform
+        /// to update the window's size.
+        pub fn set(objs: *@This(), id: ObjectID, comptime field_name: anytype, value: anytype) void {
+            if (@typeInfo(@TypeOf(field_name)) != .enum_literal) @compileError("mach: invalid field name, expected `.field` enum literal, found: " ++ @typeName(@TypeOf(field_name)));
+
+            const data = &objs.internal.data;
+            const unpacked = objs.validateAndUnpack(id, "set");
+
+            var current = data.get(unpacked.index);
+            @field(current, @tagName(field_name)) = value;
+
+            data.set(unpacked.index, current);
+
+            if (options.track_fields)
+                if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index|
+                    objs.internal.updated.items[unpacked.index].set(field_index);
+        }
+
+        /// Get a single field.
+        pub fn get(objs: *@This(), id: ObjectID, field_name: anytype) ?std.meta.FieldType(T, field_name) {
             const data = &objs.internal.data;
 
             const unpacked = objs.validateAndUnpack(id, "get");
+            const d = data.get(unpacked.index);
+            return @field(d, @tagName(field_name));
+        }
+
+        /// Get all fields.
+        pub fn getAll(objs: *@This(), id: ObjectID) ?T {
+            const data = &objs.internal.data;
+
+            const unpacked = objs.validateAndUnpack(id, "getAll");
             return data.get(unpacked.index);
         }
 
@@ -237,6 +332,29 @@ pub fn Objects(comptime T: type) type {
                 @panic("mach: " ++ fn_name ++ "() called on a dead object");
             }
             return unpacked;
+        }
+
+        /// Returns true if the field has an `updated` bit set in internal.
+        ///
+        /// Internal functions may set this bit back to false.
+        pub fn updated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
+            if (options.track_fields) {
+                const unpacked = objs.validateAndUnpack(id, "updated");
+                if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index|
+                    return objs.internal.updated.items[unpacked.index].isSet(field_index);
+            }
+            return false;
+        }
+
+        /// Returns true if the field has an `updated` bit set in internal.
+        ///
+        /// Internal functions may set this bit back to false.
+        pub fn setUpdated(objs: *@This(), id: ObjectID, field_name: anytype, value: bool) void {
+            if (options.track_fields) {
+                const unpacked = objs.validateAndUnpack(id, "setUpdated");
+                if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index|
+                    return objs.internal.updated.items[unpacked.index].setValue(field_index, value);
+            }
         }
 
         /// Tells if the given object (which must be alive and valid) is from this pool of objects.

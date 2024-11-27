@@ -33,7 +33,7 @@ pub fn init(
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = core.windows.get(core.main_window).?.framebuffer_format,
+        .format = core.windows.get(core.main_window, .framebuffer_format).?,
         .blend = &blend,
     };
 
@@ -69,6 +69,13 @@ pub fn init(
 pub fn tick(app: *App, core: *mach.Core) void {
     while (core.nextEvent()) |event| {
         switch (event) {
+            .key_press => |ev| {
+                switch (ev.key) {
+                    .right => core.windows.set(core.main_window, .width, core.windows.get(core.main_window, .width).? + 10),
+                    .left => core.windows.set(core.main_window, .width, core.windows.get(core.main_window, .width).? - 10),
+                    else => {},
+                }
+            },
             .close => core.exit(),
             else => {},
         }
