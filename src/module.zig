@@ -316,8 +316,9 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             return unpacked;
         }
 
-        /// Returns true if the field has an `updated` bit set in internal, after setting the bit
-        /// back to false.
+        /// If options have tracking enabled, this returns true when the given field has been set using the set()
+        /// or setAll() methods. A subsequent call to .updated() will return false until another set() or setAll()
+        /// call is made.
         pub fn updated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
             if (options.track_fields) {
                 const unpacked = objs.validateAndUnpack(id, "updated");
