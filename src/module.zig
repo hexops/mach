@@ -69,7 +69,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             graph: *Graph,
 
             /// A bitset per-field used to track field changes. Only used if options.track_fields == true.
-            updated: ?std.ArrayListUnmanaged(std.bit_set.DynamicBitSetUnmanaged) = if (options.track_fields) .{} else null,
+            updated: ?std.bit_set.DynamicBitSetUnmanaged = if (options.track_fields) .{} else null,
         },
 
         pub const IsMachObjects = void;
@@ -187,9 +187,9 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             try dead.resize(allocator, data.capacity, true);
             try generation.ensureUnusedCapacity(allocator, 1);
 
+            // If we are tracking fields, we need to resize the bitset to hold another object's fields
             if (objs.internal.updated) |*updated_fields| {
-                try updated_fields.ensureUnusedCapacity(allocator, 1);
-                updated_fields.appendAssumeCapacity(try std.bit_set.DynamicBitSetUnmanaged.initEmpty(allocator, @typeInfo(T).@"struct".fields.len));
+                try updated_fields.resize(allocator, data.capacity * @typeInfo(T).@"struct".fields.len, false);
             }
 
             const index = data.len;
@@ -225,7 +225,11 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             const unpacked = objs.validateAndUnpack(id, "setAll");
             data.set(unpacked.index, value);
 
-            if (options.track_fields) objs.internal.updated.items[unpacked.index].setAll();
+            if (objs.internal.updated) |*updated_fields| {
+                const updated_start = unpacked.index * @typeInfo(T).@"struct".fields.len;
+                const updated_end = updated_start + @typeInfo(T).@"struct".fields.len;
+                updated_fields.setRangeValue(.{ .start = @intCast(updated_start), .end = @intCast(updated_end) }, true);
+            }
         }
 
         /// Sets a single field of the given object to the given value.
@@ -257,8 +261,8 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
             if (options.track_fields)
                 if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index|
-                    if (objs.internal.updated) |updated_fields|
-                        updated_fields.items[unpacked.index].set(field_index);
+                    if (objs.internal.updated) |*updated_fields|
+                        updated_fields.set(unpacked.index * @typeInfo(T).@"struct".fields.len + field_index);
         }
 
         /// Get a single field.
@@ -324,9 +328,10 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
                 const unpacked = objs.validateAndUnpack(id, "updated");
                 if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index| {
                     if (objs.internal.updated) |*updated_fields| {
-                        const value = updated_fields.items[unpacked.index].isSet(field_index);
-                        updated_fields.items[unpacked.index].unset(field_index);
-                        return value;
+                        const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
+                        const updated_value = updated_fields.isSet(updated_index);
+                        updated_fields.unset(updated_index);
+                        return updated_value;
                     }
                 }
             }
