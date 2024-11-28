@@ -68,7 +68,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             /// Global pointer to object relations graph
             graph: *Graph,
 
-            /// A bitset per-field used to track field changes. Only used if options.track_fields == true.
+            /// A bitset used to track per-field changes. Only used if options.track_fields == true.
             updated: ?std.bit_set.DynamicBitSetUnmanaged = if (options.track_fields) .{} else null,
         },
 
