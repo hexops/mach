@@ -2,7 +2,6 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const gpu = mach.gpu;
-const InitOptions = Core.InitOptions;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
 const MouseButtonEvent = Core.MouseButtonEvent;
@@ -21,26 +20,14 @@ const log = std.log.scoped(.mach);
 
 pub const Darwin = @This();
 
-// --------------------------
-// Module state
-// --------------------------
-allocator: std.mem.Allocator,
-core: *Core,
+pub const Native = struct {
+    window: ?*objc.app_kit.Window = null,
+};
 
-// Core platform interface
-surface_descriptor: gpu.Surface.Descriptor,
-title: [:0]const u8,
-display_mode: DisplayMode,
-vsync_mode: VSyncMode,
-cursor_mode: CursorMode,
-cursor_shape: CursorShape,
-border: bool,
-headless: bool,
-refresh_rate: u32,
-size: Size,
-
-// Internals
-window: ?*objc.app_kit.Window,
+pub const Context = struct {
+    core: *Core,
+    window_id: mach.ObjectID,
+};
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
     const Args = @TypeOf(args_tuple);
@@ -76,193 +63,177 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     // TODO: support UIKit.
 }
 
-pub fn init(
-    darwin: *Darwin,
+pub fn tick(core: *Core) !void {
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        const native_opt: ?Native = core.windows.get(window_id, .native);
+
+        if (native_opt) |native| {
+            if (native.window) |native_window| {
+                // Handle resizing the window when the user changes width or height
+                if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
+                    var frame = native_window.frame();
+                    frame.size.height = @floatFromInt(core.windows.get(window_id, .width));
+                    frame.size.width = @floatFromInt(core.windows.get(window_id, .height));
+                    native_window.setFrame_display_animate(frame, true, true);
+                }
+            }
+        } else {
+            try initWindow(core, window_id);
+        }
+    }
+}
+
+fn initWindow(
     core: *Core,
-    options: InitOptions,
+    window_id: mach.ObjectID,
 ) !void {
-    var surface_descriptor = gpu.Surface.Descriptor{};
+    var core_window = core.windows.getValue(window_id);
+    // If the application is not headless, we need to make the application a genuine UI application
+    // by setting the activation policy, this moves the process to foreground
+    // TODO: Only call this on the first window creation
+    _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
 
-    // TODO: support UIKit.
-    var window_opt: ?*objc.app_kit.Window = null;
-    if (!options.headless) {
-        // If the application is not headless, we need to make the application a genuine UI application
-        // by setting the activation policy, this moves the process to foreground
-        _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
-
-        const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
-        const layer = objc.quartz_core.MetalLayer.new();
-        defer layer.release();
-        layer.setDisplaySyncEnabled(true);
-        metal_descriptor.* = .{
-            .layer = layer,
-        };
-        surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
-
-        const screen = objc.app_kit.Screen.mainScreen();
-        const rect = objc.core_graphics.Rect{
-            .origin = .{ .x = 0, .y = 0 },
-            .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
-        };
-
-        const window_style =
-            (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
-            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
-            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
-            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
-            (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
-
-        window_opt = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
-            rect,
-            window_style,
-            objc.app_kit.BackingStoreBuffered,
-            false,
-            screen,
-        );
-        if (window_opt) |window| {
-            window.setReleasedWhenClosed(false);
-
-            var view = objc.mach.View.allocInit();
-            view.setLayer(@ptrCast(layer));
-
-            {
-                var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, darwin, null, null);
-                view.setBlock_keyDown(keyDown.asBlock().copy());
-
-                var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, darwin, null, null);
-                view.setBlock_keyUp(keyUp.asBlock().copy());
-            }
-            window.setContentView(@ptrCast(view));
-            window.center();
-            window.setIsVisible(true);
-            window.makeKeyAndOrderFront(null);
-
-            const delegate = objc.mach.WindowDelegate.allocInit();
-            defer window.setDelegate(@ptrCast(delegate));
-            { // Set WindowDelegate blocks
-                var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, darwin, null, null);
-                delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
-
-                var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, darwin, null, null);
-                delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
-            }
-        } else std.debug.panic("mach: window failed to initialize", .{});
-    }
-
-    darwin.* = .{
-        .allocator = options.allocator,
-        .core = core,
-        .title = options.title,
-        .display_mode = options.display_mode,
-        .vsync_mode = .none,
-        .cursor_mode = .normal,
-        .cursor_shape = .arrow,
-        .border = options.border,
-        .headless = options.headless,
-        .refresh_rate = 60, // TODO: set to something meaningful
-        .size = options.size,
-        .surface_descriptor = surface_descriptor,
-        .window = window_opt,
+    const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
+    const layer = objc.quartz_core.MetalLayer.new();
+    defer layer.release();
+    layer.setDisplaySyncEnabled(true);
+    metal_descriptor.* = .{
+        .layer = layer,
     };
-}
+    core_window.surface_descriptor = .{};
+    core_window.surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
-pub fn deinit(darwin: *Darwin) void {
-    if (darwin.window) |w| @as(*objc.foundation.ObjectProtocol, @ptrCast(w)).release();
-    return;
-}
+    const screen = objc.app_kit.Screen.mainScreen();
+    const rect = objc.core_graphics.Rect{
+        .origin = .{ .x = 0, .y = 0 },
+        .size = .{ .width = @floatFromInt(core_window.width), .height = @floatFromInt(core_window.height) },
+    };
 
-pub fn update(darwin: *Darwin) !void {
-    if (darwin.window) |window| window.update();
-}
+    const window_style =
+        (if (core_window.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
 
-pub fn setTitle(darwin: *Darwin, title: [:0]const u8) void {
-    if (darwin.window) |window| {
-        var string = objc.app_kit.String.allocInit();
-        defer string.release();
-        string = string.initWithUTF8String(title.ptr);
-        window.setTitle(string);
-    }
-}
+    const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
+        rect,
+        window_style,
+        objc.app_kit.BackingStoreBuffered,
+        false,
+        screen,
+    );
+    if (native_window_opt) |native_window| {
+        native_window.setReleasedWhenClosed(false);
 
-pub fn setDisplayMode(_: *Darwin, _: DisplayMode) void {
-    return;
-}
+        var view = objc.mach.View.allocInit();
+        view.setLayer(@ptrCast(layer));
 
-pub fn setBorder(_: *Darwin, _: bool) void {
-    return;
-}
+        var context: Context = .{ .core = core, .window_id = window_id };
+        {
+            var keyDown = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.keyDown,
+                &context,
+                null,
+                null,
+            );
+            view.setBlock_keyDown(keyDown.asBlock().copy());
 
-pub fn setHeadless(_: *Darwin, _: bool) void {
-    return;
-}
+            var keyUp = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.keyUp,
+                &context,
+                null,
+                null,
+            );
+            view.setBlock_keyUp(keyUp.asBlock().copy());
+        }
+        native_window.setContentView(@ptrCast(view));
+        native_window.center();
+        native_window.setIsVisible(true);
+        native_window.makeKeyAndOrderFront(null);
 
-pub fn setVSync(_: *Darwin, _: VSyncMode) void {
-    return;
-}
+        const delegate = objc.mach.WindowDelegate.allocInit();
+        defer native_window.setDelegate(@ptrCast(delegate));
+        { // Set WindowDelegate blocks
 
-pub fn setSize(darwin: *Darwin, size: Size) void {
-    if (darwin.window) |window| {
-        var frame = window.frame();
-        frame.size.height = @floatFromInt(size.height);
-        frame.size.width = @floatFromInt(size.width);
-        window.setFrame_display_animate(frame, true, true);
-    }
-}
+            var windowWillResize_toSize = objc.foundation.stackBlockLiteral(
+                WindowDelegateCallbacks.windowWillResize_toSize,
+                &context,
+                null,
+                null,
+            );
+            delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
 
-pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
-    return;
-}
+            var windowShouldClose = objc.foundation.stackBlockLiteral(
+                WindowDelegateCallbacks.windowShouldClose,
+                &context,
+                null,
+                null,
+            );
+            delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
+        }
 
-pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
-    return;
+        // Set core_window.native, which we use to check if a window is initialized
+        // Then call core.initWindow to finish initializing the window
+        core_window.native = .{ .window = native_window };
+        core.windows.setValueRaw(window_id, core_window);
+        try core.initWindow(window_id);
+    } else std.debug.panic("mach: window failed to initialize", .{});
 }
 
 const WindowDelegateCallbacks = struct {
-    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Darwin), size: objc.app_kit.Size) callconv(.C) void {
-        const darwin: *Darwin = block.context;
+    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Context), size: objc.app_kit.Size) callconv(.C) void {
+        const core: *Core = block.context.core;
         const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
 
-        // TODO: Eventually we need to be able to tie a window here with the window Objects in core, and treat the windows
-        // as a list, rather than a single main window
-        darwin.size = .{
-            .height = s.width,
-            .width = s.height,
-        };
-        darwin.core.swap_chain_update.set();
+        var window = core.windows.getValue(block.context.window_id);
+        window.width = s.width;
+        window.height = s.height;
+        window.swap_chain_update.set();
+        core.windows.setValueRaw(block.context.window_id, window);
 
-        darwin.core.windows.setRaw(darwin.core.main_window, .width, s.width);
-        darwin.core.windows.setRaw(darwin.core.main_window, .height, s.height);
-
-        darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+        core.pushEvent(.{ .window_resize = .{
+            .window_id = block.context.window_id,
+            .size = s,
+        } });
     }
 
-    pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Darwin)) callconv(.C) bool {
-        const darwin: *Darwin = block.context;
-        darwin.core.pushEvent(.close);
+    pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) bool {
+        const core: *Core = block.context.core;
+        core.pushEvent(.{ .close = .{ .window_id = block.context.window_id } });
+
+        // TODO: This should just attempt to close the window, not the entire program, unless
+        // this is the only window.
         return false;
     }
 };
 
 const ViewCallbacks = struct {
-    pub fn keyDown(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
-        const darwin: *Darwin = block.context;
+    pub fn keyDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
         if (event.isARepeat()) {
-            darwin.core.pushEvent(.{ .key_repeat = .{
+            core.pushEvent(.{ .key_repeat = .{
+                .window_id = window_id,
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         } else {
-            darwin.core.pushEvent(.{ .key_press = .{
+            core.pushEvent(.{ .key_press = .{
+                .window_id = window_id,
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         }
     }
 
-    pub fn keyUp(block: *objc.foundation.BlockLiteral(*Darwin), event: *objc.app_kit.Event) callconv(.C) void {
-        const darwin: *Darwin = block.context;
+    pub fn keyUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
 
-        darwin.core.pushEvent(.{ .key_release = .{
+        core.pushEvent(.{ .key_release = .{
+            .window_id = window_id,
             .key = machKeyFromKeycode(event.keyCode()),
             .mods = machModifierFromModifierFlag(event.modifierFlags()),
         } });

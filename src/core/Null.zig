@@ -5,7 +5,7 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const gpu = mach.gpu;
-const InitOptions = Core.InitOptions;
+//const InitOptions = Core.InitOptions;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
 const MouseButtonEvent = Core.MouseButtonEvent;
@@ -40,10 +40,10 @@ surface_descriptor: gpu.Surface.Descriptor,
 pub fn init(
     nul: *Null,
     core: *Core,
-    options: InitOptions,
+    //options: InitOptions,
 ) !void {
     _ = nul;
-    _ = options;
+    //_ = options;
     _ = core;
     return;
 }

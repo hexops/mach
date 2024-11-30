@@ -28,8 +28,10 @@ pub fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
+    const main_window = core.windows.getValue(core.main_window);
+
     // Create our shader module
-    const shader_module = core.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    const shader_module = main_window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Blend state describes how rendered colors get blended
@@ -37,7 +39,7 @@ pub fn init(
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = core.windows.get(core.main_window, .framebuffer_format).?,
+        .format = main_window.framebuffer_format,
         .blend = &blend,
     };
 
@@ -58,7 +60,7 @@ pub fn init(
             .entry_point = "vertex_main",
         },
     };
-    const pipeline = core.device.createRenderPipeline(&pipeline_descriptor);
+    const pipeline = main_window.device.createRenderPipeline(&pipeline_descriptor);
 
     // Store our render pipeline in our module's state, so we can access it later on.
     app.* = .{
@@ -78,14 +80,16 @@ pub fn tick(core: *mach.Core, app: *App) !void {
         }
     }
 
+    const main_window = core.windows.getValue(core.main_window);
+
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = main_window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
-    const encoder = core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = main_window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -112,7 +116,7 @@ pub fn tick(core: *mach.Core, app: *App) !void {
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    main_window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // update the window title every second
     if (app.title_timer.read() >= 1.0) {
