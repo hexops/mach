@@ -2,7 +2,6 @@ const std = @import("std");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 const gpu = mach.gpu;
-const InitOptions = Core.InitOptions;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
 const MouseButtonEvent = Core.MouseButtonEvent;
@@ -23,6 +22,11 @@ pub const Darwin = @This();
 
 pub const Native = struct {
     window: ?*objc.app_kit.Window = null,
+};
+
+pub const Context = struct {
+    core: *Core,
+    window_id: mach.ObjectID,
 };
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) noreturn {
@@ -126,11 +130,22 @@ fn initWindow(
         var view = objc.mach.View.allocInit();
         view.setLayer(@ptrCast(layer));
 
+        var context: Context = .{ .core = core, .window_id = window_id };
         {
-            var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, core, null, null);
+            var keyDown = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.keyDown,
+                &context,
+                null,
+                null,
+            );
             view.setBlock_keyDown(keyDown.asBlock().copy());
 
-            var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, core, null, null);
+            var keyUp = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.keyUp,
+                &context,
+                null,
+                null,
+            );
             view.setBlock_keyUp(keyUp.asBlock().copy());
         }
         native_window.setContentView(@ptrCast(view));
@@ -141,10 +156,21 @@ fn initWindow(
         const delegate = objc.mach.WindowDelegate.allocInit();
         defer native_window.setDelegate(@ptrCast(delegate));
         { // Set WindowDelegate blocks
-            var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, core, null, null);
+
+            var windowWillResize_toSize = objc.foundation.stackBlockLiteral(
+                WindowDelegateCallbacks.windowWillResize_toSize,
+                &context,
+                null,
+                null,
+            );
             delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
 
-            var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, core, null, null);
+            var windowShouldClose = objc.foundation.stackBlockLiteral(
+                WindowDelegateCallbacks.windowShouldClose,
+                &context,
+                null,
+                null,
+            );
             delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
         }
 
@@ -156,195 +182,58 @@ fn initWindow(
     } else std.debug.panic("mach: window failed to initialize", .{});
 }
 
-// pub fn init(
-//     darwin: *Darwin,
-//     core: *Core,
-//     //options: InitOptions,
-// ) !void {
-//     // var surface_descriptor = gpu.Surface.Descriptor{};
-
-//     // // TODO: support UIKit.
-//     // var window_opt: ?*objc.app_kit.Window = null;
-//     // if (!options.headless) {
-//     //     // If the application is not headless, we need to make the application a genuine UI application
-//     //     // by setting the activation policy, this moves the process to foreground
-//     //     _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
-
-//     //     const metal_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
-//     //     const layer = objc.quartz_core.MetalLayer.new();
-//     //     defer layer.release();
-//     //     layer.setDisplaySyncEnabled(true);
-//     //     metal_descriptor.* = .{
-//     //         .layer = layer,
-//     //     };
-//     //     surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
-
-//     //     const screen = objc.app_kit.Screen.mainScreen();
-//     //     const rect = objc.core_graphics.Rect{
-//     //         .origin = .{ .x = 0, .y = 0 },
-//     //         .size = .{ .width = @floatFromInt(options.size.width), .height = @floatFromInt(options.size.height) },
-//     //     };
-
-//     //     const window_style =
-//     //         (if (options.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
-//     //         (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
-//     //         (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
-//     //         (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
-//     //         (if (options.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
-
-//     //     window_opt = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
-//     //         rect,
-//     //         window_style,
-//     //         objc.app_kit.BackingStoreBuffered,
-//     //         false,
-//     //         screen,
-//     //     );
-//     //     if (window_opt) |window| {
-//     //         window.setReleasedWhenClosed(false);
-
-//     //         var view = objc.mach.View.allocInit();
-//     //         view.setLayer(@ptrCast(layer));
-
-//     //         {
-//     //             var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, darwin, null, null);
-//     //             view.setBlock_keyDown(keyDown.asBlock().copy());
-
-//     //             var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, darwin, null, null);
-//     //             view.setBlock_keyUp(keyUp.asBlock().copy());
-//     //         }
-//     //         window.setContentView(@ptrCast(view));
-//     //         window.center();
-//     //         window.setIsVisible(true);
-//     //         window.makeKeyAndOrderFront(null);
-
-//     //         const delegate = objc.mach.WindowDelegate.allocInit();
-//     //         defer window.setDelegate(@ptrCast(delegate));
-//     //         { // Set WindowDelegate blocks
-//     //             var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, darwin, null, null);
-//     //             delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
-
-//     //             var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, darwin, null, null);
-//     //             delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
-//     //         }
-//     //     } else std.debug.panic("mach: window failed to initialize", .{});
-//     // }
-
-//     darwin.* = .{
-//         .allocator = core.allocator,
-//         .core = core,
-//         // .title = options.title,
-//         // .display_mode = options.display_mode,
-//         // .vsync_mode = .none,
-//         // .cursor_mode = .normal,
-//         // .cursor_shape = .arrow,
-//         // .border = options.border,
-//         // .headless = options.headless,
-//         // .refresh_rate = 60, // TODO: set to something meaningful
-//         // .size = options.size,
-//         // .surface_descriptor = surface_descriptor,
-//         .window = window_opt,
-//     };
-// }
-
-// pub fn deinit(darwin: *Darwin) void {
-//     if (darwin.window) |w| @as(*objc.foundation.ObjectProtocol, @ptrCast(w)).release();
-//     return;
-// }
-
-// pub fn update(darwin: *Darwin) !void {
-//     if (darwin.window) |window| window.update();
-// }
-
-// pub fn setTitle(darwin: *Darwin, title: [:0]const u8) void {
-//     if (darwin.window) |window| {
-//         var string = objc.app_kit.String.allocInit();
-//         defer string.release();
-//         string = string.initWithUTF8String(title.ptr);
-//         window.setTitle(string);
-//     }
-// }
-
-// pub fn setDisplayMode(_: *Darwin, _: DisplayMode) void {
-//     return;
-// }
-
-// pub fn setBorder(_: *Darwin, _: bool) void {
-//     return;
-// }
-
-// pub fn setHeadless(_: *Darwin, _: bool) void {
-//     return;
-// }
-
-// pub fn setVSync(_: *Darwin, _: VSyncMode) void {
-//     return;
-// }
-
-// pub fn setSize(darwin: *Darwin, window_id: mach.ObjectID, size: Size) void {
-//     _ = darwin; // autofix
-//     _ = window_id; // autofix
-//     _ = size; // autofix
-//     // if (darwin.core.windows.getAll(window_id)) |window| {
-
-//     // }
-// }
-
-// pub fn setCursorMode(_: *Darwin, _: CursorMode) void {
-//     return;
-// }
-
-// pub fn setCursorShape(_: *Darwin, _: CursorShape) void {
-//     return;
-// }
-
 const WindowDelegateCallbacks = struct {
-    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Core), size: objc.app_kit.Size) callconv(.C) void {
-        const core: *Core = block.context;
-        _ = core; // autofix
+    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Context), size: objc.app_kit.Size) callconv(.C) void {
+        const core: *Core = block.context.core;
         const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
-        _ = s; // autofix
 
-        // // TODO: Eventually we need to be able to tie a window here with the window Objects in core, and treat the windows
-        // // as a list, rather than a single main window
-        // core.size = .{
-        //     .height = s.width,
-        //     .width = s.height,
-        // };
-        // core.swap_chain_update.set();
+        var window = core.windows.getValue(block.context.window_id);
+        window.width = s.width;
+        window.height = s.height;
+        window.swap_chain_update.set();
+        core.windows.setValueRaw(block.context.window_id, window);
 
-        // darwin.core.windows.setRaw(darwin.core.main_window, .width, s.width);
-        // darwin.core.windows.setRaw(darwin.core.main_window, .height, s.height);
-
-        // darwin.core.pushEvent(.{ .framebuffer_resize = .{ .width = s.width, .height = s.height } });
+        core.pushEvent(.{ .window_resize = .{
+            .window_id = block.context.window_id,
+            .size = s,
+        } });
     }
 
-    pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Core)) callconv(.C) bool {
-        const core: *Core = block.context;
-        core.pushEvent(.close);
+    pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) bool {
+        const core: *Core = block.context.core;
+        core.pushEvent(.{ .close = .{ .window_id = block.context.window_id } });
+
+        // TODO: This should just attempt to close the window, not the entire program, unless
+        // this is the only window.
         return false;
     }
 };
 
 const ViewCallbacks = struct {
-    pub fn keyDown(block: *objc.foundation.BlockLiteral(*Core), event: *objc.app_kit.Event) callconv(.C) void {
-        const core: *Core = block.context;
+    pub fn keyDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
         if (event.isARepeat()) {
             core.pushEvent(.{ .key_repeat = .{
+                .window_id = window_id,
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         } else {
             core.pushEvent(.{ .key_press = .{
+                .window_id = window_id,
                 .key = machKeyFromKeycode(event.keyCode()),
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         }
     }
 
-    pub fn keyUp(block: *objc.foundation.BlockLiteral(*Core), event: *objc.app_kit.Event) callconv(.C) void {
-        const core: *Core = block.context;
+    pub fn keyUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
 
         core.pushEvent(.{ .key_release = .{
+            .window_id = window_id,
             .key = machKeyFromKeycode(event.keyCode()),
             .mods = machModifierFromModifierFlag(event.modifierFlags()),
         } });

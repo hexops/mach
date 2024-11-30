@@ -4,7 +4,6 @@ const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 
 const gpu = mach.gpu;
-const InitOptions = Core.InitOptions;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
 const MouseButtonEvent = Core.MouseButtonEvent;
@@ -22,18 +21,23 @@ const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 const Win32 = @This();
 
 pub const Native = struct {
-    window: w.HWND,
+    window: w.HWND = undefined,
     surrogate: u16 = 0,
-    dinput: *w.IDirectInput8W,
-    saved_window_rect: w.RECT,
-    surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
+    dinput: *w.IDirectInput8W = undefined,
+    saved_window_rect: w.RECT = undefined,
+    surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND = undefined,
+};
+
+pub const Context = struct {
+    core: *Core,
+    window_id: mach.ObjectID,
 };
 
 // --------------------------
 // Module state
 // --------------------------
-allocator: std.mem.Allocator,
-core: *Core,
+// allocator: std.mem.Allocator,
+// core: *Core,
 
 // Core platform interface
 // surface_descriptor: gpu.Surface.Descriptor,
@@ -56,15 +60,107 @@ core: *Core,
 // ------------------------------
 // Platform interface
 // ------------------------------
-pub fn init(
-    self: *Win32,
+// pub fn init(
+//     self: *Win32,
+//     core: *Core,
+//     //options: InitOptions,
+// ) !void {
+//     // self.allocator = options.allocator;
+//     // self.core = core;
+//     // self.size = options.size;
+//     // self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
+
+//     var native: Native = .{};
+
+//     const hInstance = w.GetModuleHandleW(null);
+//     const class_name = w.L("mach");
+//     const class = std.mem.zeroInit(w.WNDCLASSW, .{
+//         .style = w.CS_OWNDC,
+//         .lpfnWndProc = wndProc,
+//         .hInstance = hInstance,
+//         .hIcon = w.LoadIconW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDI_APPLICATION)))),
+//         .hCursor = w.LoadCursorW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDC_ARROW)))),
+//         .lpszClassName = class_name,
+//     });
+//     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
+
+//     const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
+//     defer self.allocator.free(title);
+
+//     var request_window_width: i32 = @bitCast(self.size.width);
+//     var request_window_height: i32 = @bitCast(self.size.height);
+
+//     const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
+//     const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
+//     // TODO (win32): should border == false mean borderless display_mode?
+
+//     var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
+
+//     if (w.TRUE == w.AdjustWindowRectEx(&rect, window_style, w.FALSE, window_ex_style)) {
+//         request_window_width = rect.right - rect.left;
+//         request_window_height = rect.bottom - rect.top;
+//     }
+
+//     const window = w.CreateWindowExW(
+//         window_ex_style,
+//         class_name,
+//         title,
+//         window_style,
+//         w.CW_USEDEFAULT,
+//         w.CW_USEDEFAULT,
+//         request_window_width,
+//         request_window_height,
+//         null,
+//         null,
+//         hInstance,
+//         null,
+//     ) orelse return error.Unexpected;
+
+//     native.window = window;
+
+//     var dinput: ?*w.IDirectInput8W = undefined;
+//     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
+//     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
+//         return error.Unexpected;
+//     }
+//     native.dinput = dinput.?;
+
+//     native.surface_descriptor_from_hwnd = .{
+//         .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
+//         .hwnd = window,
+//     };
+
+//     core_window.surface_descriptor = .{ .next_in_chain = .{
+//         .from_windows_hwnd = &self.surface_descriptor_from_hwnd,
+//     } };
+//     self.border = options.border;
+//     self.headless = options.headless;
+//     self.refresh_rate = 60; // TODO (win32)  get monitor refresh rate
+//     self.vsync_mode = .triple;
+
+//     _ = w.SetWindowLongPtrW(window, w.GWLP_USERDATA, @bitCast(@intFromPtr(self)));
+//     if (!options.headless) {
+//         setDisplayMode(self, options.display_mode);
+//     }
+
+//     self.size = getClientRect(self);
+//     _ = w.GetWindowRect(self.window, &self.saved_window_rect);
+// }
+
+// pub fn deinit(self: *Win32) void {
+//     _ = self.dinput.IUnknown_Release();
+// }
+
+pub fn tick(core: *Core) !void {
+    _ = core; // autofix
+
+}
+
+fn initWindow(
     core: *Core,
-    options: InitOptions,
+    window_id: mach.ObjectID,
 ) !void {
-    self.allocator = options.allocator;
-    self.core = core;
-    self.size = options.size;
-    self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
+    const core_window = core.windows.getValue(window_id);
 
     const hInstance = w.GetModuleHandleW(null);
     const class_name = w.L("mach");
@@ -78,15 +174,14 @@ pub fn init(
     });
     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
 
-    const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
-    defer self.allocator.free(title);
+    const title = try std.unicode.utf8ToUtf16LeAllocZ(core.allocator, core_window.title);
+    defer core.allocator.free(title);
 
-    var request_window_width: i32 = @bitCast(self.size.width);
-    var request_window_height: i32 = @bitCast(self.size.height);
+    var request_window_width: i32 = @bitCast(core_window.width);
+    var request_window_height: i32 = @bitCast(core_window.height);
 
     const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
-    const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
-    // TODO (win32): should border == false mean borderless display_mode?
+    const window_style: w.WINDOW_STYLE = if (core_window.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
 
     var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
 
@@ -95,7 +190,7 @@ pub fn init(
         request_window_height = rect.bottom - rect.top;
     }
 
-    const window = w.CreateWindowExW(
+    const native_window = w.CreateWindowExW(
         window_ex_style,
         class_name,
         title,
@@ -110,49 +205,43 @@ pub fn init(
         null,
     ) orelse return error.Unexpected;
 
-    self.window = window;
+    var native: Native = .{};
 
     var dinput: ?*w.IDirectInput8W = undefined;
     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
         return error.Unexpected;
     }
-    self.dinput = dinput.?;
+    native.dinput = dinput.?;
 
-    self.surface_descriptor_from_hwnd = .{
+    native.surface_descriptor_from_hwnd = .{
         .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
-        .hwnd = window,
+        .hwnd = native_window,
     };
 
-    self.surface_descriptor = .{ .next_in_chain = .{
-        .from_windows_hwnd = &self.surface_descriptor_from_hwnd,
+    core_window.surface_descriptor = .{ .next_in_chain = .{
+        .from_windows_hwnd = &native.surface_descriptor_from_hwnd,
     } };
-    self.border = options.border;
-    self.headless = options.headless;
-    self.refresh_rate = 60; // TODO (win32)  get monitor refresh rate
-    self.vsync_mode = .triple;
 
-    _ = w.SetWindowLongPtrW(window, w.GWLP_USERDATA, @bitCast(@intFromPtr(self)));
-    if (!options.headless) {
-        setDisplayMode(self, options.display_mode);
-    }
+    const context: Context = .{ .core = core, .window_id = window_id };
 
-    self.size = getClientRect(self);
-    _ = w.GetWindowRect(self.window, &self.saved_window_rect);
+    _ = w.SetWindowLongPtrW(native_window, w.GWLP_USERDATA, @bitCast(@intFromPtr(&context)));
+
+    const size = getClientRect(core, window_id);
+    core_window.width = size.width;
+    core_window.height = size.height;
+
+    _ = w.GetWindowRect(native.window, &native.saved_window_rect);
 }
 
-pub fn deinit(self: *Win32) void {
-    _ = self.dinput.IUnknown_Release();
-}
-
-pub fn update(self: *Win32) !void {
-    _ = self;
-    var msg: w.MSG = undefined;
-    while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
-        _ = w.TranslateMessage(&msg);
-        _ = w.DispatchMessageW(&msg);
-    }
-}
+// pub fn update(self: *Win32) !void {
+//     _ = self;
+//     var msg: w.MSG = undefined;
+//     while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
+//         _ = w.TranslateMessage(&msg);
+//         _ = w.DispatchMessageW(&msg);
+//     }
+// }
 
 pub fn setTitle(self: *Win32, title: [:0]const u8) void {
     const wtitle = std.unicode.utf8ToUtf16LeAllocZ(self.allocator, title) catch {
@@ -268,21 +357,30 @@ pub fn nativeWindowWin32(self: *Win32) w.HWND {
 // -----------------------------
 //  Internal functions
 // -----------------------------
-fn getClientRect(self: *Win32) Size {
-    var rect: w.RECT = undefined;
-    _ = w.GetClientRect(self.window, &rect);
+fn getClientRect(core: *Core, window_id: mach.ObjectID) Size {
+    const window = core.windows.getValue(window_id);
 
-    const width: u32 = @intCast(rect.right - rect.left);
-    const height: u32 = @intCast(rect.bottom - rect.top);
+    if (window.native) |native| {
+        var rect: w.RECT = undefined;
+        _ = w.GetClientRect(native.window, &rect);
 
-    return .{ .width = width, .height = height };
+        const width: u32 = @intCast(rect.right - rect.left);
+        const height: u32 = @intCast(rect.bottom - rect.top);
+
+        return .{ .width = width, .height = height };
+    }
+
+    return .{ .width = 0, .height = 0 };
 }
 
-fn restoreWindowPosition(self: *Win32) void {
-    if (self.saved_window_rect.right - self.saved_window_rect.left == 0) {
-        _ = w.ShowWindow(self.window, w.SW_RESTORE);
-    } else {
-        _ = w.SetWindowPos(self.window, null, self.saved_window_rect.left, self.saved_window_rect.top, self.saved_window_rect.right - self.saved_window_rect.left, self.saved_window_rect.bottom - self.saved_window_rect.top, w.SWP_SHOWWINDOW);
+fn restoreWindowPosition(core: *Core, window_id: mach.ObjectID) void {
+    const window = core.windows.getValue(window_id);
+    if (window.native) |native| {
+        if (native.saved_window_rect.right - native.saved_window_rect.left == 0) {
+            _ = w.ShowWindow(native.window, w.SW_RESTORE);
+        } else {
+            _ = w.SetWindowPos(native.window, null, native.saved_window_rect.left, native.saved_window_rect.top, native.saved_window_rect.right - native.saved_window_rect.left, native.saved_window_rect.bottom - native.saved_window_rect.top, w.SWP_SHOWWINDOW);
+        }
     }
 }
 
@@ -299,28 +397,38 @@ fn getKeyboardModifiers() mach.Core.KeyMods {
 }
 
 fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w.WINAPI) w.LRESULT {
-    const self = blk: {
+    const context = blk: {
         const userdata: usize = @bitCast(w.GetWindowLongPtrW(wnd, w.GWLP_USERDATA));
-        const ptr: ?*Win32 = @ptrFromInt(userdata);
+        const ptr: ?*Context = @ptrFromInt(userdata);
         break :blk ptr orelse return w.DefWindowProcW(wnd, msg, wParam, lParam);
     };
 
+    const core = context.core;
+    const window_id = context.window_id;
+
+    const window = core.windows.getValue(window_id);
+    defer core.windows.setValueRaw(window_id, window);
+
     switch (msg) {
         w.WM_CLOSE => {
-            self.core.pushEvent(.close);
+            core.pushEvent(.close);
             return 0;
         },
         w.WM_SIZE => {
             const width: u32 = @as(u32, @intCast(lParam & 0xFFFF));
             const height: u32 = @as(u32, @intCast((lParam >> 16) & 0xFFFF));
-            self.size = .{ .width = width, .height = height };
+
+            window.width = width;
+            window.height = height;
+
+            core.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .width = width, .height = height } } });
 
             // TODO (win32): only send resize event when sizing is done.
             //               the main mach loops does not run while resizing.
             //               Which means if events are pushed here they will
             //               queue up until resize is done.
 
-            self.core.swap_chain_update.set();
+            window.swap_chain_update.set();
 
             return 0;
         },
@@ -329,7 +437,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             if (vkey == w.VK_PROCESSKEY) return 0;
 
             if (msg == w.WM_SYSKEYDOWN and vkey == w.VK_F4) {
-                self.core.pushEvent(.close);
+                core.pushEvent(.close);
                 return 0;
             }
 
@@ -340,12 +448,14 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 // right alt sends left control first
                 var next: w.MSG = undefined;
                 const time = w.GetMessageTime();
-                if (w.PeekMessageW(&next, self.window, 0, 0, w.PM_NOREMOVE) != 0 and
-                    next.time == time and
-                    (next.message == msg or (msg == w.WM_SYSKEYDOWN and next.message == w.WM_KEYUP)) and
-                    ((next.lParam >> 16) & 0x1FF) == 0x138)
-                {
-                    return 0;
+                if (window.native) |native| {
+                    if (w.PeekMessageW(&next, native.window, 0, 0, w.PM_NOREMOVE) != 0 and
+                        next.time == time and
+                        (next.message == msg or (msg == w.WM_SYSKEYDOWN and next.message == w.WM_KEYUP)) and
+                        ((next.lParam >> 16) & 0x1FF) == 0x138)
+                    {
+                        return 0;
+                    }
                 }
             }
 
@@ -353,21 +463,24 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const key = keyFromScancode(scancode);
             if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
                 if (flags & w.KF_REPEAT == 0)
-                    self.core.pushEvent(.{
+                    core.pushEvent(.{
                         .key_press = .{
+                            .window_id = window_id,
                             .key = key,
                             .mods = mods,
                         },
                     })
                 else
-                    self.core.pushEvent(.{
+                    core.pushEvent(.{
                         .key_repeat = .{
+                            .window_id = window_id,
                             .key = key,
                             .mods = mods,
                         },
                     });
-            } else self.core.pushEvent(.{
+            } else core.pushEvent(.{
                 .key_release = .{
+                    .window_id = window_id,
                     .key = key,
                     .mods = mods,
                 },
@@ -376,24 +489,29 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_CHAR => {
-            const char: u16 = @truncate(wParam);
-            var chars: []const u16 = undefined;
-            if (self.surrogate != 0) {
-                chars = &.{ self.surrogate, char };
-                self.surrogate = 0;
-            } else if (std.unicode.utf16IsHighSurrogate(char)) {
-                self.surrogate = char;
+            if (window.native) |native| {
+                const char: u16 = @truncate(wParam);
+                var chars: []const u16 = undefined;
+                if (native.surrogate != 0) {
+                    chars = &.{ native.surrogate, char };
+                    native.surrogate = 0;
+                } else if (std.unicode.utf16IsHighSurrogate(char)) {
+                    native.surrogate = char;
+                    return 0;
+                } else {
+                    chars = &.{char};
+                }
+                var iter = std.unicode.Utf16LeIterator.init(chars);
+                if (iter.nextCodepoint()) |codepoint| {
+                    core.pushEvent(.{ .char_input = .{
+                        .window_id = window_id,
+                        .codepoint = codepoint.?,
+                    } });
+                } else |err| {
+                    err catch {};
+                }
                 return 0;
-            } else {
-                chars = &.{char};
             }
-            var iter = std.unicode.Utf16LeIterator.init(chars);
-            if (iter.nextCodepoint()) |codepoint| {
-                self.core.pushEvent(.{ .char_input = .{ .codepoint = codepoint.? } });
-            } else |err| {
-                err catch {};
-            }
-            return 0;
         },
         w.WM_LBUTTONDOWN,
         w.WM_LBUTTONUP,
@@ -420,15 +538,17 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 w.WM_MBUTTONDOWN,
                 w.WM_RBUTTONDOWN,
                 w.WM_XBUTTONDOWN,
-                => self.core.pushEvent(.{
+                => core.pushEvent(.{
                     .mouse_press = .{
+                        .window_id = window_id,
                         .button = button,
                         .mods = mods,
                         .pos = .{ .x = x, .y = y },
                     },
                 }),
-                else => self.core.pushEvent(.{
+                else => core.pushEvent(.{
                     .mouse_release = .{
+                        .window_id = window_id,
                         .button = button,
                         .mods = mods,
                         .pos = .{ .x = x, .y = y },
@@ -441,8 +561,9 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_MOUSEMOVE => {
             const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
             const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
-            self.core.pushEvent(.{
+            core.pushEvent(.{
                 .mouse_motion = .{
+                    .window_id = window_id,
                     .pos = .{
                         .x = x,
                         .y = y,
@@ -456,8 +577,9 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const wheel_high_word: u16 = @truncate((wParam >> 16) & 0xffff);
             const delta_y: f32 = @as(f32, @floatFromInt(@as(i16, @bitCast(wheel_high_word)))) / WHEEL_DELTA;
 
-            self.core.pushEvent(.{
+            core.pushEvent(.{
                 .mouse_scroll = .{
+                    .window_id = window_id,
                     .xoffset = 0,
                     .yoffset = delta_y,
                 },
@@ -465,11 +587,11 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_SETFOCUS => {
-            self.core.pushEvent(.{ .focus_gained = {} });
+            core.pushEvent(.{ .focus_gained = .{ .window_id = window_id } });
             return 0;
         },
         w.WM_KILLFOCUS => {
-            self.core.pushEvent(.{ .focus_lost = {} });
+            core.pushEvent(.{ .focus_lost = .{ .window_id = window_id } });
             return 0;
         },
         else => return w.DefWindowProcW(wnd, msg, wParam, lParam),

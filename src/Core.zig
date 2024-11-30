@@ -679,32 +679,48 @@ pub const Event = union(enum) {
     key_repeat: KeyEvent,
     key_release: KeyEvent,
     char_input: struct {
+        window_id: mach.ObjectID,
         codepoint: u21,
     },
     mouse_motion: struct {
+        window_id: mach.ObjectID,
         pos: Position,
     },
     mouse_press: MouseButtonEvent,
     mouse_release: MouseButtonEvent,
     mouse_scroll: struct {
+        window_id: mach.ObjectID,
         xoffset: f32,
         yoffset: f32,
     },
-    framebuffer_resize: Size,
-    focus_gained,
-    focus_lost,
-    close,
+    window_resize: ResizeEvent,
+    focus_gained: struct {
+        window_id: mach.ObjectID,
+    },
+    focus_lost: struct {
+        window_id: mach.ObjectID,
+    },
+    close: struct {
+        window_id: mach.ObjectID,
+    },
 };
 
 pub const KeyEvent = struct {
+    window_id: mach.ObjectID,
     key: Key,
     mods: KeyMods,
 };
 
 pub const MouseButtonEvent = struct {
+    window_id: mach.ObjectID,
     button: MouseButton,
     pos: Position,
     mods: KeyMods,
+};
+
+pub const ResizeEvent = struct {
+    window_id: mach.ObjectID,
+    size: Size,
 };
 
 pub const MouseButton = enum {
