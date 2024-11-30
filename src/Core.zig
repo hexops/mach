@@ -46,9 +46,11 @@ windows: mach.Objects(
         framebuffer_format: gpu.Texture.Format = .bgra8_unorm,
 
         /// Width of the framebuffer in texels (read-only)
+        /// Will be updated to reflect the actual framebuffer dimensions after window creation.
         framebuffer_width: u32 = 1920 / 2,
 
         /// Height of the framebuffer in texels (read-only)
+        /// Will be updated to reflect the actual framebuffer dimensions after window creation.
         framebuffer_height: u32 = 1080 / 2,
 
         /// Vertical sync mode, prevents screen tearing.
