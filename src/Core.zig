@@ -115,21 +115,11 @@ state: enum {
     exited,
 } = .running,
 
-// TODO: handle window titles better
-//title: [256:0]u8 = undefined,
 frame: mach.time.Frequency,
 input: mach.time.Frequency,
 
-// GPU
-// instance: *gpu.Instance,
-// adapter: *gpu.Adapter,
-// device: *gpu.Device,
-// queue: *gpu.Queue,
-// surface: *gpu.Surface,
-
 // Internal module state
 allocator: std.mem.Allocator,
-platform: Platform,
 events: EventQueue,
 input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
@@ -142,18 +132,9 @@ pub fn init(core: *Core) !void {
 
     const main_window = try core.windows.new(.{});
 
-    // TODO: Copy window title into owned buffer.
-    // var title: [256:0]u8 = undefined;
-    // if (options.title.len < title.len) {
-    //     @memcpy(title[0..options.title.len], options.title);
-    //     title[options.title.len] = 0;
-    // }
-
     var events = EventQueue.init(allocator);
     try events.ensureTotalCapacity(8192);
 
-    // TODO: remove undefined initialization (disgusting!)
-    const platform: Platform = undefined;
     core.* = .{
         // Note: since core.windows is initialized for us already, we just copy the pointer.
         .windows = core.windows,
@@ -163,15 +144,13 @@ pub fn init(core: *Core) !void {
         .events = events,
         .input_state = .{},
 
-        .platform = platform,
         .input = .{ .target = 0 },
         .frame = .{ .target = 1 },
     };
 
-    //try initWindow(core, main_window);
-
     // Tick the platform so that the platform can grab the newly created window
     // and perform initialization
+    // TODO: consider removing `main_window` and then this wont be necessary
     try Platform.tick(core);
 
     try core.frame.start();
@@ -260,7 +239,6 @@ pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
 
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
-    //core_mod.call(.processWindowUpdates);
 }
 
 pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
@@ -317,21 +295,6 @@ fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
 
     return core.state != .exited;
 }
-
-// pub fn processWindowUpdates(core: *Core) void {
-//     while (core.windows.slice().next()) |window_id| {
-//         if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
-//             const window = core.windows.getAll(window_id);
-
-//             if (window) |w| {
-//                 core.platform.setSize(.{
-//                     .width = w.width,
-//                     .height = w.height,
-//                 });
-//             }
-//         }
-//     }
-// }
 
 pub fn deinit(core: *Core) !void {
     core.state = .exited;
@@ -390,50 +353,6 @@ pub fn outOfMemory(core: *@This()) bool {
     core.oom.reset();
     return true;
 }
-
-// TODO(object)
-// /// Sets the window title. The string must be owned by Core, and will not be copied or freed. It is
-// /// advised to use the `core.title` buffer for this purpose, e.g.:
-// ///
-// /// ```
-// /// const title = try std.fmt.bufPrintZ(&core.title, "Hello, world!", .{});
-// /// core.setTitle(title);
-// /// ```
-// pub inline fn setTitle(core: *@This(), value: [:0]const u8) void {
-//     return core.platform.setTitle(value);
-// }
-
-// TODO(object)
-// /// Set the window mode
-// pub inline fn setDisplayMode(core: *@This(), mode: DisplayMode) void {
-//     return core.platform.setDisplayMode(mode);
-// }
-
-// TODO(object)
-// /// Returns the window mode
-// pub inline fn displayMode(core: *@This()) DisplayMode {
-//     return core.platform.display_mode;
-// }
-
-// TODO(object)
-// pub inline fn setBorder(core: *@This(), value: bool) void {
-//     return core.platform.setBorder(value);
-// }
-
-// TODO(object)
-// pub inline fn border(core: *@This()) bool {
-//     return core.platform.border;
-// }
-
-// TODO(object)
-// pub inline fn setHeadless(core: *@This(), value: bool) void {
-//     return core.platform.setHeadless(value);
-// }
-
-// TODO(object)
-// pub inline fn headless(core: *@This()) bool {
-//     return core.platform.headless;
-// }
 
 pub fn keyPressed(core: *@This(), key: Key) bool {
     return core.input_state.isKeyPressed(key);
@@ -602,24 +521,6 @@ pub fn mousePosition(core: *@This()) Position {
 // }
 
 pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
-
-    // TODO(object)(window-title)
-    // // Update windows title
-    // var num_windows: usize = 0;
-    // var q = try entities.query(.{
-    //     .ids = mach.Entities.Mod.read(.id),
-    //     .titles = Mod.read(.title),
-    // });
-    // while (q.next()) |v| {
-    //     for (v.ids, v.titles) |_, title| {
-    //         num_windows += 1;
-    //         state.platform.setTitle(title);
-    //     }
-    // }
-    // if (num_windows > 1) @panic("mach: Core currently only supports a single window");
-
-    //_ = try core.platform.update();
-
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         var core_window = core.windows.getValue(window_id);
@@ -677,28 +578,6 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
         .exited => @panic("application not running"),
     }
 }
-
-// TODO(object)(window-title)
-// /// Prints into the window title buffer using a format string and arguments. e.g.
-// ///
-// /// ```
-// /// try core.state().printTitle(core_mod, core_mod.state().main_window, "Hello, {s}!", .{"Mach"});
-// /// ```
-// pub fn printTitle(
-//     core: *@This(),
-//     window_id: mach.EntityID,
-//     comptime fmt: []const u8,
-//     args: anytype,
-// ) !void {
-//     _ = window_id;
-//     // Allocate and assign a new window title slice.
-//     const slice = try std.fmt.allocPrintZ(core.allocator, fmt, args);
-//     defer core.allocator.free(slice);
-//     core.setTitle(slice);
-
-//     // TODO: This function does not have access to *core.Mod to update
-//     // try core.Mod.set(window_id, .title, slice);
-// }
 
 pub fn exit(core: *Core) void {
     core.state = .exiting;
@@ -769,24 +648,6 @@ const Platform = switch (build_options.core_platform) {
     .darwin => @import("core/Darwin.zig"),
     .null => @import("core/Null.zig"),
 };
-
-// TODO(object): this struct should not exist
-// TODO: this should not be here, it is exposed because the platform implementations need it.
-// pub const InitOptions = struct {
-//     allocator: std.mem.Allocator,
-//     is_app: bool = false,
-//     headless: bool = false,
-//     display_mode: DisplayMode = .windowed,
-//     border: bool = true,
-//     title: [:0]const u8 = "Mach core",
-//     size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
-//     power_preference: gpu.PowerPreference = .undefined,
-//     required_features: ?[]const gpu.FeatureName = null,
-//     required_limits: ?gpu.Limits = null,
-//     swap_chain_usage: gpu.Texture.UsageFlags = .{
-//         .render_attachment = true,
-//     },
-// };
 
 pub const InputState = struct {
     const KeyBitSet = std.StaticBitSet(@as(u8, @intFromEnum(Key.max)) + 1);
