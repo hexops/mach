@@ -62,27 +62,20 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
-        if (core.windows.getAll(window_id)) |cw| {
-            const core_window = cw;
-            const native: Native = core_window.native;
+        const native_opt: ?Native = core.windows.get(window_id, .native);
 
-            if (core.windows.get(window_id, .device).? == null) {
-                // Window has not been set up yet, we need to init the window
-                //try initWindow(core, window_id);
-                //try core.initWindow(window_id);
-
-                try initWindow(core, window_id);
-                try core.initWindow(window_id);
-            }
+        if (native_opt) |native| {
             if (native.window) |native_window| {
                 // Handle resizing the window when the user changes width or height
                 if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
                     var frame = native_window.frame();
-                    frame.size.height = @floatFromInt(core.windows.get(window_id, .width).?);
-                    frame.size.width = @floatFromInt(core.windows.get(window_id, .height).?);
+                    frame.size.height = @floatFromInt(core.windows.get(window_id, .width));
+                    frame.size.width = @floatFromInt(core.windows.get(window_id, .height));
                     native_window.setFrame_display_animate(frame, true, true);
                 }
             }
+        } else {
+            try initWindow(core, window_id);
         }
     }
 }
@@ -91,76 +84,76 @@ fn initWindow(
     core: *Core,
     window_id: mach.ObjectID,
 ) !void {
-    if (core.windows.getAll(window_id)) |cw| {
-        var core_window = cw;
-        // If the application is not headless, we need to make the application a genuine UI application
-        // by setting the activation policy, this moves the process to foreground
-        // TODO: Only call this on the first window creation
-        _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
+    var core_window = core.windows.getValue(window_id);
+    // If the application is not headless, we need to make the application a genuine UI application
+    // by setting the activation policy, this moves the process to foreground
+    // TODO: Only call this on the first window creation
+    _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
 
-        const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
-        const layer = objc.quartz_core.MetalLayer.new();
-        defer layer.release();
-        layer.setDisplaySyncEnabled(true);
-        metal_descriptor.* = .{
-            .layer = layer,
-        };
-        core_window.surface_descriptor = .{};
-        core_window.surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
+    const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
+    const layer = objc.quartz_core.MetalLayer.new();
+    defer layer.release();
+    layer.setDisplaySyncEnabled(true);
+    metal_descriptor.* = .{
+        .layer = layer,
+    };
+    core_window.surface_descriptor = .{};
+    core_window.surface_descriptor.next_in_chain = .{ .from_metal_layer = metal_descriptor };
 
-        const screen = objc.app_kit.Screen.mainScreen();
-        const rect = objc.core_graphics.Rect{
-            .origin = .{ .x = 0, .y = 0 },
-            .size = .{ .width = @floatFromInt(core_window.width), .height = @floatFromInt(core_window.height) },
-        };
+    const screen = objc.app_kit.Screen.mainScreen();
+    const rect = objc.core_graphics.Rect{
+        .origin = .{ .x = 0, .y = 0 },
+        .size = .{ .width = @floatFromInt(core_window.width), .height = @floatFromInt(core_window.height) },
+    };
 
-        const window_style =
-            (if (core_window.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
-            (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
-            (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
-            (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
-            (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
+    const window_style =
+        (if (core_window.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
+        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
 
-        const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
-            rect,
-            window_style,
-            objc.app_kit.BackingStoreBuffered,
-            false,
-            screen,
-        );
-        if (native_window_opt) |native_window| {
-            core_window.native = .{ .window = native_window };
+    const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
+        rect,
+        window_style,
+        objc.app_kit.BackingStoreBuffered,
+        false,
+        screen,
+    );
+    if (native_window_opt) |native_window| {
+        native_window.setReleasedWhenClosed(false);
 
-            native_window.setReleasedWhenClosed(false);
+        var view = objc.mach.View.allocInit();
+        view.setLayer(@ptrCast(layer));
 
-            var view = objc.mach.View.allocInit();
-            view.setLayer(@ptrCast(layer));
+        {
+            var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, core, null, null);
+            view.setBlock_keyDown(keyDown.asBlock().copy());
 
-            {
-                var keyDown = objc.foundation.stackBlockLiteral(ViewCallbacks.keyDown, core, null, null);
-                view.setBlock_keyDown(keyDown.asBlock().copy());
+            var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, core, null, null);
+            view.setBlock_keyUp(keyUp.asBlock().copy());
+        }
+        native_window.setContentView(@ptrCast(view));
+        native_window.center();
+        native_window.setIsVisible(true);
+        native_window.makeKeyAndOrderFront(null);
 
-                var keyUp = objc.foundation.stackBlockLiteral(ViewCallbacks.keyUp, core, null, null);
-                view.setBlock_keyUp(keyUp.asBlock().copy());
-            }
-            native_window.setContentView(@ptrCast(view));
-            native_window.center();
-            native_window.setIsVisible(true);
-            native_window.makeKeyAndOrderFront(null);
+        const delegate = objc.mach.WindowDelegate.allocInit();
+        defer native_window.setDelegate(@ptrCast(delegate));
+        { // Set WindowDelegate blocks
+            var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, core, null, null);
+            delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
 
-            const delegate = objc.mach.WindowDelegate.allocInit();
-            defer native_window.setDelegate(@ptrCast(delegate));
-            { // Set WindowDelegate blocks
-                var windowWillResize_toSize = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowWillResize_toSize, core, null, null);
-                delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
+            var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, core, null, null);
+            delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
+        }
 
-                var windowShouldClose = objc.foundation.stackBlockLiteral(WindowDelegateCallbacks.windowShouldClose, core, null, null);
-                delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
-            }
-
-            core.windows.setAllRaw(window_id, core_window);
-        } else std.debug.panic("mach: window failed to initialize", .{});
-    }
+        // Set core_window.native, which we use to check if a window is initialized
+        // Then call core.initWindow to finish initializing the window
+        core_window.native = .{ .window = native_window };
+        core.windows.setValueRaw(window_id, core_window);
+        try core.initWindow(window_id);
+    } else std.debug.panic("mach: window failed to initialize", .{});
 }
 
 // pub fn init(

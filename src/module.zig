@@ -209,10 +209,10 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         ///
         /// Unlike setAll(), this method does not respect any mach.Objects tracking
         /// options, so changes made to an object through this method will not be tracked.
-        pub fn setAllRaw(objs: *@This(), id: ObjectID, value: T) void {
+        pub fn setValueRaw(objs: *@This(), id: ObjectID, value: T) void {
             const data = &objs.internal.data;
 
-            const unpacked = objs.validateAndUnpack(id, "setAllRaw");
+            const unpacked = objs.validateAndUnpack(id, "setValueRaw");
             data.set(unpacked.index, value);
         }
 
@@ -220,10 +220,10 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         ///
         /// Unlike setAllRaw, this method respects mach.Objects tracking
         /// and changes made to an object through this method will be tracked.
-        pub fn setAll(objs: *@This(), id: ObjectID, value: T) void {
+        pub fn setValue(objs: *@This(), id: ObjectID, value: T) void {
             const data = &objs.internal.data;
 
-            const unpacked = objs.validateAndUnpack(id, "setAll");
+            const unpacked = objs.validateAndUnpack(id, "setValue");
             data.set(unpacked.index, value);
 
             if (objs.internal.updated) |*updated_fields| {
@@ -267,7 +267,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         }
 
         /// Get a single field.
-        pub fn get(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T)) ?std.meta.FieldType(T, field_name) {
+        pub fn get(objs: *@This(), id: ObjectID, comptime field_name: std.meta.FieldEnum(T)) std.meta.FieldType(T, field_name) {
             const data = &objs.internal.data;
 
             const unpacked = objs.validateAndUnpack(id, "get");
@@ -276,10 +276,10 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         }
 
         /// Get all fields.
-        pub fn getAll(objs: *@This(), id: ObjectID) ?T {
+        pub fn getValue(objs: *@This(), id: ObjectID) T {
             const data = &objs.internal.data;
 
-            const unpacked = objs.validateAndUnpack(id, "getAll");
+            const unpacked = objs.validateAndUnpack(id, "getValue");
             return data.get(unpacked.index);
         }
 

@@ -75,7 +75,7 @@ windows: mach.Objects(
         // GPU
         // When device is not null, the rest of the fields have been
         // initialized.
-        device: ?*gpu.Device = null,
+        device: *gpu.Device = undefined,
         instance: *gpu.Instance = undefined,
         adapter: *gpu.Adapter = undefined,
         queue: *gpu.Queue = undefined,
@@ -94,7 +94,7 @@ windows: mach.Objects(
             .render_attachment = true,
         },
 
-        native: Platform.Native = .{},
+        native: ?Platform.Native = null,
     },
 ),
 
@@ -179,86 +179,83 @@ pub fn init(core: *Core) !void {
 }
 
 pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
-    if (core.windows.getAll(window_id)) |cw| {
-        var core_window = cw;
+    var core_window = core.windows.getValue(window_id);
 
-        core_window.instance = gpu.createInstance(null) orelse {
-            log.err("failed to create GPU instance", .{});
-            std.process.exit(1);
-        };
-        core_window.surface = core_window.instance.createSurface(&core_window.surface_descriptor);
+    core_window.instance = gpu.createInstance(null) orelse {
+        log.err("failed to create GPU instance", .{});
+        std.process.exit(1);
+    };
+    core_window.surface = core_window.instance.createSurface(&core_window.surface_descriptor);
 
-        var response: RequestAdapterResponse = undefined;
-        core_window.instance.requestAdapter(&gpu.RequestAdapterOptions{
-            .compatible_surface = core_window.surface,
-            .power_preference = core_window.power_preference,
-            .force_fallback_adapter = .false,
-        }, &response, requestAdapterCallback);
-        if (response.status != .success) {
-            log.err("failed to create GPU adapter: {?s}", .{response.message});
-            log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
-            std.process.exit(1);
-        }
-
-        // Print which adapter we are going to use.
-        var props = std.mem.zeroes(gpu.Adapter.Properties);
-        response.adapter.?.getProperties(&props);
-        if (props.backend_type == .null) {
-            log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
-            std.process.exit(1);
-        }
-        log.info("found {s} backend on {s} adapter: {s}, {s}\n", .{
-            props.backend_type.name(),
-            props.adapter_type.name(),
-            props.name,
-            props.driver_description,
-        });
-
-        core_window.adapter = response.adapter.?;
-
-        // Create a device with default limits/features.
-        core_window.device = response.adapter.?.createDevice(&.{
-            .required_features_count = if (core_window.required_features) |v| @as(u32, @intCast(v.len)) else 0,
-            .required_features = if (core_window.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
-            .required_limits = if (core_window.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
-                .limits = limits,
-            }) else null,
-            .device_lost_callback = &deviceLostCallback,
-            .device_lost_userdata = null,
-        }) orelse {
-            log.err("failed to create GPU device\n", .{});
-            std.process.exit(1);
-        };
-        core_window.device.?.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
-        core_window.queue = core_window.device.?.getQueue();
-
-        core_window.swap_chain_descriptor = gpu.SwapChain.Descriptor{
-            .label = "main swap chain",
-            .usage = core_window.swap_chain_usage,
-            .format = .bgra8_unorm,
-            .width = core_window.width,
-            .height = core_window.height,
-            .present_mode = switch (core_window.vsync_mode) {
-                .none => .immediate,
-                .double => .fifo,
-                .triple => .mailbox,
-            },
-        };
-        core_window.swap_chain = core_window.device.?.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-        core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
-        core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
-        core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
-
-        core.windows.setAllRaw(window_id, core_window);
+    var response: RequestAdapterResponse = undefined;
+    core_window.instance.requestAdapter(&gpu.RequestAdapterOptions{
+        .compatible_surface = core_window.surface,
+        .power_preference = core_window.power_preference,
+        .force_fallback_adapter = .false,
+    }, &response, requestAdapterCallback);
+    if (response.status != .success) {
+        log.err("failed to create GPU adapter: {?s}", .{response.message});
+        log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
+        std.process.exit(1);
     }
+
+    // Print which adapter we are going to use.
+    var props = std.mem.zeroes(gpu.Adapter.Properties);
+    response.adapter.?.getProperties(&props);
+    if (props.backend_type == .null) {
+        log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
+        std.process.exit(1);
+    }
+    log.info("found {s} backend on {s} adapter: {s}, {s}\n", .{
+        props.backend_type.name(),
+        props.adapter_type.name(),
+        props.name,
+        props.driver_description,
+    });
+
+    core_window.adapter = response.adapter.?;
+
+    // Create a device with default limits/features.
+    core_window.device = response.adapter.?.createDevice(&.{
+        .required_features_count = if (core_window.required_features) |v| @as(u32, @intCast(v.len)) else 0,
+        .required_features = if (core_window.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
+        .required_limits = if (core_window.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
+            .limits = limits,
+        }) else null,
+        .device_lost_callback = &deviceLostCallback,
+        .device_lost_userdata = null,
+    }) orelse {
+        log.err("failed to create GPU device\n", .{});
+        std.process.exit(1);
+    };
+    core_window.device.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
+    core_window.queue = core_window.device.getQueue();
+
+    core_window.swap_chain_descriptor = gpu.SwapChain.Descriptor{
+        .label = "main swap chain",
+        .usage = core_window.swap_chain_usage,
+        .format = .bgra8_unorm,
+        .width = core_window.width,
+        .height = core_window.height,
+        .present_mode = switch (core_window.vsync_mode) {
+            .none => .immediate,
+            .double => .fifo,
+            .triple => .mailbox,
+        },
+    };
+    core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+    core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
+    core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
+    core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
+
+    core.windows.setValueRaw(window_id, core_window);
 }
 
 pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
-    // Allow each platform to react to any changes
-    // Do we want to call this prior to calling `on_tick`?
-    // If we dont, and the user calls `updated()` on a window field
-    // it would set the field back to false, and our platform wouldnt catch
-    // the update. If we call if before we call the user tick, theres no opportunity.
+    // TODO(core)(slimsag): consider execution order of mach.Core (e.g. creating a new window
+    // during application execution, rendering to multiple windows, etc.) and how
+    // that relates to Platform.tick being responsible for both handling window updates
+    // (like title/size changes) and window creation, plus multi-threaded rendering.
     try Platform.tick(core);
 
     core_mod.run(core.on_tick.?);
@@ -308,11 +305,10 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 }
 
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
-    // Allow each platform to react to any changes
-    // Do we want to call this prior to calling `on_tick`?
-    // If we dont, and the user calls `updated()` on a window field
-    // it would set the field back to false, and our platform wouldnt catch
-    // the update. If we call if before we call the user tick, theres no opportunity.
+    // TODO(core)(slimsag): consider execution order of mach.Core (e.g. creating a new window
+    // during application execution, rendering to multiple windows, etc.) and how
+    // that relates to Platform.tick being responsible for both handling window updates
+    // (like title/size changes) and window creation, plus multi-threaded rendering.
     try Platform.tick(core);
 
     core_mod.run(core.on_tick.?);
@@ -342,16 +338,13 @@ pub fn deinit(core: *Core) !void {
 
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
-        if (core.windows.getAll(window_id)) |cw| {
-            var core_window = cw;
-            core_window.swap_chain.release();
-            core_window.queue.release();
-            if (core_window.device) |device| device.release();
-            core_window.surface.release();
-            core_window.adapter.release();
-            core_window.instance.release();
-            core_window.device = null;
-        }
+        var core_window = core.windows.getValue(window_id);
+        core_window.swap_chain.release();
+        core_window.queue.release();
+        core_window.device.release();
+        core_window.surface.release();
+        core_window.adapter.release();
+        core_window.instance.release();
     }
 
     core.events.deinit();
@@ -629,38 +622,34 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
 
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
-        if (core.windows.getAll(window_id)) |cw| {
-            var core_window = cw;
+        var core_window = core.windows.getValue(window_id);
 
-            if (core_window.device) |device| mach.sysgpu.Impl.deviceTick(device);
+        mach.sysgpu.Impl.deviceTick(core_window.device);
 
-            core_window.swap_chain.present();
+        core_window.swap_chain.present();
 
-            // Update swapchain for the next frame
-            if (core_window.swap_chain_update.isSet()) blk: {
-                core_window.swap_chain_update.reset();
+        // Update swapchain for the next frame
+        if (core_window.swap_chain_update.isSet()) blk: {
+            core_window.swap_chain_update.reset();
 
-                switch (core_window.vsync_mode) {
-                    .triple => core.frame.target = 2 * core_window.refresh_rate,
-                    else => core.frame.target = 0,
-                }
-
-                if (core_window.width == 0 or core_window.height == 0) break :blk;
-
-                core_window.swap_chain_descriptor.present_mode = switch (core_window.vsync_mode) {
-                    .none => .immediate,
-                    .double => .fifo,
-                    .triple => .mailbox,
-                };
-
-                if (core_window.device) |device| {
-                    core_window.swap_chain_descriptor.width = core_window.width;
-                    core_window.swap_chain_descriptor.height = core_window.height;
-                    core_window.swap_chain.release();
-
-                    core_window.swap_chain = device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-                }
+            switch (core_window.vsync_mode) {
+                .triple => core.frame.target = 2 * core_window.refresh_rate,
+                else => core.frame.target = 0,
             }
+
+            if (core_window.width == 0 or core_window.height == 0) break :blk;
+
+            core_window.swap_chain_descriptor.present_mode = switch (core_window.vsync_mode) {
+                .none => .immediate,
+                .double => .fifo,
+                .triple => .mailbox,
+            };
+
+            core_window.swap_chain_descriptor.width = core_window.width;
+            core_window.swap_chain_descriptor.height = core_window.height;
+            core_window.swap_chain.release();
+
+            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         }
     }
 

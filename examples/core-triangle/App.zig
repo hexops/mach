@@ -25,53 +25,52 @@ pub fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
-    if (core.windows.getAll(core.main_window)) |cw| {
-        const core_window = cw;
-        if (core_window.device) |device| {
+    const main_window = core.windows.getValue(core.main_window);
+    if (main_window.native != null) {
+        // if window.native is not null, the window is initialized
 
-            // Create our shader module
-            const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
-            defer shader_module.release();
+        // Create our shader module
+        const shader_module = main_window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+        defer shader_module.release();
 
-            // Blend state describes how rendered colors get blended
-            const blend = gpu.BlendState{};
+        // Blend state describes how rendered colors get blended
+        const blend = gpu.BlendState{};
 
-            // Color target describes e.g. the pixel format of the window we are rendering to.
-            const color_target = gpu.ColorTargetState{
-                .format = core.windows.get(core.main_window, .framebuffer_format).?,
-                .blend = &blend,
-            };
+        // Color target describes e.g. the pixel format of the window we are rendering to.
+        const color_target = gpu.ColorTargetState{
+            .format = core.windows.get(core.main_window, .framebuffer_format),
+            .blend = &blend,
+        };
 
-            // Fragment state describes which shader and entrypoint to use for rendering fragments.
-            const fragment = gpu.FragmentState.init(.{
+        // Fragment state describes which shader and entrypoint to use for rendering fragments.
+        const fragment = gpu.FragmentState.init(.{
+            .module = shader_module,
+            .entry_point = "frag_main",
+            .targets = &.{color_target},
+        });
+
+        // Create our render pipeline that will ultimately get pixels onto the screen.
+        const label = @tagName(mach_module) ++ ".init";
+        const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+            .label = label,
+            .fragment = &fragment,
+            .vertex = gpu.VertexState{
                 .module = shader_module,
-                .entry_point = "frag_main",
-                .targets = &.{color_target},
-            });
+                .entry_point = "vertex_main",
+            },
+        };
+        const pipeline = main_window.device.createRenderPipeline(&pipeline_descriptor);
 
-            // Create our render pipeline that will ultimately get pixels onto the screen.
-            const label = @tagName(mach_module) ++ ".init";
-            const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
-                .label = label,
-                .fragment = &fragment,
-                .vertex = gpu.VertexState{
-                    .module = shader_module,
-                    .entry_point = "vertex_main",
-                },
-            };
-            const pipeline = device.createRenderPipeline(&pipeline_descriptor);
-
-            // Store our render pipeline in our module's state, so we can access it later on.
-            app.* = .{
-                .title_timer = try mach.time.Timer.start(),
-                .pipeline = pipeline,
-            };
-        }
+        // Store our render pipeline in our module's state, so we can access it later on.
+        app.* = .{
+            .title_timer = try mach.time.Timer.start(),
+            .pipeline = pipeline,
+        };
     }
-
-    // TODO(object): window-title
-    // try updateWindowTitle(core);
 }
+
+// TODO(object): window-title
+// try updateWindowTitle(core);
 
 pub fn tick(app: *App, core: *mach.Core) void {
     while (core.nextEvent()) |event| {
@@ -79,20 +78,20 @@ pub fn tick(app: *App, core: *mach.Core) void {
             .key_press => |ev| {
                 switch (ev.key) {
                     .right => {
-                        var w = core.windows.getAll(core.main_window).?;
+                        var w = core.windows.getValue(core.main_window);
                         w.width = w.width + 10;
-                        core.windows.setAll(core.main_window, w);
+                        core.windows.setValue(core.main_window, w);
                     },
                     .left => {
-                        var w = core.windows.getAll(core.main_window).?;
+                        var w = core.windows.getValue(core.main_window);
                         w.width = w.width - 10;
-                        core.windows.setAll(core.main_window, w);
+                        core.windows.setValue(core.main_window, w);
                     },
                     .up => {
-                        if (core.windows.get(core.main_window, .height)) |height| core.windows.set(core.main_window, .height, height + 10);
+                        core.windows.set(core.main_window, .height, core.windows.get(core.main_window, .height) + 10);
                     },
                     .down => {
-                        if (core.windows.get(core.main_window, .height)) |height| core.windows.set(core.main_window, .height, height - 10);
+                        core.windows.set(core.main_window, .height, core.windows.get(core.main_window, .height) - 10);
                     },
                     else => {},
                 }
@@ -102,50 +101,46 @@ pub fn tick(app: *App, core: *mach.Core) void {
         }
     }
 
-    if (core.windows.getAll(core.main_window)) |mw| {
-        var main_window = mw;
+    var main_window = core.windows.getValue(core.main_window);
 
-        // Window is ready when device is not null
-        if (main_window.device) |device| {
+    // Window is ready when device is not null
 
-            // Grab the back buffer of the swapchain
-            // TODO(Core)
-            const back_buffer_view = main_window.swap_chain.getCurrentTextureView().?;
-            defer back_buffer_view.release();
+    // Grab the back buffer of the swapchain
+    // TODO(Core)
+    const back_buffer_view = main_window.swap_chain.getCurrentTextureView().?;
+    defer back_buffer_view.release();
 
-            // Create a command encoder
-            const label = @tagName(mach_module) ++ ".tick";
+    // Create a command encoder
+    const label = @tagName(mach_module) ++ ".tick";
 
-            const encoder = device.createCommandEncoder(&.{ .label = label });
-            defer encoder.release();
+    const encoder = main_window.device.createCommandEncoder(&.{ .label = label });
+    defer encoder.release();
 
-            // Begin render pass
-            const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
-            const color_attachments = [_]gpu.RenderPassColorAttachment{.{
-                .view = back_buffer_view,
-                .clear_value = sky_blue_background,
-                .load_op = .clear,
-                .store_op = .store,
-            }};
-            const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
-                .label = label,
-                .color_attachments = &color_attachments,
-            }));
-            defer render_pass.release();
+    // Begin render pass
+    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+        .view = back_buffer_view,
+        .clear_value = sky_blue_background,
+        .load_op = .clear,
+        .store_op = .store,
+    }};
+    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+        .label = label,
+        .color_attachments = &color_attachments,
+    }));
+    defer render_pass.release();
 
-            // Draw
-            render_pass.setPipeline(app.pipeline);
-            render_pass.draw(3, 1, 0, 0);
+    // Draw
+    render_pass.setPipeline(app.pipeline);
+    render_pass.draw(3, 1, 0, 0);
 
-            // Finish render pass
-            render_pass.end();
+    // Finish render pass
+    render_pass.end();
 
-            // Submit our commands to the queue
-            var command = encoder.finish(&.{ .label = label });
-            defer command.release();
-            main_window.queue.submit(&[_]*gpu.CommandBuffer{command});
-        }
-    }
+    // Submit our commands to the queue
+    var command = encoder.finish(&.{ .label = label });
+    defer command.release();
+    main_window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // update the window title every second
     // if (app.title_timer.read() >= 1.0) {
