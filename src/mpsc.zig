@@ -350,6 +350,15 @@ pub fn Queue(comptime Value: type) type {
                     // Lost race (with another takeAll() or pop()), retry from start
                     continue :outer;
                 }
+
+                // Ensure all previous atomic operations (including linking) are complete
+                // Specifically this part of pushRaw():
+                //
+                // // Link previous node to new node
+                // @atomicStore(?*Node, &prev.next, node, .release);
+                //
+                _ = @atomicLoad(*Node, &q.head, .acquire);
+
                 return tail;
             }
         }
