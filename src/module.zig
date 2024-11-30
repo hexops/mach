@@ -505,7 +505,7 @@ pub fn Modules(module_lists: anytype) type {
             });
         }
 
-        pub fn init(m: *@This(), allocator: std.mem.Allocator) std.mem.Allocator.Error!void {
+        pub fn init(m: *@This(), allocator: std.mem.Allocator) (std.mem.Allocator.Error || std.Thread.SpawnError)!void {
             m.* = .{
                 .mods = undefined,
                 .graph = undefined,
