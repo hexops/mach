@@ -30,7 +30,7 @@ pub var non_blocking = false;
 
 pub const mach_module = .mach_core;
 
-pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .processWindowUpdates, .deinit };
+pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
 
 // Set track_fields to true so that when these field values change, we know about it
 // and can update the platform windows.
@@ -40,25 +40,61 @@ windows: mach.Objects(
         /// Window title string
         // TODO: document how to set this using a format string
         // TODO: allocation/free strategy
-        title: []const u8,
+        title: []const u8 = "Mach Window",
 
         /// Texture format of the framebuffer (read-only)
-        framebuffer_format: gpu.Texture.Format,
+        framebuffer_format: gpu.Texture.Format = .bgra8_unorm,
 
         /// Width of the framebuffer in texels (read-only)
-        framebuffer_width: u32,
+        framebuffer_width: u32 = 1920 / 2,
 
         /// Height of the framebuffer in texels (read-only)
-        framebuffer_height: u32,
+        framebuffer_height: u32 = 1080 / 2,
+
+        /// Vertical sync mode, prevents screen tearing.
+        vsync_mode: VSyncMode = .none,
+
+        display_mode: DisplayMode = .windowed,
+
+        /// Cursor
+        cursor_mode: CursorMode = .normal,
+        cursor_shape: CursorShape = .arrow,
+
+        /// Outer border
+        border: bool = true,
 
         /// Width of the window in virtual pixels (read-only)
-        width: u32,
+        width: u32 = 1920 / 2,
 
         /// Height of the window in virtual pixels (read-only)
-        height: u32,
+        height: u32 = 1080 / 2,
 
-        /// Whether the window is fullscreen (read-only)
-        fullscreen: bool,
+        /// Target frames per second
+        refresh_rate: u32 = 0,
+
+        // GPU
+        // When device is not null, the rest of the fields have been
+        // initialized.
+        device: ?*gpu.Device = null,
+        instance: *gpu.Instance = undefined,
+        adapter: *gpu.Adapter = undefined,
+        queue: *gpu.Queue = undefined,
+        swap_chain: *gpu.SwapChain = undefined,
+        swap_chain_descriptor: gpu.SwapChain.Descriptor = undefined,
+        swap_chain_update: std.Thread.ResetEvent = .{},
+        surface: *gpu.Surface = undefined,
+        surface_descriptor: gpu.Surface.Descriptor = undefined,
+
+        // After window initialization, (when device is not null)
+        // changing these will have no effect
+        power_preference: gpu.PowerPreference = .undefined,
+        required_features: ?[]const gpu.FeatureName = null,
+        required_limits: ?gpu.Limits = null,
+        swap_chain_usage: gpu.Texture.UsageFlags = .{
+            .render_attachment = true,
+        },
+
+        native: Platform.Native = .{},
     },
 ),
 
@@ -80,19 +116,16 @@ state: enum {
 } = .running,
 
 // TODO: handle window titles better
-title: [256:0]u8 = undefined,
+//title: [256:0]u8 = undefined,
 frame: mach.time.Frequency,
 input: mach.time.Frequency,
-swap_chain_update: std.Thread.ResetEvent = .{},
 
 // GPU
-instance: *gpu.Instance,
-adapter: *gpu.Adapter,
-device: *gpu.Device,
-queue: *gpu.Queue,
-surface: *gpu.Surface,
-swap_chain: *gpu.SwapChain,
-descriptor: gpu.SwapChain.Descriptor,
+// instance: *gpu.Instance,
+// adapter: *gpu.Adapter,
+// device: *gpu.Device,
+// queue: *gpu.Queue,
+// surface: *gpu.Surface,
 
 // Internal module state
 allocator: std.mem.Allocator,
@@ -102,31 +135,19 @@ input_state: InputState,
 oom: std.Thread.ResetEvent = .{},
 
 pub fn init(core: *Core) !void {
-    // TODO: this needs to be removed.
-    const options: InitOptions = .{
-        .allocator = std.heap.c_allocator,
-    };
-    const allocator = options.allocator;
+    const allocator = std.heap.c_allocator;
 
     // TODO: fix all leaks and use options.allocator
     try mach.sysgpu.Impl.init(allocator, .{});
 
-    const main_window = try core.windows.new(.{
-        .title = options.title, // TODO
-        .framebuffer_format = undefined, // TODO: null?
-        .framebuffer_width = undefined, // TODO: null?
-        .framebuffer_height = undefined, // TODO: null?
-        .width = 1920 / 2,
-        .height = 1080 / 2,
-        .fullscreen = false,
-    });
+    const main_window = try core.windows.new(.{});
 
-    // Copy window title into owned buffer.
-    var title: [256:0]u8 = undefined;
-    if (options.title.len < title.len) {
-        @memcpy(title[0..options.title.len], options.title);
-        title[options.title.len] = 0;
-    }
+    // TODO: Copy window title into owned buffer.
+    // var title: [256:0]u8 = undefined;
+    // if (options.title.len < title.len) {
+    //     @memcpy(title[0..options.title.len], options.title);
+    //     title[options.title.len] = 0;
+    // }
 
     var events = EventQueue.init(allocator);
     try events.ensureTotalCapacity(8192);
@@ -143,113 +164,113 @@ pub fn init(core: *Core) !void {
         .input_state = .{},
 
         .platform = platform,
-
-        // TODO: these should not be state, they should be components.
-        .title = title,
-        .frame = undefined,
-        .input = undefined,
-        .instance = undefined,
-        .adapter = undefined,
-        .device = undefined,
-        .queue = undefined,
-        .surface = undefined,
-        .swap_chain = undefined,
-        .descriptor = undefined,
+        .input = .{ .target = 0 },
+        .frame = .{ .target = 1 },
     };
 
-    try Platform.init(&core.platform, core, options);
+    //try initWindow(core, main_window);
 
-    core.instance = gpu.createInstance(null) orelse {
-        log.err("failed to create GPU instance", .{});
-        std.process.exit(1);
-    };
-    core.surface = core.instance.createSurface(&core.platform.surface_descriptor);
+    // Tick the platform so that the platform can grab the newly created window
+    // and perform initialization
+    try Platform.tick(core);
 
-    var response: RequestAdapterResponse = undefined;
-    core.instance.requestAdapter(&gpu.RequestAdapterOptions{
-        .compatible_surface = core.surface,
-        .power_preference = options.power_preference,
-        .force_fallback_adapter = .false,
-    }, &response, requestAdapterCallback);
-    if (response.status != .success) {
-        log.err("failed to create GPU adapter: {?s}", .{response.message});
-        log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
-        std.process.exit(1);
-    }
-
-    // Print which adapter we are going to use.
-    var props = std.mem.zeroes(gpu.Adapter.Properties);
-    response.adapter.?.getProperties(&props);
-    if (props.backend_type == .null) {
-        log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
-        std.process.exit(1);
-    }
-    log.info("found {s} backend on {s} adapter: {s}, {s}\n", .{
-        props.backend_type.name(),
-        props.adapter_type.name(),
-        props.name,
-        props.driver_description,
-    });
-
-    core.adapter = response.adapter.?;
-
-    // Create a device with default limits/features.
-    core.device = response.adapter.?.createDevice(&.{
-        .required_features_count = if (options.required_features) |v| @as(u32, @intCast(v.len)) else 0,
-        .required_features = if (options.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
-        .required_limits = if (options.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
-            .limits = limits,
-        }) else null,
-        .device_lost_callback = &deviceLostCallback,
-        .device_lost_userdata = null,
-    }) orelse {
-        log.err("failed to create GPU device\n", .{});
-        std.process.exit(1);
-    };
-    core.device.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
-    core.queue = core.device.getQueue();
-
-    core.descriptor = gpu.SwapChain.Descriptor{
-        .label = "main swap chain",
-        .usage = options.swap_chain_usage,
-        .format = .bgra8_unorm,
-        .width = @intCast(core.platform.size.width),
-        .height = @intCast(core.platform.size.height),
-        .present_mode = switch (core.platform.vsync_mode) {
-            .none => .immediate,
-            .double => .fifo,
-            .triple => .mailbox,
-        },
-    };
-    core.swap_chain = core.device.createSwapChain(core.surface, &core.descriptor);
-
-    core.windows.setRaw(core.main_window, .framebuffer_format, core.descriptor.format);
-    core.windows.setRaw(core.main_window, .framebuffer_width, core.descriptor.width);
-    core.windows.setRaw(core.main_window, .framebuffer_height, core.descriptor.height);
-    // TODO(important): update this information upon framebuffer resize events
-    // var w = core.windows.get(core.main_window).?;
-    // w.framebuffer_format = core.descriptor.format;
-    // w.framebuffer_width = core.descriptor.width;
-    // w.framebuffer_height = core.descriptor.height;
-    // w.width = core.platform.size.width;
-    // w.height = core.platform.size.height;
-    // core.windows.setAll(core.main_window, w);
-
-    core.frame = .{ .target = 0 };
-    core.input = .{ .target = 1 };
     try core.frame.start();
     try core.input.start();
 }
 
-pub fn tick(core: *Core, core_mod: mach.Mod(Core)) void {
+pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
+    if (core.windows.getAll(window_id)) |cw| {
+        var core_window = cw;
+
+        core_window.instance = gpu.createInstance(null) orelse {
+            log.err("failed to create GPU instance", .{});
+            std.process.exit(1);
+        };
+        core_window.surface = core_window.instance.createSurface(&core_window.surface_descriptor);
+
+        var response: RequestAdapterResponse = undefined;
+        core_window.instance.requestAdapter(&gpu.RequestAdapterOptions{
+            .compatible_surface = core_window.surface,
+            .power_preference = core_window.power_preference,
+            .force_fallback_adapter = .false,
+        }, &response, requestAdapterCallback);
+        if (response.status != .success) {
+            log.err("failed to create GPU adapter: {?s}", .{response.message});
+            log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
+            std.process.exit(1);
+        }
+
+        // Print which adapter we are going to use.
+        var props = std.mem.zeroes(gpu.Adapter.Properties);
+        response.adapter.?.getProperties(&props);
+        if (props.backend_type == .null) {
+            log.err("no backend found for {s} adapter", .{props.adapter_type.name()});
+            std.process.exit(1);
+        }
+        log.info("found {s} backend on {s} adapter: {s}, {s}\n", .{
+            props.backend_type.name(),
+            props.adapter_type.name(),
+            props.name,
+            props.driver_description,
+        });
+
+        core_window.adapter = response.adapter.?;
+
+        // Create a device with default limits/features.
+        core_window.device = response.adapter.?.createDevice(&.{
+            .required_features_count = if (core_window.required_features) |v| @as(u32, @intCast(v.len)) else 0,
+            .required_features = if (core_window.required_features) |v| @as(?[*]const gpu.FeatureName, v.ptr) else null,
+            .required_limits = if (core_window.required_limits) |limits| @as(?*const gpu.RequiredLimits, &gpu.RequiredLimits{
+                .limits = limits,
+            }) else null,
+            .device_lost_callback = &deviceLostCallback,
+            .device_lost_userdata = null,
+        }) orelse {
+            log.err("failed to create GPU device\n", .{});
+            std.process.exit(1);
+        };
+        core_window.device.?.setUncapturedErrorCallback({}, printUnhandledErrorCallback);
+        core_window.queue = core_window.device.?.getQueue();
+
+        core_window.swap_chain_descriptor = gpu.SwapChain.Descriptor{
+            .label = "main swap chain",
+            .usage = core_window.swap_chain_usage,
+            .format = .bgra8_unorm,
+            .width = core_window.width,
+            .height = core_window.height,
+            .present_mode = switch (core_window.vsync_mode) {
+                .none => .immediate,
+                .double => .fifo,
+                .triple => .mailbox,
+            },
+        };
+        core_window.swap_chain = core_window.device.?.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+        core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
+        core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
+        core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
+
+        core.windows.setAllRaw(window_id, core_window);
+    }
+}
+
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
+    // Allow each platform to react to any changes
+    // Do we want to call this prior to calling `on_tick`?
+    // If we dont, and the user calls `updated()` on a window field
+    // it would set the field back to false, and our platform wouldnt catch
+    // the update. If we call if before we call the user tick, theres no opportunity.
+    try Platform.tick(core);
+
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
-    core_mod.call(.processWindowUpdates);
+    //core_mod.call(.processWindowUpdates);
 }
 
 pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     if (core.on_tick == null) @panic("core.on_tick callback must be set");
     if (core.on_exit == null) @panic("core.on_exit callback must be set");
+
+    try Platform.tick(core);
 
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
@@ -287,50 +308,51 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 }
 
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
+    // Allow each platform to react to any changes
+    // Do we want to call this prior to calling `on_tick`?
+    // If we dont, and the user calls `updated()` on a window field
+    // it would set the field back to false, and our platform wouldnt catch
+    // the update. If we call if before we call the user tick, theres no opportunity.
+    try Platform.tick(core);
+
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
-    core_mod.call(.processWindowUpdates);
+    //core_mod.call(.processWindowUpdates);
 
     return core.state != .exited;
 }
 
-pub fn processWindowUpdates(core: *Core) void {
-    if (core.windows.updated(core.main_window, .width) or core.windows.updated(core.main_window, .height)) {
-        const window = core.windows.getAll(core.main_window);
+// pub fn processWindowUpdates(core: *Core) void {
+//     while (core.windows.slice().next()) |window_id| {
+//         if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
+//             const window = core.windows.getAll(window_id);
 
-        if (window) |main_window| {
-            core.platform.setSize(.{
-                .width = main_window.width,
-                .height = main_window.height,
-            });
-        }
-    }
-}
+//             if (window) |w| {
+//                 core.platform.setSize(.{
+//                     .width = w.width,
+//                     .height = w.height,
+//                 });
+//             }
+//         }
+//     }
+// }
 
 pub fn deinit(core: *Core) !void {
     core.state = .exited;
 
-    // TODO(object)(window-title)
-    // var q = try entities.query(.{
-    //     .titles = Mod.read(.title),
-    // });
-    // while (q.next()) |v| {
-    //     for (v.titles) |title| {
-    //         state.allocator.free(title);
-    //     }
-    // }
-
-    // GPU backend must be released BEFORE platform deinit, otherwise we may enter a race
-    // where the GPU might try to present to the window server.
-    core.swap_chain.release();
-    core.queue.release();
-    core.device.release();
-    core.surface.release();
-    core.adapter.release();
-    core.instance.release();
-
-    // Deinit the platform
-    core.platform.deinit();
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        if (core.windows.getAll(window_id)) |cw| {
+            var core_window = cw;
+            core_window.swap_chain.release();
+            core_window.queue.release();
+            if (core_window.device) |device| device.release();
+            core_window.surface.release();
+            core_window.adapter.release();
+            core_window.instance.release();
+            core_window.device = null;
+        }
+    }
 
     core.events.deinit();
 }
@@ -587,6 +609,7 @@ pub fn mousePosition(core: *@This()) Position {
 // }
 
 pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
+
     // TODO(object)(window-title)
     // // Update windows title
     // var num_windows: usize = 0;
@@ -602,30 +625,43 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
     // }
     // if (num_windows > 1) @panic("mach: Core currently only supports a single window");
 
-    _ = try core.platform.update();
-    mach.sysgpu.Impl.deviceTick(core.device);
-    core.swap_chain.present();
+    //_ = try core.platform.update();
 
-    // Update swapchain for the next frame
-    if (core.swap_chain_update.isSet()) blk: {
-        core.swap_chain_update.reset();
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        if (core.windows.getAll(window_id)) |cw| {
+            var core_window = cw;
 
-        switch (core.platform.vsync_mode) {
-            .triple => core.frame.target = 2 * core.platform.refresh_rate,
-            else => core.frame.target = 0,
+            if (core_window.device) |device| mach.sysgpu.Impl.deviceTick(device);
+
+            core_window.swap_chain.present();
+
+            // Update swapchain for the next frame
+            if (core_window.swap_chain_update.isSet()) blk: {
+                core_window.swap_chain_update.reset();
+
+                switch (core_window.vsync_mode) {
+                    .triple => core.frame.target = 2 * core_window.refresh_rate,
+                    else => core.frame.target = 0,
+                }
+
+                if (core_window.width == 0 or core_window.height == 0) break :blk;
+
+                core_window.swap_chain_descriptor.present_mode = switch (core_window.vsync_mode) {
+                    .none => .immediate,
+                    .double => .fifo,
+                    .triple => .mailbox,
+                };
+
+                if (core_window.device) |device| {
+                    core_window.swap_chain_descriptor.width = core_window.width;
+                    core_window.swap_chain_descriptor.height = core_window.height;
+                    core_window.swap_chain.release();
+
+                    core_window.swap_chain = device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+                }
+            }
         }
-
-        if (core.platform.size.width == 0 or core.platform.size.height == 0) break :blk;
-
-        core.descriptor.present_mode = switch (core.platform.vsync_mode) {
-            .none => .immediate,
-            .double => .fifo,
-            .triple => .mailbox,
-        };
-        core.descriptor.width = @intCast(core.platform.size.width);
-        core.descriptor.height = @intCast(core.platform.size.height);
-        core.swap_chain.release();
-        core.swap_chain = core.device.createSwapChain(core.surface, &core.descriptor);
     }
 
     // TODO(important): update this information in response to resize events rather than
@@ -747,21 +783,21 @@ const Platform = switch (build_options.core_platform) {
 
 // TODO(object): this struct should not exist
 // TODO: this should not be here, it is exposed because the platform implementations need it.
-pub const InitOptions = struct {
-    allocator: std.mem.Allocator,
-    is_app: bool = false,
-    headless: bool = false,
-    display_mode: DisplayMode = .windowed,
-    border: bool = true,
-    title: [:0]const u8 = "Mach core",
-    size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
-    power_preference: gpu.PowerPreference = .undefined,
-    required_features: ?[]const gpu.FeatureName = null,
-    required_limits: ?gpu.Limits = null,
-    swap_chain_usage: gpu.Texture.UsageFlags = .{
-        .render_attachment = true,
-    },
-};
+// pub const InitOptions = struct {
+//     allocator: std.mem.Allocator,
+//     is_app: bool = false,
+//     headless: bool = false,
+//     display_mode: DisplayMode = .windowed,
+//     border: bool = true,
+//     title: [:0]const u8 = "Mach core",
+//     size: Size = .{ .width = 1920 / 2, .height = 1080 / 2 },
+//     power_preference: gpu.PowerPreference = .undefined,
+//     required_features: ?[]const gpu.FeatureName = null,
+//     required_limits: ?gpu.Limits = null,
+//     swap_chain_usage: gpu.Texture.UsageFlags = .{
+//         .render_attachment = true,
+//     },
+// };
 
 pub const InputState = struct {
     const KeyBitSet = std.StaticBitSet(@as(u8, @intFromEnum(Key.max)) + 1);
@@ -1070,37 +1106,37 @@ const RequestAdapterResponse = struct {
 };
 
 // Verifies that a platform implementation exposes the expected function declarations.
-comptime {
-    // Core
-    assertHasField(Platform, "surface_descriptor");
-    assertHasField(Platform, "refresh_rate");
+// comptime {
+//     // Core
+//     assertHasField(Platform, "surface_descriptor");
+//     assertHasField(Platform, "refresh_rate");
 
-    assertHasDecl(Platform, "init");
-    assertHasDecl(Platform, "deinit");
+//     assertHasDecl(Platform, "init");
+//     assertHasDecl(Platform, "deinit");
 
-    assertHasDecl(Platform, "setTitle");
+//     assertHasDecl(Platform, "setTitle");
 
-    assertHasDecl(Platform, "setDisplayMode");
-    assertHasField(Platform, "display_mode");
+//     assertHasDecl(Platform, "setDisplayMode");
+//     assertHasField(Platform, "display_mode");
 
-    assertHasDecl(Platform, "setBorder");
-    assertHasField(Platform, "border");
+//     assertHasDecl(Platform, "setBorder");
+//     assertHasField(Platform, "border");
 
-    assertHasDecl(Platform, "setHeadless");
-    assertHasField(Platform, "headless");
+//     assertHasDecl(Platform, "setHeadless");
+//     assertHasField(Platform, "headless");
 
-    assertHasDecl(Platform, "setVSync");
-    assertHasField(Platform, "vsync_mode");
+//     assertHasDecl(Platform, "setVSync");
+//     assertHasField(Platform, "vsync_mode");
 
-    assertHasDecl(Platform, "setSize");
-    assertHasField(Platform, "size");
+//     assertHasDecl(Platform, "setSize");
+//     assertHasField(Platform, "size");
 
-    assertHasDecl(Platform, "setCursorMode");
-    assertHasField(Platform, "cursor_mode");
+//     assertHasDecl(Platform, "setCursorMode");
+//     assertHasField(Platform, "cursor_mode");
 
-    assertHasDecl(Platform, "setCursorShape");
-    assertHasField(Platform, "cursor_shape");
-}
+//     assertHasDecl(Platform, "setCursorShape");
+//     assertHasField(Platform, "cursor_shape");
+// }
 
 fn assertHasDecl(comptime T: anytype, comptime decl_name: []const u8) void {
     if (!@hasDecl(T, decl_name)) @compileError(@typeName(T) ++ " missing declaration: " ++ decl_name);
@@ -1112,7 +1148,6 @@ fn assertHasField(comptime T: anytype, comptime field_name: []const u8) void {
 
 test {
     _ = Platform;
-    @import("std").testing.refAllDeclsRecursive(InitOptions);
     @import("std").testing.refAllDeclsRecursive(VSyncMode);
     @import("std").testing.refAllDeclsRecursive(Size);
     @import("std").testing.refAllDeclsRecursive(Position);

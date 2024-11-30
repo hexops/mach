@@ -85,7 +85,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
         pub const Slice = struct {
             index: Index,
-            objs: *Objects(T),
+            objs: *Objects(options, T),
 
             /// Same as Objects(T).set but doesn't employ safety checks
             pub fn set(objs: *@This(), id: ObjectID, value: T) void {
@@ -127,6 +127,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
                     defer iter.index += 1;
 
                     if (!dead.isSet(iter.index)) return @bitCast(PackedID{
+                        .type_id = iter.objs.internal.type_id,
                         .generation = generation.items[iter.index],
                         .index = iter.index,
                     });

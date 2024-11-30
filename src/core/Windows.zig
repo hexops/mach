@@ -21,6 +21,14 @@ const KeyMods = Core.KeyMods;
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 const Win32 = @This();
 
+pub const Native = struct {
+    window: w.HWND,
+    surrogate: u16 = 0,
+    dinput: *w.IDirectInput8W,
+    saved_window_rect: w.RECT,
+    surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
+};
+
 // --------------------------
 // Module state
 // --------------------------
@@ -28,22 +36,22 @@ allocator: std.mem.Allocator,
 core: *Core,
 
 // Core platform interface
-surface_descriptor: gpu.Surface.Descriptor,
-display_mode: DisplayMode,
-vsync_mode: VSyncMode,
-cursor_mode: CursorMode,
-cursor_shape: CursorShape,
-border: bool,
-headless: bool,
-size: Size,
+// surface_descriptor: gpu.Surface.Descriptor,
+// display_mode: DisplayMode,
+// vsync_mode: VSyncMode,
+// cursor_mode: CursorMode,
+// cursor_shape: CursorShape,
+// border: bool,
+// headless: bool,
+// size: Size,
 
-// Internals
-window: w.HWND,
-refresh_rate: u32,
-surrogate: u16 = 0,
-dinput: *w.IDirectInput8W,
-saved_window_rect: w.RECT,
-surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
+// // Internals
+// window: w.HWND,
+// refresh_rate: u32,
+// surrogate: u16 = 0,
+// dinput: *w.IDirectInput8W,
+// saved_window_rect: w.RECT,
+// surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
 
 // ------------------------------
 // Platform interface
