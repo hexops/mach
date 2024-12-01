@@ -33,124 +33,6 @@ pub const Context = struct {
     window_id: mach.ObjectID,
 };
 
-// --------------------------
-// Module state
-// --------------------------
-// allocator: std.mem.Allocator,
-// core: *Core,
-
-// Core platform interface
-// surface_descriptor: gpu.Surface.Descriptor,
-// display_mode: DisplayMode,
-// vsync_mode: VSyncMode,
-// cursor_mode: CursorMode,
-// cursor_shape: CursorShape,
-// border: bool,
-// headless: bool,
-// size: Size,
-
-// // Internals
-// window: w.HWND,
-// refresh_rate: u32,
-// surrogate: u16 = 0,
-// dinput: *w.IDirectInput8W,
-// saved_window_rect: w.RECT,
-// surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND,
-
-// ------------------------------
-// Platform interface
-// ------------------------------
-// pub fn init(
-//     self: *Win32,
-//     core: *Core,
-//     //options: InitOptions,
-// ) !void {
-//     // self.allocator = options.allocator;
-//     // self.core = core;
-//     // self.size = options.size;
-//     // self.saved_window_rect = .{ .top = 0, .left = 0, .right = 0, .bottom = 0 };
-
-//     var native: Native = .{};
-
-//     const hInstance = w.GetModuleHandleW(null);
-//     const class_name = w.L("mach");
-//     const class = std.mem.zeroInit(w.WNDCLASSW, .{
-//         .style = w.CS_OWNDC,
-//         .lpfnWndProc = wndProc,
-//         .hInstance = hInstance,
-//         .hIcon = w.LoadIconW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDI_APPLICATION)))),
-//         .hCursor = w.LoadCursorW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDC_ARROW)))),
-//         .lpszClassName = class_name,
-//     });
-//     if (w.RegisterClassW(&class) == 0) return error.Unexpected;
-
-//     const title = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, options.title);
-//     defer self.allocator.free(title);
-
-//     var request_window_width: i32 = @bitCast(self.size.width);
-//     var request_window_height: i32 = @bitCast(self.size.height);
-
-//     const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
-//     const window_style: w.WINDOW_STYLE = if (options.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
-//     // TODO (win32): should border == false mean borderless display_mode?
-
-//     var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
-
-//     if (w.TRUE == w.AdjustWindowRectEx(&rect, window_style, w.FALSE, window_ex_style)) {
-//         request_window_width = rect.right - rect.left;
-//         request_window_height = rect.bottom - rect.top;
-//     }
-
-//     const window = w.CreateWindowExW(
-//         window_ex_style,
-//         class_name,
-//         title,
-//         window_style,
-//         w.CW_USEDEFAULT,
-//         w.CW_USEDEFAULT,
-//         request_window_width,
-//         request_window_height,
-//         null,
-//         null,
-//         hInstance,
-//         null,
-//     ) orelse return error.Unexpected;
-
-//     native.window = window;
-
-//     var dinput: ?*w.IDirectInput8W = undefined;
-//     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
-//     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
-//         return error.Unexpected;
-//     }
-//     native.dinput = dinput.?;
-
-//     native.surface_descriptor_from_hwnd = .{
-//         .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
-//         .hwnd = window,
-//     };
-
-//     core_window.surface_descriptor = .{ .next_in_chain = .{
-//         .from_windows_hwnd = &self.surface_descriptor_from_hwnd,
-//     } };
-//     self.border = options.border;
-//     self.headless = options.headless;
-//     self.refresh_rate = 60; // TODO (win32)  get monitor refresh rate
-//     self.vsync_mode = .triple;
-
-//     _ = w.SetWindowLongPtrW(window, w.GWLP_USERDATA, @bitCast(@intFromPtr(self)));
-//     if (!options.headless) {
-//         setDisplayMode(self, options.display_mode);
-//     }
-
-//     self.size = getClientRect(self);
-//     _ = w.GetWindowRect(self.window, &self.saved_window_rect);
-// }
-
-// pub fn deinit(self: *Win32) void {
-//     _ = self.dinput.IUnknown_Release();
-// }
-
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
@@ -158,6 +40,12 @@ pub fn tick(core: *Core) !void {
 
         if (native_opt) |native| {
             _ = native; // autofix
+
+            var msg: w.MSG = undefined;
+            while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
+                _ = w.TranslateMessage(&msg);
+                _ = w.DispatchMessageW(&msg);
+            }
 
             // Handle resizing the window when the user changes width or height
             if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {}
@@ -252,126 +140,6 @@ fn initWindow(
     try core.initWindow(window_id);
     _ = w.ShowWindow(native_window, w.SW_SHOW);
 }
-
-// pub fn update(self: *Win32) !void {
-//     _ = self;
-//     var msg: w.MSG = undefined;
-//     while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
-//         _ = w.TranslateMessage(&msg);
-//         _ = w.DispatchMessageW(&msg);
-//     }
-// }
-
-// pub fn setTitle(self: *Win32, title: [:0]const u8) void {
-//     const wtitle = std.unicode.utf8ToUtf16LeAllocZ(self.allocator, title) catch {
-//         self.state.oom.set();
-//         return;
-//     };
-//     defer self.allocator.free(wtitle);
-//     _ = w.SetWindowTextW(self.window, wtitle);
-// }
-
-// pub fn setDisplayMode(self: *Win32, mode: DisplayMode) void {
-//     self.display_mode = mode;
-
-//     switch (mode) {
-//         .windowed => {
-//             const window_style: w.WINDOW_STYLE = if (self.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW;
-//             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
-
-//             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
-//             _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
-
-//             restoreWindowPosition(self);
-//         },
-//         .fullscreen => {
-//             // TODO (win32) - change to use exclusive fullscreen using ChangeDisplaySetting
-
-//             _ = w.GetWindowRect(self.window, &self.saved_window_rect);
-
-//             const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1 };
-//             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
-
-//             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
-//             _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
-
-//             const monitor = w.MonitorFromWindow(self.window, w.MONITOR_DEFAULTTONEAREST);
-//             var monitor_info: w.MONITORINFO = undefined;
-//             monitor_info.cbSize = @sizeOf(w.MONITORINFO);
-//             if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
-//                 _ = w.SetWindowPos(self.window, null, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top, w.SWP_NOZORDER);
-//             }
-//         },
-//         .borderless => {
-//             _ = w.GetWindowRect(self.window, &self.saved_window_rect);
-
-//             const window_style = w.WINDOW_STYLE{ .POPUP = 1, .VISIBLE = 1 };
-//             const window_ex_style = w.WINDOW_EX_STYLE{ .APPWINDOW = 1 };
-
-//             _ = w.SetWindowLongW(self.window, w.GWL_STYLE, @bitCast(window_style));
-//             _ = w.SetWindowLongW(self.window, w.GWL_EXSTYLE, @bitCast(window_ex_style));
-
-//             const monitor = w.MonitorFromWindow(self.window, w.MONITOR_DEFAULTTONEAREST);
-//             var monitor_info: w.MONITORINFO = undefined;
-//             monitor_info.cbSize = @sizeOf(w.MONITORINFO);
-//             if (w.GetMonitorInfoW(monitor, &monitor_info) == w.TRUE) {
-//                 _ = w.SetWindowPos(self.window, null, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top, w.SWP_NOZORDER);
-//             }
-//         },
-//     }
-// }
-
-// pub fn setBorder(self: *Win32, value: bool) void {
-//     const overlappedwindow: i32 = @bitCast(w.WS_OVERLAPPEDWINDOW);
-//     const popupwindow: i32 = @bitCast(w.WS_POPUPWINDOW);
-//     _ = w.SetWindowLongW(self.window, w.GWL_STYLE, if (value) overlappedwindow else popupwindow);
-//     self.border = value;
-// }
-
-// pub fn setHeadless(self: *Win32, value: bool) void {
-//     _ = w.ShowWindow(self.window, if (value) w.SW_HIDE else w.SW_SHOW);
-//     self.headless = value;
-// }
-
-// pub fn setVSync(self: *Win32, mode: VSyncMode) void {
-//     self.vsync_mode = mode;
-// }
-
-// pub fn setSize(self: *Win32, value: Size) void {
-//     // TODO (win32) - use AdjustClientRect to get correct client rect.
-//     _ = w.SetWindowPos(self.window, null, 0, 0, @as(i32, @intCast(value.width)), @as(i32, @intCast(value.height)), w.SET_WINDOW_POS_FLAGS{ .NOMOVE = 1, .NOZORDER = 1, .NOACTIVATE = 1 });
-//     self.size = value;
-// }
-
-// pub fn setCursorMode(self: *Win32, mode: CursorMode) void {
-//     switch (mode) {
-//         .normal => while (w.ShowCursor(w.TRUE) < 0) {},
-//         .hidden => while (w.ShowCursor(w.FALSE) >= 0) {},
-//         .disabled => {},
-//     }
-//     self.cursor_mode = mode;
-// }
-
-// pub fn setCursorShape(self: *Win32, shape: CursorShape) void {
-//     const name: i32 = switch (shape) {
-//         .arrow => w.IDC_ARROW,
-//         .ibeam => w.IDC_IBEAM,
-//         .crosshair => w.IDC_CROSS,
-//         .pointing_hand => w.IDC_HAND,
-//         .resize_ew => w.IDC_SIZEWE,
-//         .resize_ns => w.IDC_SIZENS,
-//         .resize_nwse => w.IDC_SIZENWSE,
-//         .resize_nesw => w.IDC_SIZENESW,
-//         .resize_all => w.IDC_SIZEALL,
-//         .not_allowed => w.IDC_NO,
-//     };
-//     _ = w.SetCursor(w.LoadCursorW(null, @ptrFromInt(@as(usize, @intCast(name)))));
-//     self.cursor_shape = shape;
-// }
-
-// pub fn nativeWindowWin32(self: *Win32) w.HWND {
-//     return self.window;
-// }
 
 // -----------------------------
 //  Internal functions

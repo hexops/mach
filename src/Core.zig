@@ -162,6 +162,7 @@ pub fn init(core: *Core) !void {
 pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     var core_window = core.windows.getValue(window_id);
     defer core.windows.setValueRaw(window_id, core_window);
+
     core_window.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
         std.process.exit(1);
