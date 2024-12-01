@@ -5,22 +5,11 @@ const sysaudio = mach.sysaudio;
 
 pub const Opus = @import("mach-opus");
 
+const Audio = @This();
+
 pub const mach_module = .mach_audio;
 
-// TODO(object)
-pub const components = .{
-    .samples = .{ .type = []const f32 },
-    .channels = .{ .type = u8 },
-    .volume = .{ .type = f32 },
-    .playing = .{ .type = bool },
-    .index = .{ .type = usize },
-};
-
-pub const systems = .{
-    .init = .{ .handler = init },
-    .deinit = .{ .handler = deinit },
-    .audio_tick = .{ .handler = audioTick },
-};
+pub const mach_systems = .{ .init, .tick, .deinit };
 
 const log = std.log.scoped(mach_module);
 
@@ -32,24 +21,50 @@ const log = std.log.scoped(mach_module);
 // stop playing smoothly assuming a 60hz application render rate.
 ms_render_ahead: f32 = 16,
 
+buffers: mach.Objects(
+    .{},
+    struct {
+        /// The actual audio samples
+        samples: []const f32,
+
+        /// The number of channels in the samples buffer
+        channels: u8,
+
+        /// Volume multiplier
+        volume: f32 = 1.0,
+
+        /// Whether the buffer should be playing currently
+        playing: bool = true,
+
+        /// The currently playhead of the samples
+        index: usize = 0,
+    },
+),
+
+/// Whether to debug audio sync issues
+debug: bool = false,
+
+/// Callback which is ran when buffers change state from playing -> not playing
+on_state_change: ?mach.FunctionID = null,
+
+/// Audio player (has global volume controls)
+player: sysaudio.Player,
+
+// Internal fields
 allocator: std.mem.Allocator,
 ctx: sysaudio.Context,
-player: sysaudio.Player,
-on_state_change: ?mach.AnySystem = null,
-output_mu: std.Thread.Mutex = .{},
 output: SampleBuffer,
 mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
-render_num_samples: usize = 0,
-debug: bool = false,
-running_mu: std.Thread.Mutex = .{},
-running: bool = true,
-
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+shutdown: std.atomic.Value(bool) = .init(false),
+mod: mach.Mod(Audio),
+driver_needs_num_samples: usize = 0,
 
 const SampleBuffer = std.fifo.LinearFifo(u8, .Dynamic);
 
-fn init(audio: *Mod) !void {
-    const allocator = gpa.allocator();
+pub fn init(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
+    // TODO(allocator): find a better way for modules to get allocators
+    const allocator = std.heap.c_allocator;
+
     const ctx = try sysaudio.Context.init(null, allocator, .{});
     try ctx.refresh();
 
@@ -71,128 +86,108 @@ fn init(audio: *Mod) !void {
         break :blk std.ascii.eqlIgnoreCase(s, "true");
     } else false;
 
-    audio.init(.{
+    audio.* = .{
+        .buffers = audio.buffers,
         .allocator = allocator,
         .ctx = ctx,
         .player = player,
         .output = SampleBuffer.init(allocator),
         .debug = debug,
-    });
+        .mod = audio_mod,
+    };
 
     try player.start();
 }
 
-fn deinit(audio: *Mod) void {
-    audio.state().running_mu.lock();
-    defer audio.state().running_mu.unlock();
-    audio.state().running = false;
-
-    // TODO: make sure this doesn't hang forever
-    // audio.state().player.deinit();
-    audio.state().ctx.deinit();
-    if (audio.state().mixing_buffer) |*b| b.deinit(audio.state().allocator);
+pub fn deinit(audio: *Audio) void {
+    audio.shutdown.store(true, .release);
+    audio.player.deinit();
+    audio.ctx.deinit();
+    if (audio.mixing_buffer) |*b| b.deinit(audio.allocator);
 }
 
-/// .audio_tick is sent whenever the audio driver requests more audio samples to output to the
-/// speakers. Usually the driver is requesting a small amount of samples, e.g. ~4096 samples.
+/// Audio.tick is called on the high-priority OS audio thread when the audio driver is waiting for
+/// more audio samples because the audio.output buffer does not currently have enough to satisfy the
+/// driver.
 ///
-/// The audio driver asks for more samples on a different, often high-priority OS thread. It does
-/// not block waiting for .audio_tick to be dispatched, instead it simply returns whatever samples
-/// are already prepared in the audio.state().output buffer ahead of time. This ensures that even
-/// if the system is under heavy load, or a few frames are particularly slow, that audio
-/// (hopefully) continues playing uninterrupted.
-///
-/// The goal of this event handler, then, is to prepare enough audio samples ahead of time in the
-/// audio.state().output buffer that feed the driver so it does not get hungry and play silence
-/// instead. At the same time, we don't want to play too far ahead as that would cause latency
-/// between e.g. user interactions and audio actually playing - so in practice the amount we play
-/// ahead is rather small and imperceivable to most humans.
-fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
-    audio.state().running_mu.lock();
-    const running = audio.state().running;
-    const driver_expects = audio.state().render_num_samples; // How many samples the driver last expected us to produce.
-    audio.state().running_mu.unlock();
-    if (!running) return; // Scheduled by the other thread e.g. right before .deinit, ignore it.
+/// Its goal is to fill the audio.output buffer with enough samples to satisfy the immediate
+/// requirements of the audio driver (audio.driver_needs_num_samples), and prepare some amount of
+/// additional samples ahead of time to satisfy the driver in the future.
+pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
+    // If the other thread called deinit(), return.
+    if (audio.shutdown.load(.acquire)) {
+        return;
+    }
 
-    const allocator = audio.state().allocator;
-    const player = &audio.state().player;
+    const allocator = audio.allocator;
+    const player = &audio.player;
     const player_channels: u8 = @intCast(player.channels().len);
+    const driver_needs = audio.driver_needs_num_samples;
 
     // How many audio samples we will render ahead by
     const samples_per_ms = @as(f32, @floatFromInt(player.sampleRate())) / 1000.0;
-    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.state().ms_render_ahead * samples_per_ms))) * player_channels;
+    const render_ahead: u32 = @as(u32, @intFromFloat(@trunc(audio.ms_render_ahead * samples_per_ms))) * player_channels;
 
-    // Our goal is to ensure that we always have pre-rendered the number of samples the driver last
-    // expected, expects, plus the play ahead amount.
-    const goal_pre_rendered = driver_expects + render_ahead;
+    // Our goal is to satisfy the driver's immediate needs, plus prepare render_head number of samples.
+    const goal_pre_rendered = driver_needs + render_ahead;
 
-    audio.state().output_mu.lock();
-    const already_prepared = audio.state().output.readableLength() / player.format().size();
+    const already_prepared = audio.output.readableLength() / player.format().size();
     const render_num_samples = if (already_prepared > goal_pre_rendered) 0 else goal_pre_rendered - already_prepared;
-    audio.state().output_mu.unlock();
-
-    if (render_num_samples < 0) return; // we do not need to render more audio right now
+    if (render_num_samples < 0) @panic("invariant: Audio.tick ran when more audio samples are not needed");
 
     // Ensure our f32 mixing buffer has enough space for the samples we will render right now.
     // This will allocate to grow but never shrink.
-    var mixing_buffer = if (audio.state().mixing_buffer) |*b| b else blk: {
+    var mixing_buffer = if (audio.mixing_buffer) |*b| b else blk: {
         const b = try std.ArrayListUnmanaged(f32).initCapacity(allocator, render_num_samples);
-        audio.state().mixing_buffer = b;
-        break :blk &audio.state().mixing_buffer.?;
+        audio.mixing_buffer = b;
+        break :blk &audio.mixing_buffer.?;
     };
     try mixing_buffer.resize(allocator, render_num_samples); // grows, but never shrinks
 
     // Zero the mixing buffer to silence: if no audio is mixed in below, then we want silence
-    // not undefined memory.
+    // not undefined memory noise.
     @memset(mixing_buffer.items, 0);
 
     var did_state_change = false;
-    var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
-        .samples_slices = Mod.read(.samples),
-        .channels = Mod.read(.channels),
-        .playings = Mod.write(.playing),
-        .indexes = Mod.write(.index),
-    });
-    while (q.next()) |v| {
-        for (v.ids, v.samples_slices, v.channels, v.playings, v.indexes) |id, samples, channels, *playing, *index| {
-            if (!playing.*) continue;
+    {
+        audio.buffers.lock();
+        defer audio.buffers.unlock();
 
-            const volume = audio.get(id, .volume) orelse 1.0;
-            const channels_diff = player_channels - channels + 1;
-            const to_read = (@min(samples.len - index.*, mixing_buffer.items.len) / channels_diff) + @rem(@min(samples.len - index.*, mixing_buffer.items.len), channels_diff);
-            if (channels == 1 and player_channels > 1) {
+        var buffers = audio.buffers.slice();
+        while (buffers.next()) |buf_id| {
+            var buffer = buffers.get(buf_id);
+            if (!buffer.playing) continue;
+
+            const channels_diff = player_channels - buffer.channels + 1;
+            const to_read = (@min(buffer.samples.len - buffer.index, mixing_buffer.items.len) / channels_diff) + @rem(@min(buffer.samples.len - buffer.index, mixing_buffer.items.len), channels_diff);
+            if (buffer.channels == 1 and player_channels > 1) {
                 // Duplicate samples for mono sounds
                 var i: usize = 0;
-                for (samples[index.*..][0..to_read]) |sample| {
-                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample * volume);
+                for (buffer.samples[buffer.index..][0..to_read]) |sample| {
+                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample * buffer.volume);
                     i += player_channels;
                 }
             } else {
-                mixSamples(mixing_buffer.items[0..to_read], samples[index.*..][0..to_read], volume);
+                mixSamples(mixing_buffer.items[0..to_read], buffer.samples[buffer.index..][0..to_read], buffer.volume);
             }
 
-            if (index.* + to_read >= samples.len) {
+            if (buffer.index + to_read >= buffer.samples.len) {
                 // No longer playing, we've read all samples
                 did_state_change = true;
-                playing.* = false;
-                index.* = 0;
-                continue;
-            }
-            index.* = index.* + to_read;
+                buffer.playing = false;
+                buffer.index = 0;
+            } else buffer.index = buffer.index + to_read;
+
+            // Save changes to the buffer object
+            buffers.set(buf_id, buffer);
         }
     }
-    if (audio.state().on_state_change) |on_state_change_event| {
-        if (did_state_change) audio.scheduleAny(on_state_change_event);
-    }
+    if (did_state_change) if (audio.on_state_change) |f| audio_mod.run(f);
 
     // Write our rendered samples to the fifo, expanding its size as needed and converting our f32
     // samples to the format the driver expects.
-    // TODO(audio): handle potential OOM here
-    audio.state().output_mu.lock();
-    defer audio.state().output_mu.unlock();
     const out_buffer_len = render_num_samples * player.format().size();
-    const out_buffer = try audio.state().output.writableWithSize(out_buffer_len);
+    const out_buffer = try audio.output.writableWithSize(out_buffer_len); // TODO(audio): handle potential OOM here better
     std.debug.assert(mixing_buffer.items.len == render_num_samples);
     sysaudio.convertTo(
         f32,
@@ -200,71 +195,66 @@ fn audioTick(entities: *mach.Entities.Mod, audio: *Mod) !void {
         player.format(),
         out_buffer[0..out_buffer_len], // writableWithSize may return a larger slice than needed
     );
-    audio.state().output.update(out_buffer_len);
+    audio.output.update(out_buffer_len);
 }
 
-// Callback invoked on the audio thread
+/// Called by the system audio driver when the output buffer needs to be filled. Called on a
+/// dedicated OS thread for high-priority audio. Its goal is to fill the output buffer as quickly
+/// as possible and return, else audio skips will occur.
 fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
-    const audio: *Mod = @ptrCast(@alignCast(audio_opaque));
+    const audio: *Audio = @ptrCast(@alignCast(audio_opaque));
+    const format_size = audio.player.format().size();
 
-    // Make sure any audio.state() we access is covered by a mutex so it is not accessed during
-    // .deinit in the main thread.
-    audio.state().running_mu.lock();
-
-    const running = audio.state().running;
-    if (!running) {
-        audio.state().running_mu.unlock();
+    // If the other thread called deinit(), write zeros to the buffer (no sound) and return.
+    if (audio.shutdown.load(.acquire)) {
         @memset(output, 0);
         return;
     }
-    const format_size = audio.state().player.format().size();
-    const render_num_samples = @divExact(output.len, format_size);
-    audio.state().render_num_samples = render_num_samples;
 
-    audio.state().running_mu.unlock();
-
-    // Notify that we are writing audio frames now
+    // Do we have enough audio samples in our audio.output buffer to fill the output buffer?
     //
-    // Note that we do not *wait* at all for .audio_tick to complete, this is an asynchronous
-    // dispatch of the event. The expectation is that audio.state().output already has enough
-    // samples in it that we can return right now. The event is just a signal dispatched on another
-    // thread to enable reacting to audio events in realtime.
-    audio.schedule(.audio_tick);
+    // This is the most common case, because audio.output should have much more data prepared
+    // ahead of time than what the audio driver needs.
+    var read_slice = audio.output.readableSlice(0);
+    if (read_slice.len >= output.len) {
+        if (read_slice.len > output.len) read_slice = read_slice[0..output.len];
+        @memcpy(output[0..read_slice.len], read_slice);
+        audio.output.discard(read_slice.len);
+        return;
+    }
 
-    // Read the prepared audio samples and directly @memcpy them to the output buffer.
-    audio.state().output_mu.lock();
-    defer audio.state().output_mu.unlock();
-    var read_slice = audio.state().output.readableSlice(0);
-    if (read_slice.len < output.len) {
-        // We do not have enough audio data prepared. Busy-wait until we do, otherwise the audio
-        // thread may become de-sync'd with the loop responsible for producing it.
-        audio.schedule(.audio_tick);
-        if (audio.state().debug) log.debug("resync, found {} samples but need {} (nano timestamp {})", .{ read_slice.len / format_size, output.len / format_size, std.time.nanoTimestamp() });
+    // At this point, we don't have enough audio data prepared in our audio.output buffer. so we
+    // must prepare it now.
+    while (true) {
+        // Run the audio tick function, which should fill the audio.output buffer with more audio
+        // samples.
+        audio.driver_needs_num_samples = @divExact(output.len, format_size);
+        audio.mod.call(.tick);
 
-        audio.state().output_mu.unlock();
-        l: while (true) {
-            audio.state().output_mu.lock();
-            if (audio.state().output.readableLength() >= output.len) {
-                read_slice = audio.state().output.readableSlice(0);
-                break :l;
-            }
-            audio.state().output_mu.unlock();
+        // Check if we now have enough data in our audio.output buffer. If we do, then we're done.
+        read_slice = audio.output.readableSlice(0);
+        if (read_slice.len >= output.len) {
+            if (read_slice.len > output.len) read_slice = read_slice[0..output.len];
+            @memcpy(output[0..read_slice.len], read_slice);
+            audio.output.discard(read_slice.len);
+            return;
+        }
 
-            // Handle potential exit
-            audio.state().running_mu.lock();
-            if (!audio.state().running) {
-                audio.state().running_mu.unlock();
-                @memset(output, 0);
-                return;
-            }
-            audio.state().running_mu.unlock();
+        // The audio tick didn't produce enough data, this might indicate some subtle mismatch in
+        // the audio tick function not producing a multiple of the audio driver's actual buffer
+        // size.
+        if (audio.debug) log.debug("resync, found {} samples but need {} (nano timestamp {})", .{
+            @divExact(read_slice.len, format_size),
+            @divExact(output.len, format_size),
+            std.time.nanoTimestamp(),
+        });
+
+        // If the other thread called deinit(), write zeros to the buffer (no sound) and return.
+        if (audio.shutdown.load(.acquire)) {
+            @memset(output, 0);
+            return;
         }
     }
-    if (read_slice.len > output.len) {
-        read_slice = read_slice[0..output.len];
-    }
-    @memcpy(output[0..read_slice.len], read_slice);
-    audio.state().output.discard(read_slice.len);
 }
 
 // TODO(audio): remove this switch, currently ReleaseFast/ReleaseSmall have some weird behavior if
