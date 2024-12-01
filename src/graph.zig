@@ -345,7 +345,7 @@ pub const Graph = struct {
         } });
     }
 
-    const Results = struct {
+    pub const Results = struct {
         // The actual result items. Read-only.
         items: []const u64,
 
