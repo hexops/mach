@@ -162,7 +162,6 @@ pub fn init(core: *Core) !void {
 pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     var core_window = core.windows.getValue(window_id);
     defer core.windows.setValueRaw(window_id, core_window);
-
     core_window.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
         std.process.exit(1);
@@ -247,7 +246,6 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     if (core.on_exit == null) @panic("core.on_exit callback must be set");
 
     try Platform.tick(core);
-
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
 
@@ -526,6 +524,7 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         var core_window = core.windows.getValue(window_id);
+        defer core.windows.setValueRaw(window_id, core_window);
 
         mach.sysgpu.Impl.deviceTick(core_window.device);
 
@@ -555,16 +554,6 @@ pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
             core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         }
     }
-
-    // TODO(important): update this information in response to resize events rather than
-    // after frame submission
-    // var win = core.windows.getAll(core.main_window).?;
-    // win.framebuffer_format = core.descriptor.format;
-    // win.framebuffer_width = core.descriptor.width;
-    // win.framebuffer_height = core.descriptor.height;
-    // win.width = core.platform.size.width;
-    // win.height = core.platform.size.height;
-    // core.windows.setAll(core.main_window, win);
 
     // Record to frame rate frequency monitor that a frame was finished.
     core.frame.tick();

@@ -26,47 +26,44 @@ pub fn init(
     core.on_exit = app_mod.id.deinit;
 
     const main_window = core.windows.getValue(core.main_window);
-    if (main_window.native != null) {
-        // if window.native is not null, the window is initialized
 
-        // Create our shader module
-        const shader_module = main_window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
-        defer shader_module.release();
+    // Create our shader module
+    const shader_module = main_window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    defer shader_module.release();
 
-        // Blend state describes how rendered colors get blended
-        const blend = gpu.BlendState{};
+    // Blend state describes how rendered colors get blended
+    const blend = gpu.BlendState{};
 
-        // Color target describes e.g. the pixel format of the window we are rendering to.
-        const color_target = gpu.ColorTargetState{
-            .format = core.windows.get(core.main_window, .framebuffer_format),
-            .blend = &blend,
-        };
+    // Color target describes e.g. the pixel format of the window we are rendering to.
+    const color_target = gpu.ColorTargetState{
+        .format = main_window.framebuffer_format,
+        .blend = &blend,
+    };
 
-        // Fragment state describes which shader and entrypoint to use for rendering fragments.
-        const fragment = gpu.FragmentState.init(.{
+    // Fragment state describes which shader and entrypoint to use for rendering fragments.
+    const fragment = gpu.FragmentState.init(.{
+        .module = shader_module,
+        .entry_point = "frag_main",
+        .targets = &.{color_target},
+    });
+
+    // Create our render pipeline that will ultimately get pixels onto the screen.
+    const label = @tagName(mach_module) ++ ".init";
+    const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
+        .label = label,
+        .fragment = &fragment,
+        .vertex = gpu.VertexState{
             .module = shader_module,
-            .entry_point = "frag_main",
-            .targets = &.{color_target},
-        });
+            .entry_point = "vertex_main",
+        },
+    };
+    const pipeline = main_window.device.createRenderPipeline(&pipeline_descriptor);
 
-        // Create our render pipeline that will ultimately get pixels onto the screen.
-        const label = @tagName(mach_module) ++ ".init";
-        const pipeline_descriptor = gpu.RenderPipeline.Descriptor{
-            .label = label,
-            .fragment = &fragment,
-            .vertex = gpu.VertexState{
-                .module = shader_module,
-                .entry_point = "vertex_main",
-            },
-        };
-        const pipeline = main_window.device.createRenderPipeline(&pipeline_descriptor);
-
-        // Store our render pipeline in our module's state, so we can access it later on.
-        app.* = .{
-            .title_timer = try mach.time.Timer.start(),
-            .pipeline = pipeline,
-        };
-    }
+    // Store our render pipeline in our module's state, so we can access it later on.
+    app.* = .{
+        .title_timer = try mach.time.Timer.start(),
+        .pipeline = pipeline,
+    };
 }
 
 // TODO(object): window-title
@@ -101,9 +98,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
         }
     }
 
-    var main_window = core.windows.getValue(core.main_window);
-
-    // Window is ready when device is not null
+    const main_window = core.windows.getValue(core.main_window);
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
