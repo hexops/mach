@@ -25,9 +25,15 @@ const BackendEnum = enum {
     x11,
     wayland,
 };
+
 const Backend = union(BackendEnum) {
     x11: X11,
     wayland: Wayland,
+};
+
+pub const Native = union(BackendEnum) {
+    x11: X11.Native,
+    wayland: Wayland.Native,
 };
 
 pub const Linux = @This();
@@ -51,6 +57,10 @@ backend: Backend,
 // please keep these up to date until we can remove them
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/cursor" };
+
+pub fn tick(core: *Core) !void {
+    _ = core;
+}
 
 pub fn init(
     linux: *Linux,

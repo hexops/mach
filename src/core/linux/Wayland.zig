@@ -70,6 +70,8 @@ libxkbcommon: LibXkbCommon,
 modifiers: Core.KeyMods,
 modifier_indices: KeyModInd,
 
+pub const Native = struct {};
+
 pub fn init(
     linux: *Linux,
     core: *Core,
