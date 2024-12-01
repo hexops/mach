@@ -75,14 +75,10 @@ pub fn tick(app: *App, core: *mach.Core) void {
             .key_press => |ev| {
                 switch (ev.key) {
                     .right => {
-                        var w = core.windows.getValue(core.main_window);
-                        w.width = w.width + 10;
-                        core.windows.setValue(core.main_window, w);
+                        core.windows.set(core.main_window, .width, core.windows.get(core.main_window, .width) + 10);
                     },
                     .left => {
-                        var w = core.windows.getValue(core.main_window);
-                        w.width = w.width - 10;
-                        core.windows.setValue(core.main_window, w);
+                        core.windows.set(core.main_window, .width, core.windows.get(core.main_window, .width) - 10);
                     },
                     .up => {
                         core.windows.set(core.main_window, .height, core.windows.get(core.main_window, .height) + 10);
