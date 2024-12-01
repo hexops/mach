@@ -166,8 +166,12 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             // all objects have been thrown on the floor. If they have, we find them and grow the
             // recycling bin to fit them.
             if (objs.internal.thrown_on_the_floor >= (data.len / 10)) {
-                var iter = dead.iterator(.{});
-                while (iter.next()) |index| try recycling_bin.append(allocator, @intCast(index));
+                var iter = dead.iterator(.{ .kind = .set });
+                while (iter.next()) |index| {
+                    // dead bitset contains data.capacity number of entries, we only care about ones that are in data.len range.
+                    if (index > data.len - 1) break;
+                    try recycling_bin.append(allocator, @intCast(index));
+                }
                 objs.internal.thrown_on_the_floor = 0;
             }
 
@@ -176,6 +180,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
                 dead.unset(index);
                 const gen = generation.items[index] + 1;
                 generation.items[index] = gen;
+                data.set(index, value);
                 return @bitCast(PackedID{
                     .type_id = objs.internal.type_id,
                     .generation = gen,
@@ -185,7 +190,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
             // Ensure we have space for the new object
             try data.ensureUnusedCapacity(allocator, 1);
-            try dead.resize(allocator, data.capacity, true);
+            try dead.resize(allocator, data.capacity, false);
             try generation.ensureUnusedCapacity(allocator, 1);
 
             // If we are tracking fields, we need to resize the bitset to hold another object's fields
