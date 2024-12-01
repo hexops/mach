@@ -391,6 +391,18 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         pub fn removeChild(objs: *@This(), id: ObjectID, child: ObjectID) !void {
             return objs.internal.graph.removeChild(objs.internal.allocator, id, child);
         }
+
+        /// Queries the children of the given object ID (which may be any object, including one not
+        /// in this list of objects - and finds the first child which would be from this list of
+        /// objects.
+        pub fn getFirstChildOfType(objs: *@This(), id: ObjectID) !?ObjectID {
+            var children = try objs.getChildren(id);
+            defer children.deinit();
+            for (children.items) |child_id| {
+                if (objs.is(child_id)) return child_id;
+            }
+            return null;
+        }
     };
 }
 
