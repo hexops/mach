@@ -28,7 +28,6 @@ pub const deinit = mach.schedule(.{
     .{ mach.Audio, .deinit },
 });
 
-
 /// Tag object we set as a child of mach.Audio objects to indicate they are background music.
 // TODO(object): consider adding a better object 'tagging' system?
 bgm: mach.Objects(.{}, struct {}),
@@ -126,6 +125,11 @@ pub fn tick(
                     _ = try audio.buffers.new(.{
                         .samples = app.sfx.samples,
                         .channels = app.sfx.channels,
+
+                        // Start 0.15s into the sfx, which removes the silence at the start of the
+                        // audio clip and makes it more apparent the low latency between pressing a
+                        // key and sfx actually playing.
+                        .index = @intFromFloat(@as(f32, @floatFromInt(audio.player.sampleRate() * app.sfx.channels)) * 0.15),
                     });
                 },
             },
