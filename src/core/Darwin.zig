@@ -73,8 +73,8 @@ pub fn tick(core: *Core) !void {
                 // Handle resizing the window when the user changes width or height
                 if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
                     var frame = native_window.frame();
-                    frame.size.height = @floatFromInt(core.windows.get(window_id, .width));
-                    frame.size.width = @floatFromInt(core.windows.get(window_id, .height));
+                    frame.size.width = @floatFromInt(core.windows.get(window_id, .width));
+                    frame.size.height = @floatFromInt(core.windows.get(window_id, .height));
                     native_window.setFrame_display_animate(frame, true, true);
                 }
             }
