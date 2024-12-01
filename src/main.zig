@@ -13,8 +13,7 @@ pub const Core = if (build_options.want_core) @import("Core.zig") else struct {}
 pub const gamemode = if (builtin.os.tag != .linux or builtin.link_libc) @import("gamemode.zig");
 // TODO(object)
 // pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
-// TODO(object)
-// pub const Audio = if (build_options.want_sysaudio) @import("Audio.zig") else struct {};
+pub const Audio = if (build_options.want_sysaudio) @import("Audio.zig") else struct {};
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
 pub const time = @import("time/main.zig");
@@ -46,8 +45,7 @@ test {
     _ = sysgpu;
     // TODO(object)
     // _ = gfx;
-    // TODO(object)
-    // _ = Audio;
+    _ = Audio;
     _ = math;
     _ = testing;
     _ = time;

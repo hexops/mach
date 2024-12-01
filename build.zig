@@ -77,7 +77,7 @@ pub fn build(b: *std.Build) !void {
         // .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
         // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
         // .{ .name = "piano", .deps = &.{} },
-        // .{ .name = "play-opus", .deps = &.{.assets} },
+        .{ .name = "play-opus", .deps = &.{.assets} },
         // .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
         // .{ .name = "text", .deps = &.{.assets} },
     };
