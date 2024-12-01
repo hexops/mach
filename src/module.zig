@@ -88,28 +88,28 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             objs: *Objects(options, T),
 
             /// Same as Objects(T).set but doesn't employ safety checks
-            pub fn set(objs: *@This(), id: ObjectID, value: T) void {
-                const data = &objs.internal.data;
+            pub fn set(s: *@This(), id: ObjectID, value: T) void {
+                const data = &s.objs.internal.data;
                 const unpacked: PackedID = @bitCast(id);
                 data.set(unpacked.index, value);
             }
 
             /// Same as Objects(T).get but doesn't employ safety checks
-            pub fn get(objs: *@This(), id: ObjectID) ?T {
-                const data = &objs.internal.data;
+            pub fn get(s: *@This(), id: ObjectID) T {
+                const data = &s.objs.internal.data;
                 const unpacked: PackedID = @bitCast(id);
                 return data.get(unpacked.index);
             }
 
             /// Same as Objects(T).delete but doesn't employ safety checks
-            pub fn delete(objs: *@This(), id: ObjectID) void {
-                const dead = &objs.internal.dead;
-                const recycling_bin = &objs.internal.recycling_bin;
+            pub fn delete(s: *@This(), id: ObjectID) void {
+                const dead = &s.objs.internal.dead;
+                const recycling_bin = &s.objs.internal.recycling_bin;
 
                 const unpacked: PackedID = @bitCast(id);
                 if (recycling_bin.items.len < recycling_bin.capacity) {
                     recycling_bin.appendAssumeCapacity(unpacked.index);
-                } else objs.internal.thrown_on_the_floor += 1;
+                } else s.objs.internal.thrown_on_the_floor += 1;
 
                 dead.set(unpacked.index);
             }
