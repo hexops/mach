@@ -1,5 +1,5 @@
 const std = @import("std");
-const mach = @import("../main.zig");
+const mach = @import("main.zig");
 const StringTable = @import("StringTable.zig");
 const Graph = @import("graph.zig").Graph;
 
@@ -114,22 +114,22 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
                 dead.set(unpacked.index);
             }
 
-            pub fn next(iter: *Slice) ?ObjectID {
-                const dead = &iter.objs.internal.dead;
-                const generation = &iter.objs.internal.generation;
+            pub fn next(s: *Slice) ?ObjectID {
+                const dead = &s.objs.internal.dead;
+                const generation = &s.objs.internal.generation;
                 const num_objects = generation.items.len;
 
                 while (true) {
-                    if (iter.index == num_objects) {
-                        iter.index = 0;
+                    if (s.index == num_objects) {
+                        s.index = 0;
                         return null;
                     }
-                    defer iter.index += 1;
+                    defer s.index += 1;
 
-                    if (!dead.isSet(iter.index)) return @bitCast(PackedID{
-                        .type_id = iter.objs.internal.type_id,
-                        .generation = generation.items[iter.index],
-                        .index = iter.index,
+                    if (!dead.isSet(s.index)) return @bitCast(PackedID{
+                        .type_id = s.objs.internal.type_id,
+                        .generation = generation.items[s.index],
+                        .index = s.index,
                     });
                 }
             }
@@ -305,7 +305,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         }
 
         // TODO: this doesn't type check currently, but it should (verify id is from this pool of objects.)
-        fn validateAndUnpack(objs: *@This(), id: ObjectID, comptime fn_name: []const u8) PackedID {
+        fn validateAndUnpack(objs: *const @This(), id: ObjectID, comptime fn_name: []const u8) PackedID {
             const dead = &objs.internal.dead;
             const generation = &objs.internal.generation;
 
