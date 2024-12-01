@@ -152,15 +152,26 @@ pub const Context = struct {
 // }
 
 pub fn tick(core: *Core) !void {
-    _ = core; // autofix
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        const native_opt: ?Native = core.windows.get(window_id, .native);
 
+        if (native_opt) |native| {
+            _ = native; // autofix
+
+            // Handle resizing the window when the user changes width or height
+            if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {}
+        } else {
+            try initWindow(core, window_id);
+        }
+    }
 }
 
 fn initWindow(
     core: *Core,
     window_id: mach.ObjectID,
 ) !void {
-    const core_window = core.windows.getValue(window_id);
+    var core_window = core.windows.getValue(window_id);
 
     const hInstance = w.GetModuleHandleW(null);
     const class_name = w.L("mach");
@@ -227,11 +238,19 @@ fn initWindow(
 
     _ = w.SetWindowLongPtrW(native_window, w.GWLP_USERDATA, @bitCast(@intFromPtr(&context)));
 
+    _ = w.ShowWindow(native_window, w.SW_SHOW);
+
+    restoreWindowPosition(core, window_id);
+
     const size = getClientRect(core, window_id);
     core_window.width = size.width;
     core_window.height = size.height;
 
     _ = w.GetWindowRect(native.window, &native.saved_window_rect);
+
+    core_window.native = native;
+    core.windows.setValueRaw(window_id, core_window);
+    try core.initWindow(window_id);
 }
 
 // pub fn update(self: *Win32) !void {
@@ -406,12 +425,12 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
     const core = context.core;
     const window_id = context.window_id;
 
-    const window = core.windows.getValue(window_id);
+    var window = core.windows.getValue(window_id);
     defer core.windows.setValueRaw(window_id, window);
 
     switch (msg) {
         w.WM_CLOSE => {
-            core.pushEvent(.close);
+            core.pushEvent(.{ .close = .{ .window_id = window_id } });
             return 0;
         },
         w.WM_SIZE => {
@@ -437,7 +456,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             if (vkey == w.VK_PROCESSKEY) return 0;
 
             if (msg == w.WM_SYSKEYDOWN and vkey == w.VK_F4) {
-                core.pushEvent(.close);
+                core.pushEvent(.{ .close = .{ .window_id = window_id } });
                 return 0;
             }
 
@@ -489,7 +508,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_CHAR => {
-            if (window.native) |native| {
+            if (window.native) |*native| {
                 const char: u16 = @truncate(wParam);
                 var chars: []const u16 = undefined;
                 if (native.surrogate != 0) {
@@ -596,6 +615,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         },
         else => return w.DefWindowProcW(wnd, msg, wParam, lParam),
     }
+    return w.DefWindowProcW(wnd, msg, wParam, lParam);
 }
 
 fn keyFromScancode(scancode: u9) Key {

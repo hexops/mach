@@ -161,6 +161,7 @@ pub fn init(core: *Core) !void {
 
 pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     var core_window = core.windows.getValue(window_id);
+    defer core.windows.setValueRaw(window_id, core_window);
 
     core_window.instance = gpu.createInstance(null) orelse {
         log.err("failed to create GPU instance", .{});
@@ -228,8 +229,6 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
     core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
     core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
-
-    core.windows.setValueRaw(window_id, core_window);
 }
 
 pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
@@ -266,6 +265,7 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     // The user wants mach.Core to take control of the main loop.
     if (supports_non_blocking) {
         while (core.state != .exited) {
+            try Platform.tick(core);
             core_mod.run(core.on_tick.?);
             core_mod.call(.presentFrame);
         }
