@@ -61,6 +61,8 @@ cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
 // Mutable state fields; read/write by any thread
 surface_descriptor: *gpu.Surface.DescriptorFromXlibWindow,
 
+pub const Native = struct {};
+
 pub fn init(
     linux: *Linux,
     core: *Core,
