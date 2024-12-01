@@ -130,11 +130,14 @@ fn initWindow(
         var view = objc.mach.View.allocInit();
         view.setLayer(@ptrCast(layer));
 
-        var context: Context = .{ .core = core, .window_id = window_id };
+        const context = try core.allocator.create(Context);
+        context.* = .{ .core = core, .window_id = window_id };
+        // TODO(core): free this allocation
+
         {
             var keyDown = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyDown,
-                &context,
+                context,
                 null,
                 null,
             );
@@ -142,7 +145,7 @@ fn initWindow(
 
             var keyUp = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyUp,
-                &context,
+                context,
                 null,
                 null,
             );
@@ -159,7 +162,7 @@ fn initWindow(
 
             var windowWillResize_toSize = objc.foundation.stackBlockLiteral(
                 WindowDelegateCallbacks.windowWillResize_toSize,
-                &context,
+                context,
                 null,
                 null,
             );
@@ -167,7 +170,7 @@ fn initWindow(
 
             var windowShouldClose = objc.foundation.stackBlockLiteral(
                 WindowDelegateCallbacks.windowShouldClose,
-                &context,
+                context,
                 null,
                 null,
             );
