@@ -234,9 +234,10 @@ fn initWindow(
         .from_windows_hwnd = &native.surface_descriptor_from_hwnd,
     } };
 
-    const context: Context = .{ .core = core, .window_id = window_id };
+    const context = try core.allocator.create(Context);
+    context.* = .{ .core = core, .window_id = window_id };
 
-    _ = w.SetWindowLongPtrW(native_window, w.GWLP_USERDATA, @bitCast(@intFromPtr(&context)));
+    _ = w.SetWindowLongPtrW(native_window, w.GWLP_USERDATA, @bitCast(@intFromPtr(context)));
 
     restoreWindowPosition(core, window_id);
 
