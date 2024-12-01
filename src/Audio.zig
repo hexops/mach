@@ -155,8 +155,9 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
 
         var buffers = audio.buffers.slice();
         while (buffers.next()) |buf_id| {
-            var buffer = buffers.get(buf_id);
+            var buffer = audio.buffers.getValue(buf_id);
             if (!buffer.playing) continue;
+            defer audio.buffers.setValue(buf_id, buffer);
 
             const channels_diff = player_channels - buffer.channels + 1;
             const to_read = (@min(buffer.samples.len - buffer.index, mixing_buffer.items.len) / channels_diff) + @rem(@min(buffer.samples.len - buffer.index, mixing_buffer.items.len), channels_diff);
@@ -177,9 +178,6 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
                 buffer.playing = false;
                 buffer.index = 0;
             } else buffer.index = buffer.index + to_read;
-
-            // Save changes to the buffer object
-            buffers.set(buf_id, buffer);
         }
     }
     if (did_state_change) if (audio.on_state_change) |f| audio_mod.run(f);
