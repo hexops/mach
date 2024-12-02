@@ -28,6 +28,7 @@ pub const deinit = mach.schedule(.{
     .{ mach.Audio, .deinit },
 });
 
+window: mach.ObjectID,
 /// Tag object we set as a child of mach.Audio objects to indicate they are background music.
 // TODO(object): consider adding a better object 'tagging' system?
 bgm: mach.Objects(.{}, struct {}),
@@ -46,6 +47,10 @@ pub fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
+    const window = try core.windows.new(.{
+        .title = "play-opus",
+    });
+
     // Configure the audio module to send our app's .audio_state_change event when an entity's sound
     // finishes playing.
     audio.on_state_change = app_mod.id.audioStateChange;
@@ -61,7 +66,7 @@ pub fn init(
     const sfx = try mach.Audio.Opus.decodeStream(allocator, sfx_sound_stream);
 
     // Initialize module state
-    app.* = .{ .sfx = sfx, .bgm = app.bgm };
+    app.* = .{ .sfx = sfx, .bgm = app.bgm, .window = window };
 
     const bgm_buffer = blk: {
         audio.buffers.lock();
@@ -138,16 +143,16 @@ pub fn tick(
         }
     }
 
-    var main_window = core.windows.getValue(core.main_window);
+    var window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = main_window.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
-    const encoder = main_window.device.createCommandEncoder(&.{ .label = label });
+    const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -172,5 +177,5 @@ pub fn tick(
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    main_window.queue.submit(&[_]*gpu.CommandBuffer{command});
+    window.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

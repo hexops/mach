@@ -106,9 +106,6 @@ on_tick: ?mach.FunctionID = null,
 /// Callback system invoked when application is exiting
 on_exit: ?mach.FunctionID = null,
 
-/// Main window of the application
-main_window: mach.ObjectID,
-
 /// Current state of the application
 state: enum {
     running,
@@ -132,8 +129,6 @@ pub fn init(core: *Core) !void {
     // TODO: fix all leaks and use options.allocator
     try mach.sysgpu.Impl.init(allocator, .{});
 
-    const main_window = try core.windows.new(.{});
-
     var events = EventQueue.init(allocator);
     try events.ensureTotalCapacity(8192);
 
@@ -142,18 +137,12 @@ pub fn init(core: *Core) !void {
         .windows = core.windows,
 
         .allocator = allocator,
-        .main_window = main_window,
         .events = events,
         .input_state = .{},
 
         .input = .{ .target = 0 },
         .frame = .{ .target = 1 },
     };
-
-    // Tick the platform so that the platform can grab the newly created window
-    // and perform initialization
-    // TODO: consider removing `main_window` and then this wont be necessary
-    try Platform.tick(core);
 
     try core.frame.start();
     try core.input.start();
@@ -229,6 +218,8 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
     core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
     core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
+
+    core.pushEvent(.{ .window_open = .{ .window_id = window_id } });
 }
 
 pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
@@ -686,6 +677,9 @@ pub const Event = union(enum) {
         yoffset: f32,
     },
     window_resize: ResizeEvent,
+    window_open: struct {
+        window_id: mach.ObjectID,
+    },
     focus_gained: struct {
         window_id: mach.ObjectID,
     },
