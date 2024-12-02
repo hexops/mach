@@ -21,7 +21,7 @@ const log = std.log.scoped(.mach);
 pub const Darwin = @This();
 
 pub const Native = struct {
-    window: ?*objc.app_kit.Window = null,
+    window: *objc.app_kit.Window = undefined,
 };
 
 pub const Context = struct {
@@ -57,7 +57,6 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     ns_app.setDelegate(@ptrCast(delegate));
 
     ns_app.run();
-    //_ = objc.app_kit.applicationMain(0, undefined);
 
     unreachable;
     // TODO: support UIKit.
@@ -66,17 +65,22 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
-        const native_opt: ?Native = core.windows.get(window_id, .native);
+        const core_window = windows.get(window_id);
 
-        if (native_opt) |native| {
-            if (native.window) |native_window| {
-                // Handle resizing the window when the user changes width or height
-                if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
-                    var frame = native_window.frame();
-                    frame.size.width = @floatFromInt(core.windows.get(window_id, .width));
-                    frame.size.height = @floatFromInt(core.windows.get(window_id, .height));
-                    native_window.setFrame_display_animate(frame, true, true);
-                }
+        if (core_window.native) |native| {
+            const native_window: *objc.app_kit.Window = native.window;
+
+            if (core.windows.updated(window_id, .title)) {
+                const string = objc.foundation.String.allocInit();
+                defer string.release();
+                native.window.setTitle(string.initWithUTF8String(core_window.title));
+            }
+
+            if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
+                var frame = native_window.frame();
+                frame.size.width = @floatFromInt(core.windows.get(window_id, .width));
+                frame.size.height = @floatFromInt(core.windows.get(window_id, .height));
+                native_window.setFrame_display_animate(native_window.frameRectForContentRect(frame), true, true);
             }
         } else {
             try initWindow(core, window_id);
@@ -156,10 +160,13 @@ fn initWindow(
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
+        const string = objc.foundation.String.allocInit();
+        defer string.release();
+        native_window.setTitle(string.initWithUTF8String(core_window.title));
+
         const delegate = objc.mach.WindowDelegate.allocInit();
         defer native_window.setDelegate(@ptrCast(delegate));
-        { // Set WindowDelegate blocks
-
+        {
             var windowWillResize_toSize = objc.foundation.stackBlockLiteral(
                 WindowDelegateCallbacks.windowWillResize_toSize,
                 context,
