@@ -40,7 +40,7 @@ windows: mach.Objects(
         /// Window title string
         // TODO: document how to set this using a format string
         // TODO: allocation/free strategy
-        title: []const u8 = "Mach Window",
+        title: [:0]const u8 = "Mach Window",
 
         /// Texture format of the framebuffer (read-only)
         framebuffer_format: gpu.Texture.Format = .bgra8_unorm,
@@ -65,17 +65,17 @@ windows: mach.Objects(
         /// Outer border
         border: bool = true,
 
-        /// Width of the window in virtual pixels (read-only)
+        /// Width of the window in virtual pixels
         width: u32 = 1920 / 2,
 
-        /// Height of the window in virtual pixels (read-only)
+        /// Height of the window in virtual pixels
         height: u32 = 1080 / 2,
 
         /// Target frames per second
         refresh_rate: u32 = 0,
 
         // GPU
-        // When device is not null, the rest of the fields have been
+        // When `native` is not null, the rest of the fields have been
         // initialized.
         device: *gpu.Device = undefined,
         instance: *gpu.Instance = undefined,
