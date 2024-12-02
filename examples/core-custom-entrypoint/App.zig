@@ -7,6 +7,7 @@ pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .deinit, .tick };
 
+window: mach.ObjectID,
 title_timer: mach.time.Timer,
 pipeline: *gpu.RenderPipeline,
 
@@ -28,10 +29,25 @@ pub fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
-    const main_window = core.windows.getValue(core.main_window);
+    const window = try core.windows.new(.{ .title = "core-custom-entrypoint" });
+
+    // Store our render pipeline in our module's state, so we can access it later on.
+    app.* = .{
+        .window = window,
+        .title_timer = try mach.time.Timer.start(),
+        .pipeline = undefined,
+    };
+
+    // TODO(object): window-title
+    // try updateWindowTitle(core);
+}
+
+fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
+    _ = window_id; // autofix
+    const window = core.windows.getValue(app.window);
 
     // Create our shader module
-    const shader_module = main_window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
+    const shader_module = window.device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Blend state describes how rendered colors get blended
@@ -39,7 +55,7 @@ pub fn init(
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
-        .format = main_window.framebuffer_format,
+        .format = window.framebuffer_format,
         .blend = &blend,
     };
 
@@ -60,36 +76,31 @@ pub fn init(
             .entry_point = "vertex_main",
         },
     };
-    const pipeline = main_window.device.createRenderPipeline(&pipeline_descriptor);
 
-    // Store our render pipeline in our module's state, so we can access it later on.
-    app.* = .{
-        .title_timer = try mach.time.Timer.start(),
-        .pipeline = pipeline,
-    };
-
-    // TODO(object): window-title
-    // try updateWindowTitle(core);
+    app.pipeline = window.device.createRenderPipeline(&pipeline_descriptor);
 }
 
 pub fn tick(core: *mach.Core, app: *App) !void {
     while (core.nextEvent()) |event| {
         switch (event) {
+            .window_open => |ev| {
+                try setupPipeline(core, app, ev.window_id);
+            },
             .close => core.exit(),
             else => {},
         }
     }
 
-    const main_window = core.windows.getValue(core.main_window);
+    const window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = main_window.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
-    const encoder = main_window.device.createCommandEncoder(&.{ .label = label });
+    const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -116,7 +127,7 @@ pub fn tick(core: *mach.Core, app: *App) !void {
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    main_window.queue.submit(&[_]*gpu.CommandBuffer{command});
+    window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
     // update the window title every second
     if (app.title_timer.read() >= 1.0) {
