@@ -101,7 +101,10 @@ fn initWindow(
     const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
+
     layer.setDisplaySyncEnabled(true);
+    layer.setOpaque(false);
+
     metal_descriptor.* = .{
         .layer = layer,
     };
@@ -159,6 +162,10 @@ fn initWindow(
         native_window.center();
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
+
+        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(0.5, 0.5, 0.5, 0.5);
+        native_window.setBackgroundColor(color);
+        native_window.setTitlebarAppearsTransparent(true);
 
         const string = objc.foundation.String.allocInit();
         defer string.release();
