@@ -59,32 +59,27 @@ const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display
 const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/cursor" };
 
 pub fn tick(core: *Core) !void {
-    _ = core;
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        const native_opt: ?Native = core.windows.get(window_id, .native);
+        if (native_opt) |native| {
+            switch (native) {
+                .x11 => {}, // X11.tick(window_id),
+                .wayland => try Wayland.tick(window_id),
+            }
+        } else {
+            try initWindow(core, window_id);
+        }
+    }
 }
 
-pub fn init(
-    linux: *Linux,
+pub fn initWindow(
     core: *Core,
-    options: InitOptions,
+    window_id: mach.ObjectID,
 ) !void {
-    linux.allocator = options.allocator;
-
-    if (!options.is_app and try wantGamemode(linux.allocator)) linux.gamemode = initLinuxGamemode();
-    linux.headless = options.headless;
-    linux.refresh_rate = 60; // TODO: set to something meaningful
-    linux.vsync_mode = .triple;
-    linux.size = options.size;
-    linux.title = try options.allocator.dupeZ(u8, options.title);
-    linux.border = options.border;
-    linux.cursor_mode = .normal;
-    linux.cursor_shape = .arrow;
-    if (!options.headless) {
-        linux.display_mode = options.display_mode;
-    }
-
     const desired_backend: BackendEnum = blk: {
         const backend = std.process.getEnvVarOwned(
-            linux.allocator,
+            core.allocator,
             "MACH_BACKEND",
         ) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => {
@@ -92,7 +87,7 @@ pub fn init(
             },
             else => return err,
         };
-        defer linux.allocator.free(backend);
+        defer core.allocator.free(backend);
 
         if (std.ascii.eqlIgnoreCase(backend, "x11")) break :blk .x11;
         if (std.ascii.eqlIgnoreCase(backend, "wayland")) break :blk .wayland;
@@ -102,18 +97,19 @@ pub fn init(
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
         .x11 => {
-            X11.init(linux, core, options) catch |err| {
-                const err_msg = switch (err) {
-                    error.LibraryNotFound => "Missing X11 library",
-                    error.FailedToConnectToDisplay => "Failed to connect to X11 display",
-                    else => "An unknown error occured while trying to connect to X11",
-                };
-                log.err("{s}\n\nFalling back to Wayland\n", .{err_msg});
-                try Wayland.init(linux, core, options);
-            };
+            return;
+            // X11.initWindow(core, window_id) catch |err| {
+            //     const err_msg = switch (err) {
+            //         error.LibraryNotFound => "Missing X11 library",
+            //         error.FailedToConnectToDisplay => "Failed to connect to X11 display",
+            //         else => "An unknown error occured while trying to connect to X11",
+            //     };
+            //     log.err("{s}\n\nFalling back to Wayland\n", .{err_msg});
+            //     try Wayland.initWindow(core, window_id);
+            // };
         },
         .wayland => {
-            Wayland.init(linux, core, options) catch |err| {
+            Wayland.initWindow(core, window_id) catch |err| {
                 const err_msg = switch (err) {
                     error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
                     error.LibraryNotFound => "Missing Wayland library",
@@ -121,35 +117,26 @@ pub fn init(
                     else => "An unknown error occured while trying to connect to Wayland",
                 };
                 log.err("{s}\n\nFalling back to X11\n", .{err_msg});
-                try X11.init(linux, core, options);
+                // try X11.initWindow(core, window_id);
             };
-        },
-    }
-
-    switch (linux.backend) {
-        .wayland => |be| {
-            linux.surface_descriptor = .{ .next_in_chain = .{ .from_wayland_surface = be.surface_descriptor } };
-        },
-        .x11 => |be| {
-            linux.surface_descriptor = .{ .next_in_chain = .{ .from_xlib_window = be.surface_descriptor } };
         },
     }
 
     // warn about incomplete features
     // TODO: remove this when linux is not missing major features
-    try warnAboutIncompleteFeatures(linux.backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, options.allocator);
+    try warnAboutIncompleteFeatures(desired_backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, core.allocator);
 }
 
-pub fn deinit(linux: *Linux) void {
-    if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-
-    linux.allocator.free(linux.title);
-
-    switch (linux.backend) {
-        .wayland => linux.backend.wayland.deinit(linux),
-        .x11 => linux.backend.x11.deinit(linux),
-    }
-}
+// pub fn deinit(linux: *Linux) void {
+//     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
+//
+//     linux.allocator.free(linux.title);
+//
+//     switch (linux.backend) {
+//         .wayland => linux.backend.wayland.deinit(linux),
+//         .x11 => linux.backend.x11.deinit(linux),
+//     }
+// }
 
 pub fn update(linux: *Linux) !void {
     switch (linux.backend) {
