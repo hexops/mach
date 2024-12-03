@@ -27,7 +27,7 @@ pub fn init(
     core.on_exit = app_mod.id.deinit;
 
     const window = try core.windows.new(.{
-        .title = "core-triangle",
+        .title = "core-transparent-window",
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -47,7 +47,17 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
     defer shader_module.release();
 
     // Blend state describes how rendered colors get blended
-    const blend = gpu.BlendState{};
+    var blend = gpu.BlendState{};
+    blend.alpha = .{
+        .dst_factor = .one_minus_src_alpha,
+        .src_factor = .one,
+        .operation = .add,
+    };
+    blend.color = .{
+        .dst_factor = .one_minus_src_alpha,
+        .src_factor = .src_alpha,
+        .operation = .add,
+    };
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
@@ -84,6 +94,23 @@ pub fn tick(app: *App, core: *mach.Core) void {
             .window_open => |ev| {
                 try setupPipeline(core, app, ev.window_id);
             },
+            .key_press => |ev| {
+                switch (ev.key) {
+                    .right => {
+                        core.windows.set(app.window, .width, core.windows.get(app.window, .width) + 10);
+                    },
+                    .left => {
+                        core.windows.set(app.window, .width, core.windows.get(app.window, .width) - 10);
+                    },
+                    .up => {
+                        core.windows.set(app.window, .height, core.windows.get(app.window, .height) + 10);
+                    },
+                    .down => {
+                        core.windows.set(app.window, .height, core.windows.get(app.window, .height) - 10);
+                    },
+                    else => {},
+                }
+            },
             .close => core.exit(),
             else => {},
         }
@@ -103,7 +130,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer encoder.release();
 
     // Begin render pass
-    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
+    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1.0, .a = 0.0 };
     const color_attachments = [_]gpu.RenderPassColorAttachment{.{
         .view = back_buffer_view,
         .clear_value = sky_blue_background,
