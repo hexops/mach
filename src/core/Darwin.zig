@@ -70,6 +70,34 @@ pub fn tick(core: *Core) !void {
         if (core_window.native) |native| {
             const native_window: *objc.app_kit.Window = native.window;
 
+            if (core.windows.updated(window_id, .color)) {
+                switch (core_window.color) {
+                    .transparent => |wc| {
+                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                            wc.color.r,
+                            wc.color.g,
+                            wc.color.b,
+                            wc.color.a,
+                        );
+                        native_window.setBackgroundColor(color);
+                        native_window.setTitlebarAppearsTransparent(true);
+                    },
+                    .solid => |wc| {
+                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                            wc.color.r,
+                            wc.color.g,
+                            wc.color.b,
+                            wc.color.a,
+                        );
+                        native_window.setBackgroundColor(color);
+                        native_window.setTitlebarAppearsTransparent(false);
+                    },
+                    .system => {
+                        native_window.setTitlebarAppearsTransparent(false);
+                    },
+                }
+            }
+
             if (core.windows.updated(window_id, .title)) {
                 const string = objc.foundation.String.allocInit();
                 defer string.release();
@@ -123,6 +151,7 @@ fn initWindow(
         (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
         (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
         (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
+    // (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskFullSizeContentView else 0);
 
     const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
         rect,
@@ -163,9 +192,28 @@ fn initWindow(
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
-        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(0.5, 0.5, 0.5, 0.5);
-        native_window.setBackgroundColor(color);
-        native_window.setTitlebarAppearsTransparent(true);
+        switch (core_window.color) {
+            .transparent => |wc| {
+                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                    wc.color.r,
+                    wc.color.g,
+                    wc.color.b,
+                    wc.color.a,
+                );
+                native_window.setBackgroundColor(color);
+                native_window.setTitlebarAppearsTransparent(true);
+            },
+            .solid => |wc| {
+                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                    wc.color.r,
+                    wc.color.g,
+                    wc.color.b,
+                    wc.color.a,
+                );
+                native_window.setBackgroundColor(color);
+            },
+            .system => {},
+        }
 
         const string = objc.foundation.String.allocInit();
         defer string.release();

@@ -16,6 +16,9 @@ pub const main = mach.schedule(.{
 
 window: mach.ObjectID,
 title_timer: mach.time.Timer,
+color_timer: mach.time.Timer,
+color_time: f32 = 0.0,
+flip: bool = false,
 pipeline: *gpu.RenderPipeline,
 
 pub fn init(
@@ -34,6 +37,7 @@ pub fn init(
     app.* = .{
         .window = window,
         .title_timer = try mach.time.Timer.start(),
+        .color_timer = try mach.time.Timer.start(),
         .pipeline = undefined,
     };
 }
@@ -48,16 +52,6 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
 
     // Blend state describes how rendered colors get blended
     var blend = gpu.BlendState{};
-    blend.alpha = .{
-        .dst_factor = .one_minus_src_alpha,
-        .src_factor = .one,
-        .operation = .add,
-    };
-    blend.color = .{
-        .dst_factor = .one_minus_src_alpha,
-        .src_factor = .src_alpha,
-        .operation = .add,
-    };
 
     // Color target describes e.g. the pixel format of the window we are rendering to.
     const color_target = gpu.ColorTargetState{
@@ -116,7 +110,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
         }
     }
 
-    const window = core.windows.getValue(app.window);
+    var window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
@@ -130,7 +124,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer encoder.release();
 
     // Begin render pass
-    const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1.0, .a = 0.0 };
+    const sky_blue_background = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
     const color_attachments = [_]gpu.RenderPassColorAttachment{.{
         .view = back_buffer_view,
         .clear_value = sky_blue_background,
@@ -155,28 +149,32 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer command.release();
     window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
-    // update the window title every second
-    // if (app.title_timer.read() >= 1.0) {
-    //     app.title_timer.reset();
-    //     // TODO(object): window-title
-    //     // try updateWindowTitle(core);
-    // }
+    if (app.title_timer.read() >= 1.0) {
+        app.title_timer.reset();
+        // TODO(object): window-title
+
+        // try updateWindowTitle(core);
+    }
+
+    if (app.color_time >= 4.0 or app.color_time <= 0.0) {
+        app.color_time = @trunc(app.color_time);
+        app.flip = !app.flip;
+    }
+
+    if (!app.flip) {
+        app.color_time -= app.color_timer.lap();
+    } else {
+        app.color_time += app.color_timer.lap();
+    }
+
+    const red = mach.math.lerp(0.1, 0.6, mach.math.clamp(app.color_time, 0.0, 1.0));
+    const blue = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 1.0, 0.0, 1.0));
+    const green = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 2.0, 0.0, 1.0));
+    const alpha = mach.math.lerp(0.3, 1.0, app.color_time / 4.0);
+
+    core.windows.set(app.window, .color, .{ .transparent = .{ .color = .{ .r = red, .g = green, .b = blue, .a = alpha }, .titlebar = true } });
 }
 
 pub fn deinit(app: *App) void {
     app.pipeline.release();
 }
-
-// TODO(object): window-title
-// fn updateWindowTitle(core: *mach.Core) !void {
-//     try core.printTitle(
-//         core.main_window,
-//         "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
-//         .{
-//             // TODO(Core)
-//             core.frameRate(),
-//             core.inputRate(),
-//         },
-//     );
-//     core.schedule(.update);
-// }
