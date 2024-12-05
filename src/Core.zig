@@ -74,6 +74,9 @@ windows: mach.Objects(
         /// Target frames per second
         refresh_rate: u32 = 0,
 
+        /// Color of the window background/titlebar
+        color: WindowColor = .system,
+
         // GPU
         // When `native` is not null, the rest of the fields have been
         // initialized.
@@ -657,6 +660,20 @@ pub const InputState = struct {
     }
 };
 
+pub const WindowColor = union(enum) {
+    system: void, // Default window colors
+    transparent: struct {
+        color: gpu.Color,
+        // If true, and the OS supports it, the titlebar will also be set to color
+        titlebar: bool = false,
+    },
+    solid: struct {
+        color: gpu.Color,
+        // If titlebar is true, and the OS supports it, the titlebar will also be set to color
+        titlebar: bool = false,
+    },
+};
+
 pub const Event = union(enum) {
     key_press: KeyEvent,
     key_repeat: KeyEvent,
@@ -956,39 +973,6 @@ const RequestAdapterResponse = struct {
     adapter: ?*gpu.Adapter,
     message: ?[*:0]const u8,
 };
-
-// Verifies that a platform implementation exposes the expected function declarations.
-// comptime {
-//     // Core
-//     assertHasField(Platform, "surface_descriptor");
-//     assertHasField(Platform, "refresh_rate");
-
-//     assertHasDecl(Platform, "init");
-//     assertHasDecl(Platform, "deinit");
-
-//     assertHasDecl(Platform, "setTitle");
-
-//     assertHasDecl(Platform, "setDisplayMode");
-//     assertHasField(Platform, "display_mode");
-
-//     assertHasDecl(Platform, "setBorder");
-//     assertHasField(Platform, "border");
-
-//     assertHasDecl(Platform, "setHeadless");
-//     assertHasField(Platform, "headless");
-
-//     assertHasDecl(Platform, "setVSync");
-//     assertHasField(Platform, "vsync_mode");
-
-//     assertHasDecl(Platform, "setSize");
-//     assertHasField(Platform, "size");
-
-//     assertHasDecl(Platform, "setCursorMode");
-//     assertHasField(Platform, "cursor_mode");
-
-//     assertHasDecl(Platform, "setCursorShape");
-//     assertHasField(Platform, "cursor_shape");
-// }
 
 fn assertHasDecl(comptime T: anytype, comptime decl_name: []const u8) void {
     if (!@hasDecl(T, decl_name)) @compileError(@typeName(T) ++ " missing declaration: " ++ decl_name);
