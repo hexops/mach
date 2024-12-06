@@ -31,6 +31,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "core-transparent-window",
+        .vsync_mode = .triple,
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -153,7 +154,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
         app.title_timer.reset();
         // TODO(object): window-title
 
-        // try updateWindowTitle(core);
+        core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]", .{ core.frame.rate, core.input.rate }) catch unreachable);
     }
 
     if (app.color_time >= 4.0 or app.color_time <= 0.0) {

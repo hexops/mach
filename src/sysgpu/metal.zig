@@ -480,11 +480,14 @@ pub const SwapChain = struct {
 
         if (swapchain.current_drawable) |_| {
             const queue = try swapchain.device.getQueue();
-            const command_buffer = queue.command_queue.commandBuffer() orelse {
+            const command_buffer: *mtl.CommandBuffer = queue.command_queue.commandBuffer() orelse {
                 return error.NewCommandBufferFailed;
             };
+
             command_buffer.presentDrawable(@ptrCast(swapchain.current_drawable)); // TODO - objc casting?
             command_buffer.commit();
+            if (swapchain.surface.layer.displaySyncEnabled())
+                command_buffer.waitUntilScheduled();
         }
     }
 };

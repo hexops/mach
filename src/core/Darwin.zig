@@ -22,6 +22,7 @@ pub const Darwin = @This();
 
 pub const Native = struct {
     window: *objc.app_kit.Window = undefined,
+    view: *objc.mach.View = undefined,
 };
 
 pub const Context = struct {
@@ -69,6 +70,7 @@ pub fn tick(core: *Core) !void {
 
         if (core_window.native) |native| {
             const native_window: *objc.app_kit.Window = native.window;
+            const native_view: *objc.mach.View = native.view;
 
             if (core.windows.updated(window_id, .color)) {
                 switch (core_window.color) {
@@ -81,6 +83,7 @@ pub fn tick(core: *Core) !void {
                         );
                         native_window.setBackgroundColor(color);
                         native_window.setTitlebarAppearsTransparent(true);
+                        native_view.layer().setOpaque(false);
                     },
                     .solid => |wc| {
                         const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
@@ -91,9 +94,11 @@ pub fn tick(core: *Core) !void {
                         );
                         native_window.setBackgroundColor(color);
                         native_window.setTitlebarAppearsTransparent(false);
+                        native_view.layer().setOpaque(true);
                     },
                     .system => {
                         native_window.setTitlebarAppearsTransparent(false);
+                        native_view.layer().setOpaque(true);
                     },
                 }
             }
@@ -130,8 +135,9 @@ fn initWindow(
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
 
-    layer.setDisplaySyncEnabled(true);
-    layer.setOpaque(false);
+    if (core_window.color == .transparent) {
+        layer.setOpaque(false);
+    }
 
     metal_descriptor.* = .{
         .layer = layer,
@@ -241,7 +247,7 @@ fn initWindow(
 
         // Set core_window.native, which we use to check if a window is initialized
         // Then call core.initWindow to finish initializing the window
-        core_window.native = .{ .window = native_window };
+        core_window.native = .{ .window = native_window, .view = view };
         core.windows.setValueRaw(window_id, core_window);
         try core.initWindow(window_id);
     } else std.debug.panic("mach: window failed to initialize", .{});
