@@ -487,7 +487,7 @@ pub const SwapChain = struct {
             command_buffer.presentDrawable(@ptrCast(swapchain.current_drawable)); // TODO - objc casting?
             command_buffer.commit();
             if (swapchain.surface.layer.displaySyncEnabled())
-                command_buffer.waitUntilScheduled();
+                command_buffer.waitUntilCompleted();
         }
     }
 };
