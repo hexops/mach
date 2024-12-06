@@ -478,16 +478,19 @@ pub const SwapChain = struct {
         const pool = objc.autoreleasePoolPush();
         defer objc.autoreleasePoolPop(pool);
 
-        if (swapchain.current_drawable) |_| {
+        if (swapchain.current_drawable) |drawable| {
             const queue = try swapchain.device.getQueue();
             const command_buffer: *mtl.CommandBuffer = queue.command_queue.commandBuffer() orelse {
                 return error.NewCommandBufferFailed;
             };
 
-            command_buffer.presentDrawable(@ptrCast(swapchain.current_drawable)); // TODO - objc casting?
-            command_buffer.commit();
-            if (swapchain.surface.layer.displaySyncEnabled())
-                command_buffer.waitUntilCompleted();
+            if (swapchain.surface.layer.displaySyncEnabled()) {
+                command_buffer.commit();
+                drawable.present();
+            } else {
+                command_buffer.presentDrawable(@ptrCast(drawable));
+                command_buffer.commit();
+            }
         }
     }
 };
