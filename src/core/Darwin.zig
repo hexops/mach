@@ -135,9 +135,7 @@ fn initWindow(
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
 
-    if (core_window.color == .transparent) {
-        layer.setOpaque(false);
-    }
+    if (core_window.color == .transparent) layer.setOpaque(false);
 
     metal_descriptor.* = .{
         .layer = layer,
@@ -228,13 +226,13 @@ fn initWindow(
         const delegate = objc.mach.WindowDelegate.allocInit();
         defer native_window.setDelegate(@ptrCast(delegate));
         {
-            var windowWillResize_toSize = objc.foundation.stackBlockLiteral(
-                WindowDelegateCallbacks.windowWillResize_toSize,
+            var windowDidResize = objc.foundation.stackBlockLiteral(
+                WindowDelegateCallbacks.windowDidResize,
                 context,
                 null,
                 null,
             );
-            delegate.setBlock_windowWillResize_toSize(windowWillResize_toSize.asBlock().copy());
+            delegate.setBlock_windowDidResize(windowDidResize.asBlock().copy());
 
             var windowShouldClose = objc.foundation.stackBlockLiteral(
                 WindowDelegateCallbacks.windowShouldClose,
@@ -254,19 +252,28 @@ fn initWindow(
 }
 
 const WindowDelegateCallbacks = struct {
-    pub fn windowWillResize_toSize(block: *objc.foundation.BlockLiteral(*Context), size: objc.app_kit.Size) callconv(.C) void {
+    pub fn windowDidResize(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) void {
         const core: *Core = block.context.core;
-        const s: Size = .{ .width = @intFromFloat(size.width), .height = @intFromFloat(size.height) };
 
-        var window = core.windows.getValue(block.context.window_id);
-        window.width = s.width;
-        window.height = s.height;
-        window.swap_chain_update.set();
-        core.windows.setValueRaw(block.context.window_id, window);
+        var core_window = core.windows.getValue(block.context.window_id);
+
+        if (core_window.native) |native| {
+            const native_window: *objc.app_kit.Window = native.window;
+
+            const frame = native_window.frame();
+
+            const content_rect = native_window.contentRectForFrameRect(frame);
+
+            core_window.width = @intFromFloat(content_rect.size.width);
+            core_window.height = @intFromFloat(content_rect.size.height);
+            core_window.swap_chain_update.set();
+        }
+
+        core.windows.setValueRaw(block.context.window_id, core_window);
 
         core.pushEvent(.{ .window_resize = .{
             .window_id = block.context.window_id,
-            .size = s,
+            .size = .{ .width = core_window.width, .height = core_window.height },
         } });
     }
 
