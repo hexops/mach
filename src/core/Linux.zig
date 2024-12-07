@@ -97,7 +97,8 @@ pub fn initWindow(
     // Try to initialize the desired backend, falling back to the other if that one is not supported
     switch (desired_backend) {
         .x11 => {
-            return;
+            log.err("\nX11 needs to be setup to work with the new object system, so it is not working at the moment. Using Wayland.\n", .{});
+            try Wayland.initWindow(core, window_id);
             // X11.initWindow(core, window_id) catch |err| {
             //     const err_msg = switch (err) {
             //         error.LibraryNotFound => "Missing X11 library",
@@ -116,7 +117,9 @@ pub fn initWindow(
                     error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",
                 };
-                log.err("{s}\n\nFalling back to X11\n", .{err_msg});
+                log.err("{s}\n\nCannot connect to Wayland. X11 is unavailable as a fallback while it is being reconfigured to work with the new object system. Failing...\n", .{err_msg});
+                return error.X11NotImplemented;
+                // log.err("{s}\n\nFalling back to X11\n", .{err_msg});
                 // try X11.initWindow(core, window_id);
             };
         },
