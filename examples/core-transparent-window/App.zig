@@ -19,7 +19,7 @@ title_timer: mach.time.Timer,
 color_timer: mach.time.Timer,
 color_time: f32 = 0.0,
 flip: bool = false,
-pipeline: *gpu.RenderPipeline,
+pipeline: *gpu.RenderPipeline = undefined,
 
 pub fn init(
     core: *mach.Core,
@@ -31,7 +31,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "core-transparent-window",
-        .vsync_mode = .triple,
+        .vsync_mode = .double,
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -39,7 +39,6 @@ pub fn init(
         .window = window,
         .title_timer = try mach.time.Timer.start(),
         .color_timer = try mach.time.Timer.start(),
-        .pipeline = undefined,
     };
 }
 
@@ -89,7 +88,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
             .window_open => |ev| {
                 try setupPipeline(core, app, ev.window_id);
             },
-            .key_press => |ev| {
+            .key_repeat, .key_press => |ev| {
                 switch (ev.key) {
                     .right => {
                         core.windows.set(app.window, .width, core.windows.get(app.window, .width) + 10);
@@ -154,7 +153,7 @@ pub fn tick(app: *App, core: *mach.Core) void {
         app.title_timer.reset();
         // TODO(object): window-title
 
-        core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]", .{ core.frame.rate, core.input.rate }) catch unreachable);
+        core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, "core-transparent-window [ {d}fps ] [ Input {d}hz ]", .{ core.frame.rate, core.input.rate }) catch unreachable);
     }
 
     if (app.color_time >= 4.0 or app.color_time <= 0.0) {
