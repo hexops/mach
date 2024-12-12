@@ -209,6 +209,14 @@ fn initWindow(
             );
             view.setBlock_flagsChanged(flagsChanged.asBlock().copy());
 
+            var magnify = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.magnify,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_magnify(magnify.asBlock().copy());
+
             var mouseMoved = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.mouseMoved,
                 context,
@@ -402,6 +410,17 @@ const ViewCallbacks = struct {
             .window_id = window_id,
             .xoffset = @floatCast(scroll_delta_x),
             .yoffset = @floatCast(scroll_delta_y),
+        } });
+    }
+
+    // This is currently only supported on macOS using a trackpad
+    pub fn magnify(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .magnify = .{
+            .window_id = window_id,
+            .magnification = @floatCast(event.magnification()),
         } });
     }
 
