@@ -176,6 +176,14 @@ fn initWindow(
             );
             view.setBlock_keyDown(keyDown.asBlock().copy());
 
+            var insertText = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.insertText,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_insertText(insertText.asBlock().copy());
+
             var keyUp = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyUp,
                 context,
@@ -411,6 +419,16 @@ const ViewCallbacks = struct {
                 .mods = machModifierFromModifierFlag(event.modifierFlags()),
             } });
         }
+    }
+
+    pub fn insertText(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event, codepoint: u32) callconv(.C) void {
+        _ = event; // autofix
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+        core.pushEvent(.{ .char_input = .{
+            .codepoint = @intCast(codepoint),
+            .window_id = window_id,
+        } });
     }
 
     pub fn keyUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
