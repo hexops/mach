@@ -209,8 +209,8 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
         .label = "main swap chain",
         .usage = core_window.swap_chain_usage,
         .format = .bgra8_unorm,
-        .width = core_window.width,
-        .height = core_window.height,
+        .width = core_window.framebuffer_width,
+        .height = core_window.framebuffer_height,
         .present_mode = switch (core_window.vsync_mode) {
             .none => .immediate,
             .double => .fifo,
@@ -218,10 +218,6 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
         },
     };
     core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-    core_window.framebuffer_format = core_window.swap_chain_descriptor.format;
-    core_window.framebuffer_width = core_window.swap_chain_descriptor.width;
-    core_window.framebuffer_height = core_window.swap_chain_descriptor.height;
-
     core.pushEvent(.{ .window_open = .{ .window_id = window_id } });
 }
 
@@ -234,6 +230,32 @@ pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
 
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
+}
+
+pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        var core_window = core.windows.getValue(window_id);
+        defer core.windows.setValueRaw(window_id, core_window);
+
+        mach.sysgpu.Impl.deviceTick(core_window.device);
+
+        core_window.swap_chain.present();
+    }
+
+    // Record to frame rate frequency monitor that a frame was finished.
+    core.frame.tick();
+
+    switch (core.state) {
+        .running => {},
+        .exiting => {
+            core.state = .deinitializing;
+            core_mod.run(core.on_exit.?);
+            core_mod.call(.deinit);
+        },
+        .deinitializing => {},
+        .exited => @panic("application not running"),
+    }
 }
 
 pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
@@ -286,9 +308,12 @@ fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
 
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
-    //core_mod.call(.processWindowUpdates);
 
     return core.state != .exited;
+}
+
+pub fn exit(core: *Core) void {
+    core.state = .exiting;
 }
 
 pub fn deinit(core: *Core) !void {
@@ -367,206 +392,6 @@ pub fn mouseReleased(core: *@This(), button: MouseButton) bool {
 
 pub fn mousePosition(core: *@This()) Position {
     return core.input_state.mouse_position;
-}
-
-// TODO(object)
-// /// Set refresh rate synchronization mode. Default `.triple`
-// ///
-// /// Calling this function also implicitly calls setFrameRateLimit for you:
-// /// ```
-// /// .none   => setFrameRateLimit(0) // unlimited
-// /// .double => setFrameRateLimit(0) // unlimited
-// /// .triple => setFrameRateLimit(2 * max_monitor_refresh_rate)
-// /// ```
-// pub inline fn setVSync(core: *@This(), mode: VSyncMode) void {
-//     return core.platform.setVSync(mode);
-// }
-
-// TODO(object)
-// /// Returns refresh rate synchronization mode.
-// pub inline fn vsync(core: *@This()) VSyncMode {
-//     return core.platform.vsync_mode;
-// }
-
-// TODO(object)
-// /// Sets the frame rate limit. Default 0 (unlimited)
-// ///
-// /// This is applied *in addition* to the vsync mode.
-// pub inline fn setFrameRateLimit(core: *@This(), limit: u32) void {
-//     core.frame.target = limit;
-// }
-
-// TODO(object)
-// /// Returns the frame rate limit, or zero if unlimited.
-// pub inline fn frameRateLimit(core: *@This()) u32 {
-//     return core.frame.target;
-// }
-
-// TODO(object)
-// /// Set the window size, in subpixel units.
-// pub inline fn setSize(core: *@This(), value: Size) void {
-//     return core.platform.setSize(value);
-// }
-
-// TODO(object)
-// /// Returns the window size, in subpixel units.
-// pub inline fn size(core: *@This()) Size {
-//     return core.platform.size;
-// }
-
-// TODO(object)
-// pub inline fn setCursorMode(core: *@This(), mode: CursorMode) void {
-//     return core.platform.setCursorMode(mode);
-// }
-
-// TODO(object)
-// pub inline fn cursorMode(core: *@This()) CursorMode {
-//     return core.platform.cursorMode();
-// }
-
-// TODO(object)
-// pub inline fn setCursorShape(core: *@This(), cursor: CursorShape) void {
-//     return core.platform.setCursorShape(cursor);
-// }
-
-// TODO(object)
-// pub inline fn cursorShape(core: *@This()) CursorShape {
-//     return core.platform.cursorShape();
-// }
-
-// TODO(object)
-// /// Sets the minimum target frequency of the input handling thread.
-// ///
-// /// Input handling (the main thread) runs at a variable frequency. The thread blocks until there are
-// /// input events available, or until it needs to unblock in order to achieve the minimum target
-// /// frequency which is your collaboration point of opportunity with the main thread.
-// ///
-// /// For example, by default (`setInputFrequency(1)`) mach-core will aim to invoke `updateMainThread`
-// /// at least once per second (but potentially much more, e.g. once per every mouse movement or
-// /// keyboard button press.) If you were to increase the input frequency to say 60hz e.g.
-// /// `setInputFrequency(60)` then mach-core will aim to invoke your `updateMainThread` 60 times per
-// /// second.
-// ///
-// /// An input frequency of zero implies unlimited, in which case the main thread will busy-wait.
-// ///
-// /// # Multithreaded mach-core behavior
-// ///
-// /// On some platforms, mach-core is able to handle input and rendering independently for
-// /// improved performance and responsiveness.
-// ///
-// /// | Platform | Threading       |
-// /// |----------|-----------------|
-// /// | Desktop  | Multi threaded  |
-// /// | Browser  | Single threaded |
-// /// | Mobile   | TBD             |
-// ///
-// /// On single-threaded platforms, `update` and the (optional) `updateMainThread` callback are
-// /// invoked in sequence, one after the other, on the same thread.
-// ///
-// /// On multi-threaded platforms, `init` and `deinit` are called on the main thread, while `update`
-// /// is called on a separate rendering thread. The (optional) `updateMainThread` callback can be
-// /// used in cases where you must run a function on the main OS thread (such as to open a native
-// /// file dialog on macOS, since many system GUI APIs must be run on the main OS thread.) It is
-// /// advised you do not use this callback to run any code except when absolutely neccessary, as
-// /// it is in direct contention with input handling.
-// ///
-// /// APIs which are not accessible from a specific thread are declared as such, otherwise can be
-// /// called from any thread as they are internally synchronized.
-// pub inline fn setInputFrequency(core: *@This(), input_frequency: u32) void {
-//     core.input.target = input_frequency;
-// }
-
-// TODO(object)
-// /// Returns the input frequency, or zero if unlimited (busy-waiting mode)
-// pub inline fn inputFrequency(core: *@This()) u32 {
-//     return core.input.target;
-// }
-
-// TODO(object)
-// /// Returns the actual number of frames rendered (`update` calls that returned) in the last second.
-// ///
-// /// This is updated once per second.
-// pub inline fn frameRate(core: *@This()) u32 {
-//     return core.frame.rate;
-// }
-
-// TODO(object)
-// /// Returns the actual number of input thread iterations in the last second. See setInputFrequency
-// /// for what this means.
-// ///
-// /// This is updated once per second.
-// pub inline fn inputRate(core: *@This()) u32 {
-//     return core.input.rate;
-// }
-
-// TODO(object)
-// /// Returns the underlying native NSWindow pointer
-// ///
-// /// May only be called on macOS.
-// pub fn nativeWindowCocoa(core: *@This()) *anyopaque {
-//     return core.platform.nativeWindowCocoa();
-// }
-
-// TODO(object)
-// /// Returns the underlying native Windows' HWND pointer
-// ///
-// /// May only be called on Windows.
-// pub fn nativeWindowWin32(core: *@This()) std.os.windows.HWND {
-//     return core.platform.nativeWindowWin32();
-// }
-
-pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
-    var windows = core.windows.slice();
-    while (windows.next()) |window_id| {
-        var core_window = core.windows.getValue(window_id);
-        defer core.windows.setValueRaw(window_id, core_window);
-
-        mach.sysgpu.Impl.deviceTick(core_window.device);
-
-        core_window.swap_chain.present();
-
-        // Update swapchain for the next frame
-        if (core_window.swap_chain_update.isSet()) blk: {
-            core_window.swap_chain_update.reset();
-
-            switch (core_window.vsync_mode) {
-                .triple => core.frame.target = 2 * core_window.refresh_rate,
-                else => core.frame.target = 0,
-            }
-
-            if (core_window.width == 0 or core_window.height == 0) break :blk;
-
-            core_window.swap_chain_descriptor.present_mode = switch (core_window.vsync_mode) {
-                .none => .immediate,
-                .double => .fifo,
-                .triple => .mailbox,
-            };
-
-            core_window.swap_chain_descriptor.width = core_window.width;
-            core_window.swap_chain_descriptor.height = core_window.height;
-            core_window.swap_chain.release();
-
-            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-        }
-    }
-
-    // Record to frame rate frequency monitor that a frame was finished.
-    core.frame.tick();
-
-    switch (core.state) {
-        .running => {},
-        .exiting => {
-            core.state = .deinitializing;
-            core_mod.run(core.on_exit.?);
-            core_mod.call(.deinit);
-        },
-        .deinitializing => {},
-        .exited => @panic("application not running"),
-    }
-}
-
-pub fn exit(core: *Core) void {
-    core.state = .exiting;
 }
 
 inline fn requestAdapterCallback(

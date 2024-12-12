@@ -165,9 +165,19 @@ fn initWindow(
         screen,
     );
     if (native_window_opt) |native_window| {
+        const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
+        const window_width: f32 = @floatFromInt(core_window.width);
+        const window_height: f32 = @floatFromInt(core_window.height);
+
+        core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
+        core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
+
         native_window.setReleasedWhenClosed(false);
 
         var view = objc.mach.View.allocInit();
+
+        // initWithFrame is overridden in our MACHView, which creates a tracking area for mouse tracking
+        view = view.initWithFrame(rect);
         view.setLayer(@ptrCast(layer));
 
         const context = try core.allocator.create(Context);
@@ -190,6 +200,46 @@ fn initWindow(
                 null,
             );
             view.setBlock_keyUp(keyUp.asBlock().copy());
+
+            var flagsChanged = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.flagsChanged,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_flagsChanged(flagsChanged.asBlock().copy());
+
+            var mouseMoved = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseMoved,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseMoved(mouseMoved.asBlock().copy());
+
+            var mouseDown = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseDown,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseDown(mouseDown.asBlock().copy());
+
+            var mouseUp = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseUp,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseUp(mouseUp.asBlock().copy());
+
+            var scrollWheel = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.scrollWheel,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_scrollWheel(scrollWheel.asBlock().copy());
         }
         native_window.setContentView(@ptrCast(view));
         native_window.center();
@@ -261,12 +311,23 @@ const WindowDelegateCallbacks = struct {
             const native_window: *objc.app_kit.Window = native.window;
 
             const frame = native_window.frame();
-
             const content_rect = native_window.contentRectForFrameRect(frame);
 
             core_window.width = @intFromFloat(content_rect.size.width);
             core_window.height = @intFromFloat(content_rect.size.height);
-            core_window.swap_chain_update.set();
+
+            const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
+            const window_width: f32 = @floatFromInt(core_window.width);
+            const window_height: f32 = @floatFromInt(core_window.height);
+
+            core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
+            core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
+
+            core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+            core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+            core_window.swap_chain.release();
+
+            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         }
 
         core.windows.setValueRaw(block.context.window_id, core_window);
@@ -288,6 +349,62 @@ const WindowDelegateCallbacks = struct {
 };
 
 const ViewCallbacks = struct {
+    pub fn mouseMoved(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        const mouse_location = event.locationInWindow();
+
+        const window_height: f32 = @floatFromInt(core.windows.get(window_id, .height));
+
+        core.pushEvent(.{ .mouse_motion = .{
+            .window_id = window_id,
+            .pos = .{ .x = mouse_location.x, .y = window_height - mouse_location.y },
+        } });
+    }
+
+    pub fn mouseDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .mouse_press = .{
+            .window_id = window_id,
+            .button = @enumFromInt(event.buttonNumber()),
+            .pos = .{ .x = event.locationInWindow().x, .y = event.locationInWindow().y },
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
+    }
+    pub fn mouseUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .mouse_release = .{
+            .window_id = window_id,
+            .button = @enumFromInt(event.buttonNumber()),
+            .pos = .{ .x = event.locationInWindow().x, .y = event.locationInWindow().y },
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
+    }
+
+    pub fn scrollWheel(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        var scroll_delta_x = event.scrollingDeltaX();
+        var scroll_delta_y = event.scrollingDeltaY();
+
+        if (event.hasPreciseScrollingDeltas()) {
+            scroll_delta_x *= 0.1;
+            scroll_delta_y *= 0.1;
+        }
+
+        core.pushEvent(.{ .mouse_scroll = .{
+            .window_id = window_id,
+            .xoffset = @floatCast(scroll_delta_x),
+            .yoffset = @floatCast(scroll_delta_y),
+        } });
+    }
+
     pub fn keyDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;
@@ -315,6 +432,33 @@ const ViewCallbacks = struct {
             .key = machKeyFromKeycode(event.keyCode()),
             .mods = machModifierFromModifierFlag(event.modifierFlags()),
         } });
+    }
+
+    pub fn flagsChanged(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        const key = machKeyFromKeycode(event.keyCode());
+        const mods = machModifierFromModifierFlag(event.modifierFlags());
+
+        const key_flag = switch (key) {
+            .left_shift, .right_shift => objc.app_kit.EventModifierFlagShift,
+            .left_control, .right_control => objc.app_kit.EventModifierFlagControl,
+            .left_alt, .right_alt => objc.app_kit.EventModifierFlagOption,
+            .left_super, .right_super => objc.app_kit.EventModifierFlagCommand,
+            .caps_lock => objc.app_kit.EventModifierFlagCapsLock,
+            else => 0,
+        };
+
+        if (event.modifierFlags() & key_flag != 0) {
+            if (core.input_state.isKeyPressed(key)) {
+                core.pushEvent(.{ .key_release = .{ .window_id = window_id, .key = key, .mods = mods } });
+            } else {
+                core.pushEvent(.{ .key_press = .{ .window_id = window_id, .key = key, .mods = mods } });
+            }
+        } else {
+            core.pushEvent(.{ .key_release = .{ .window_id = window_id, .key = key, .mods = mods } });
+        }
     }
 };
 
