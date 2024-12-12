@@ -522,6 +522,10 @@ pub const Event = union(enum) {
     window_open: struct {
         window_id: mach.ObjectID,
     },
+    magnify: struct {
+        window_id: mach.ObjectID,
+        magnification: f32,
+    },
     focus_gained: struct {
         window_id: mach.ObjectID,
     },
