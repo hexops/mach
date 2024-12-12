@@ -74,8 +74,17 @@ windows: mach.Objects(
         /// Target frames per second
         refresh_rate: u32 = 0,
 
-        /// Color of the window background/titlebar
-        color: WindowColor = .system,
+        /// Titlebar/window decorations
+        decorated: bool = true,
+
+        /// Color of the window decorations, i.e. titlebar
+        /// if null, decoration is the system-determined color
+        decoration_color: ?gpu.Color = null,
+
+        /// Whether the window should be completely transparent
+        /// or not. On macOS, to achieve a fully transparent window
+        /// decoration_color must also be set fully transparent.
+        transparent: bool = false,
 
         // GPU
         // When `native` is not null, the rest of the fields have been

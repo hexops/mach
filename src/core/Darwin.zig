@@ -70,36 +70,19 @@ pub fn tick(core: *Core) !void {
 
         if (core_window.native) |native| {
             const native_window: *objc.app_kit.Window = native.window;
-            const native_view: *objc.mach.View = native.view;
 
-            if (core.windows.updated(window_id, .color)) {
-                switch (core_window.color) {
-                    .transparent => |wc| {
-                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                            wc.color.r,
-                            wc.color.g,
-                            wc.color.b,
-                            wc.color.a,
-                        );
-                        native_window.setBackgroundColor(color);
-                        native_window.setTitlebarAppearsTransparent(true);
-                        native_view.layer().setOpaque(false);
-                    },
-                    .solid => |wc| {
-                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                            wc.color.r,
-                            wc.color.g,
-                            wc.color.b,
-                            wc.color.a,
-                        );
-                        native_window.setBackgroundColor(color);
-                        native_window.setTitlebarAppearsTransparent(false);
-                        native_view.layer().setOpaque(true);
-                    },
-                    .system => {
-                        native_window.setTitlebarAppearsTransparent(false);
-                        native_view.layer().setOpaque(true);
-                    },
+            if (core.windows.updated(window_id, .decoration_color)) {
+                if (core_window.decoration_color) |decoration_color| {
+                    const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                        decoration_color.r,
+                        decoration_color.g,
+                        decoration_color.b,
+                        decoration_color.a,
+                    );
+                    native_window.setBackgroundColor(color);
+                    native_window.setTitlebarAppearsTransparent(true);
+                } else {
+                    native_window.setTitlebarAppearsTransparent(false);
                 }
             }
 
@@ -135,7 +118,7 @@ fn initWindow(
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
 
-    if (core_window.color == .transparent) layer.setOpaque(false);
+    if (core_window.transparent) layer.setOpaque(false);
 
     metal_descriptor.* = .{
         .layer = layer,
@@ -151,11 +134,11 @@ fn initWindow(
 
     const window_style =
         (if (core_window.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
-    // (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskFullSizeContentView else 0);
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskTitled else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskClosable else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskResizable else 0) |
+        (if (!core_window.decorated) objc.app_kit.WindowStyleMaskFullSizeContentView else 0);
 
     const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
         rect,
@@ -254,27 +237,15 @@ fn initWindow(
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
-        switch (core_window.color) {
-            .transparent => |wc| {
-                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                    wc.color.r,
-                    wc.color.g,
-                    wc.color.b,
-                    wc.color.a,
-                );
-                native_window.setBackgroundColor(color);
-                native_window.setTitlebarAppearsTransparent(true);
-            },
-            .solid => |wc| {
-                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                    wc.color.r,
-                    wc.color.g,
-                    wc.color.b,
-                    wc.color.a,
-                );
-                native_window.setBackgroundColor(color);
-            },
-            .system => {},
+        if (core_window.decoration_color) |decoration_color| {
+            const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                decoration_color.r,
+                decoration_color.g,
+                decoration_color.b,
+                decoration_color.a,
+            );
+            native_window.setBackgroundColor(color);
+            native_window.setTitlebarAppearsTransparent(true);
         }
 
         const string = objc.foundation.String.allocInit();
