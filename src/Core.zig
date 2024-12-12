@@ -56,6 +56,7 @@ windows: mach.Objects(
         /// Vertical sync mode, prevents screen tearing.
         vsync_mode: VSyncMode = .none,
 
+        /// Window display mode: fullscreen, windowed or borderless fullscreen
         display_mode: DisplayMode = .windowed,
 
         /// Cursor
@@ -108,6 +109,7 @@ windows: mach.Objects(
             .render_attachment = true,
         },
 
+        /// Container for native platform-specific information
         native: ?Platform.Native = null,
     },
 ),

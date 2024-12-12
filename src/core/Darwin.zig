@@ -98,6 +98,31 @@ pub fn tick(core: *Core) !void {
                 frame.size.height = @floatFromInt(core.windows.get(window_id, .height));
                 native_window.setFrame_display_animate(native_window.frameRectForContentRect(frame), true, true);
             }
+
+            if (core.windows.updated(window_id, .cursor_mode)) {
+                switch (core_window.cursor_mode) {
+                    .normal => objc.app_kit.Cursor.unhide(),
+                    .disabled, .hidden => objc.app_kit.Cursor.hide(),
+                }
+            }
+
+            if (core.windows.updated(window_id, .cursor_shape)) {
+                const Cursor = objc.app_kit.Cursor;
+
+                Cursor.pop();
+
+                switch (core_window.cursor_shape) {
+                    .arrow => Cursor.arrowCursor().push(),
+                    .ibeam => Cursor.IBeamCursor().push(),
+                    .crosshair => Cursor.crosshairCursor().push(),
+                    .pointing_hand => Cursor.pointingHandCursor().push(),
+                    .not_allowed => Cursor.operationNotAllowedCursor().push(),
+                    .resize_ns => Cursor.resizeUpDownCursor().push(),
+                    .resize_ew => Cursor.resizeLeftRightCursor().push(),
+                    .resize_all => Cursor.closedHandCursor().push(),
+                    else => std.log.warn("Unsupported cursor", .{}),
+                }
+            }
         } else {
             try initWindow(core, window_id);
         }
