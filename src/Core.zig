@@ -533,10 +533,7 @@ pub const Event = union(enum) {
     window_open: struct {
         window_id: mach.ObjectID,
     },
-    magnify: struct {
-        window_id: mach.ObjectID,
-        magnification: f32,
-    },
+    zoom_gesture: ZoomGestureEvent,
     focus_gained: struct {
         window_id: mach.ObjectID,
     },
@@ -564,6 +561,17 @@ pub const MouseButtonEvent = struct {
 pub const ResizeEvent = struct {
     window_id: mach.ObjectID,
     size: Size,
+};
+
+pub const ZoomGestureEvent = struct {
+    window_id: mach.ObjectID,
+    phase: GesturePhase,
+    zoom: f32,
+};
+
+pub const GesturePhase = enum {
+    began,
+    ended,
 };
 
 pub const MouseButton = enum {

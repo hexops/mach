@@ -139,6 +139,33 @@ fn initWindow(
     // TODO: Only call this on the first window creation
     _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
 
+    const commandFn = struct {
+        pub fn commandFn(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) ?*objc.app_kit.Event {
+            const core_: *Core = block.context.core;
+            const window_id_ = block.context.window_id;
+
+            if (core_.windows.get(window_id_, .native)) |native| {
+                const native_window: *objc.app_kit.Window = native.window;
+
+                if (event.modifierFlags() & objc.app_kit.EventModifierFlagCommand != 0)
+                    native_window.sendEvent(event);
+            }
+            return event;
+        }
+    }.commandFn;
+
+    const context = try core.allocator.create(Context);
+    context.* = .{ .core = core, .window_id = window_id };
+
+    var commandBlock = objc.foundation.stackBlockLiteral(
+        commandFn,
+        context,
+        null,
+        null,
+    );
+
+    _ = objc.app_kit.Event.addLocalMonitorForEventsMatchingMask_handler(objc.app_kit.EventMaskKeyUp, commandBlock.asBlock().copy());
+
     const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
@@ -188,8 +215,6 @@ fn initWindow(
         view = view.initWithFrame(rect);
         view.setLayer(@ptrCast(layer));
 
-        const context = try core.allocator.create(Context);
-        context.* = .{ .core = core, .window_id = window_id };
         // TODO(core): free this allocation
 
         {
@@ -422,9 +447,10 @@ const ViewCallbacks = struct {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;
 
-        core.pushEvent(.{ .magnify = .{
+        core.pushEvent(.{ .zoom_gesture = .{
             .window_id = window_id,
-            .magnification = @floatCast(event.magnification()),
+            .zoom = @floatCast(event.magnification()),
+            .phase = machPhaseFromPhase(event.phase()),
         } });
     }
 
@@ -494,6 +520,14 @@ const ViewCallbacks = struct {
         }
     }
 };
+
+fn machPhaseFromPhase(phase: objc.app_kit.EventPhase) Core.GesturePhase {
+    return switch (phase) {
+        objc.app_kit.EventPhaseBegan => .began,
+        objc.app_kit.EventPhaseEnded => .ended,
+        else => .began,
+    };
+}
 
 fn machModifierFromModifierFlag(modifier_flag: usize) Core.KeyMods {
     var modifier: Core.KeyMods = .{
