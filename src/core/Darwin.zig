@@ -134,37 +134,41 @@ fn initWindow(
     window_id: mach.ObjectID,
 ) !void {
     var core_window = core.windows.getValue(window_id);
+
+    const context = try core.allocator.create(Context);
+    context.* = .{ .core = core, .window_id = window_id };
     // If the application is not headless, we need to make the application a genuine UI application
     // by setting the activation policy, this moves the process to foreground
     // TODO: Only call this on the first window creation
     _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
 
-    const commandFn = struct {
-        pub fn commandFn(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) ?*objc.app_kit.Event {
-            const core_: *Core = block.context.core;
-            const window_id_ = block.context.window_id;
+    {
+        // On macos, the command key in particular seems to be handled a bit differently and tends to block the `keyUp` event
+        // from firing. To remedy this, we borrow the same fix GLFW uses and add a monitor.
+        const commandFn = struct {
+            pub fn commandFn(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) ?*objc.app_kit.Event {
+                const core_: *Core = block.context.core;
+                const window_id_ = block.context.window_id;
 
-            if (core_.windows.get(window_id_, .native)) |native| {
-                const native_window: *objc.app_kit.Window = native.window;
+                if (core_.windows.get(window_id_, .native)) |native| {
+                    const native_window: *objc.app_kit.Window = native.window;
 
-                if (event.modifierFlags() & objc.app_kit.EventModifierFlagCommand != 0)
-                    native_window.sendEvent(event);
+                    if (event.modifierFlags() & objc.app_kit.EventModifierFlagCommand != 0)
+                        native_window.sendEvent(event);
+                }
+                return event;
             }
-            return event;
-        }
-    }.commandFn;
+        }.commandFn;
 
-    const context = try core.allocator.create(Context);
-    context.* = .{ .core = core, .window_id = window_id };
+        var commandBlock = objc.foundation.stackBlockLiteral(
+            commandFn,
+            context,
+            null,
+            null,
+        );
 
-    var commandBlock = objc.foundation.stackBlockLiteral(
-        commandFn,
-        context,
-        null,
-        null,
-    );
-
-    _ = objc.app_kit.Event.addLocalMonitorForEventsMatchingMask_handler(objc.app_kit.EventMaskKeyUp, commandBlock.asBlock().copy());
+        _ = objc.app_kit.Event.addLocalMonitorForEventsMatchingMask_handler(objc.app_kit.EventMaskKeyUp, commandBlock.asBlock().copy());
+    }
 
     const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
     const layer = objc.quartz_core.MetalLayer.new();
