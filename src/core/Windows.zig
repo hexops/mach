@@ -40,7 +40,6 @@ pub fn tick(core: *Core) !void {
 
         if (native_opt) |native| {
             _ = native; // autofix
-
             var msg: w.MSG = undefined;
             while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
                 _ = w.TranslateMessage(&msg);
@@ -193,8 +192,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
     const core = context.core;
     const window_id = context.window_id;
 
-    var window = core.windows.getValue(window_id);
-    defer core.windows.setValueRaw(window_id, window);
+    var core_window = core.windows.getValue(window_id);
 
     switch (msg) {
         w.WM_CLOSE => {
@@ -205,17 +203,27 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             const width: u32 = @as(u32, @intCast(lParam & 0xFFFF));
             const height: u32 = @as(u32, @intCast((lParam >> 16) & 0xFFFF));
 
-            window.width = width;
-            window.height = height;
+            if (core_window.width != width or core_window.height != height) {
+                // Recreate the swap_chain
+                core_window.swap_chain.release();
+                core_window.swap_chain_descriptor.width = width;
+                core_window.swap_chain_descriptor.height = height;
+                core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
 
-            core.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .width = width, .height = height } } });
+                core_window.width = width;
+                core_window.height = height;
+                core_window.framebuffer_width = width;
+                core_window.framebuffer_height = height;
+
+                core.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .width = width, .height = height } } });
+
+                core.windows.setValueRaw(window_id, core_window);
+            }
 
             // TODO (win32): only send resize event when sizing is done.
             //               the main mach loops does not run while resizing.
             //               Which means if events are pushed here they will
             //               queue up until resize is done.
-
-            window.swap_chain_update.set();
 
             return 0;
         },
@@ -225,6 +233,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
 
             if (msg == w.WM_SYSKEYDOWN and vkey == w.VK_F4) {
                 core.pushEvent(.{ .close = .{ .window_id = window_id } });
+
                 return 0;
             }
 
@@ -235,7 +244,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 // right alt sends left control first
                 var next: w.MSG = undefined;
                 const time = w.GetMessageTime();
-                if (window.native) |native| {
+                if (core_window.native) |native| {
                     if (w.PeekMessageW(&next, native.window, 0, 0, w.PM_NOREMOVE) != 0 and
                         next.time == time and
                         (next.message == msg or (msg == w.WM_SYSKEYDOWN and next.message == w.WM_KEYUP)) and
@@ -276,7 +285,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_CHAR => {
-            if (window.native) |*native| {
+            if (core_window.native) |*native| {
                 const char: u16 = @truncate(wParam);
                 var chars: []const u16 = undefined;
                 if (native.surrogate != 0) {
