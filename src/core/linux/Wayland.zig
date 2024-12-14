@@ -140,6 +140,9 @@ pub fn initWindow(
     // Setup surface
     wl.surface = c.wl_compositor_create_surface(wl.interfaces.wl_compositor) orelse return error.UnableToCreateSurface;
     wl.surface_descriptor = .{ .display = wl.display, .surface = wl.surface };
+    core_window.surface_descriptor = .{ .next_in_chain = .{
+        .from_wayland_surface = &wl.surface_descriptor,
+    } };
 
     // Setup opaque region
     {
@@ -203,6 +206,7 @@ pub fn initWindow(
     _ = libwaylandclient.wl_display_roundtrip(wl.display);
 
     core.windows.setValue(window_id, core_window);
+    try core.initWindow(window_id);
 }
 
 // pub fn deinit(
