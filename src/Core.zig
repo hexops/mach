@@ -96,7 +96,6 @@ windows: mach.Objects(
         queue: *gpu.Queue = undefined,
         swap_chain: *gpu.SwapChain = undefined,
         swap_chain_descriptor: gpu.SwapChain.Descriptor = undefined,
-        swap_chain_update: std.Thread.ResetEvent = .{},
         surface: *gpu.Surface = undefined,
         surface_descriptor: gpu.Surface.Descriptor = undefined,
 
