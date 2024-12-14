@@ -70,36 +70,19 @@ pub fn tick(core: *Core) !void {
 
         if (core_window.native) |native| {
             const native_window: *objc.app_kit.Window = native.window;
-            const native_view: *objc.mach.View = native.view;
 
-            if (core.windows.updated(window_id, .color)) {
-                switch (core_window.color) {
-                    .transparent => |wc| {
-                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                            wc.color.r,
-                            wc.color.g,
-                            wc.color.b,
-                            wc.color.a,
-                        );
-                        native_window.setBackgroundColor(color);
-                        native_window.setTitlebarAppearsTransparent(true);
-                        native_view.layer().setOpaque(false);
-                    },
-                    .solid => |wc| {
-                        const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                            wc.color.r,
-                            wc.color.g,
-                            wc.color.b,
-                            wc.color.a,
-                        );
-                        native_window.setBackgroundColor(color);
-                        native_window.setTitlebarAppearsTransparent(false);
-                        native_view.layer().setOpaque(true);
-                    },
-                    .system => {
-                        native_window.setTitlebarAppearsTransparent(false);
-                        native_view.layer().setOpaque(true);
-                    },
+            if (core.windows.updated(window_id, .decoration_color)) {
+                if (core_window.decoration_color) |decoration_color| {
+                    const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                        decoration_color.r,
+                        decoration_color.g,
+                        decoration_color.b,
+                        decoration_color.a,
+                    );
+                    native_window.setBackgroundColor(color);
+                    native_window.setTitlebarAppearsTransparent(true);
+                } else {
+                    native_window.setTitlebarAppearsTransparent(false);
                 }
             }
 
@@ -115,6 +98,31 @@ pub fn tick(core: *Core) !void {
                 frame.size.height = @floatFromInt(core.windows.get(window_id, .height));
                 native_window.setFrame_display_animate(native_window.frameRectForContentRect(frame), true, true);
             }
+
+            if (core.windows.updated(window_id, .cursor_mode)) {
+                switch (core_window.cursor_mode) {
+                    .normal => objc.app_kit.Cursor.unhide(),
+                    .disabled, .hidden => objc.app_kit.Cursor.hide(),
+                }
+            }
+
+            if (core.windows.updated(window_id, .cursor_shape)) {
+                const Cursor = objc.app_kit.Cursor;
+
+                Cursor.pop();
+
+                switch (core_window.cursor_shape) {
+                    .arrow => Cursor.arrowCursor().push(),
+                    .ibeam => Cursor.IBeamCursor().push(),
+                    .crosshair => Cursor.crosshairCursor().push(),
+                    .pointing_hand => Cursor.pointingHandCursor().push(),
+                    .not_allowed => Cursor.operationNotAllowedCursor().push(),
+                    .resize_ns => Cursor.resizeUpDownCursor().push(),
+                    .resize_ew => Cursor.resizeLeftRightCursor().push(),
+                    .resize_all => Cursor.closedHandCursor().push(),
+                    else => std.log.warn("Unsupported cursor", .{}),
+                }
+            }
         } else {
             try initWindow(core, window_id);
         }
@@ -126,16 +134,47 @@ fn initWindow(
     window_id: mach.ObjectID,
 ) !void {
     var core_window = core.windows.getValue(window_id);
+
+    const context = try core.allocator.create(Context);
+    context.* = .{ .core = core, .window_id = window_id };
     // If the application is not headless, we need to make the application a genuine UI application
     // by setting the activation policy, this moves the process to foreground
     // TODO: Only call this on the first window creation
     _ = objc.app_kit.Application.sharedApplication().setActivationPolicy(objc.app_kit.ApplicationActivationPolicyRegular);
 
+    {
+        // On macos, the command key in particular seems to be handled a bit differently and tends to block the `keyUp` event
+        // from firing. To remedy this, we borrow the same fix GLFW uses and add a monitor.
+        const commandFn = struct {
+            pub fn commandFn(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) ?*objc.app_kit.Event {
+                const core_: *Core = block.context.core;
+                const window_id_ = block.context.window_id;
+
+                if (core_.windows.get(window_id_, .native)) |native| {
+                    const native_window: *objc.app_kit.Window = native.window;
+
+                    if (event.modifierFlags() & objc.app_kit.EventModifierFlagCommand != 0)
+                        native_window.sendEvent(event);
+                }
+                return event;
+            }
+        }.commandFn;
+
+        var commandBlock = objc.foundation.stackBlockLiteral(
+            commandFn,
+            context,
+            null,
+            null,
+        );
+
+        _ = objc.app_kit.Event.addLocalMonitorForEventsMatchingMask_handler(objc.app_kit.EventMaskKeyUp, commandBlock.asBlock().copy());
+    }
+
     const metal_descriptor = try core.allocator.create(gpu.Surface.DescriptorFromMetalLayer);
     const layer = objc.quartz_core.MetalLayer.new();
     defer layer.release();
 
-    if (core_window.color == .transparent) layer.setOpaque(false);
+    if (core_window.transparent) layer.setOpaque(false);
 
     metal_descriptor.* = .{
         .layer = layer,
@@ -151,11 +190,11 @@ fn initWindow(
 
     const window_style =
         (if (core_window.display_mode == .fullscreen) objc.app_kit.WindowStyleMaskFullScreen else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskTitled else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskClosable else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
-        (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskResizable else 0);
-    // (if (core_window.display_mode == .windowed) objc.app_kit.WindowStyleMaskFullSizeContentView else 0);
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskTitled else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskClosable else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskMiniaturizable else 0) |
+        (if (core_window.decorated) objc.app_kit.WindowStyleMaskResizable else 0) |
+        (if (!core_window.decorated) objc.app_kit.WindowStyleMaskFullSizeContentView else 0);
 
     const native_window_opt: ?*objc.app_kit.Window = objc.app_kit.Window.alloc().initWithContentRect_styleMask_backing_defer_screen(
         rect,
@@ -165,13 +204,21 @@ fn initWindow(
         screen,
     );
     if (native_window_opt) |native_window| {
+        const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
+        const window_width: f32 = @floatFromInt(core_window.width);
+        const window_height: f32 = @floatFromInt(core_window.height);
+
+        core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
+        core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
+
         native_window.setReleasedWhenClosed(false);
 
         var view = objc.mach.View.allocInit();
+
+        // initWithFrame is overridden in our MACHView, which creates a tracking area for mouse tracking
+        view = view.initWithFrame(rect);
         view.setLayer(@ptrCast(layer));
 
-        const context = try core.allocator.create(Context);
-        context.* = .{ .core = core, .window_id = window_id };
         // TODO(core): free this allocation
 
         {
@@ -183,6 +230,14 @@ fn initWindow(
             );
             view.setBlock_keyDown(keyDown.asBlock().copy());
 
+            var insertText = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.insertText,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_insertText(insertText.asBlock().copy());
+
             var keyUp = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyUp,
                 context,
@@ -190,33 +245,69 @@ fn initWindow(
                 null,
             );
             view.setBlock_keyUp(keyUp.asBlock().copy());
+
+            var flagsChanged = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.flagsChanged,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_flagsChanged(flagsChanged.asBlock().copy());
+
+            var magnify = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.magnify,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_magnify(magnify.asBlock().copy());
+
+            var mouseMoved = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseMoved,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseMoved(mouseMoved.asBlock().copy());
+
+            var mouseDown = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseDown,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseDown(mouseDown.asBlock().copy());
+
+            var mouseUp = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.mouseUp,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_mouseUp(mouseUp.asBlock().copy());
+
+            var scrollWheel = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.scrollWheel,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_scrollWheel(scrollWheel.asBlock().copy());
         }
         native_window.setContentView(@ptrCast(view));
         native_window.center();
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
-        switch (core_window.color) {
-            .transparent => |wc| {
-                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                    wc.color.r,
-                    wc.color.g,
-                    wc.color.b,
-                    wc.color.a,
-                );
-                native_window.setBackgroundColor(color);
-                native_window.setTitlebarAppearsTransparent(true);
-            },
-            .solid => |wc| {
-                const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
-                    wc.color.r,
-                    wc.color.g,
-                    wc.color.b,
-                    wc.color.a,
-                );
-                native_window.setBackgroundColor(color);
-            },
-            .system => {},
+        if (core_window.decoration_color) |decoration_color| {
+            const color = objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                decoration_color.r,
+                decoration_color.g,
+                decoration_color.b,
+                decoration_color.a,
+            );
+            native_window.setBackgroundColor(color);
+            native_window.setTitlebarAppearsTransparent(true);
         }
 
         const string = objc.foundation.String.allocInit();
@@ -261,12 +352,23 @@ const WindowDelegateCallbacks = struct {
             const native_window: *objc.app_kit.Window = native.window;
 
             const frame = native_window.frame();
-
             const content_rect = native_window.contentRectForFrameRect(frame);
 
             core_window.width = @intFromFloat(content_rect.size.width);
             core_window.height = @intFromFloat(content_rect.size.height);
-            core_window.swap_chain_update.set();
+
+            const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
+            const window_width: f32 = @floatFromInt(core_window.width);
+            const window_height: f32 = @floatFromInt(core_window.height);
+
+            core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
+            core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
+
+            core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+            core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+            core_window.swap_chain.release();
+
+            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         }
 
         core.windows.setValueRaw(block.context.window_id, core_window);
@@ -288,6 +390,74 @@ const WindowDelegateCallbacks = struct {
 };
 
 const ViewCallbacks = struct {
+    pub fn mouseMoved(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        const mouse_location = event.locationInWindow();
+
+        const window_height: f32 = @floatFromInt(core.windows.get(window_id, .height));
+
+        core.pushEvent(.{ .mouse_motion = .{
+            .window_id = window_id,
+            .pos = .{ .x = mouse_location.x, .y = window_height - mouse_location.y },
+        } });
+    }
+
+    pub fn mouseDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .mouse_press = .{
+            .window_id = window_id,
+            .button = @enumFromInt(event.buttonNumber()),
+            .pos = .{ .x = event.locationInWindow().x, .y = event.locationInWindow().y },
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
+    }
+    pub fn mouseUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .mouse_release = .{
+            .window_id = window_id,
+            .button = @enumFromInt(event.buttonNumber()),
+            .pos = .{ .x = event.locationInWindow().x, .y = event.locationInWindow().y },
+            .mods = machModifierFromModifierFlag(event.modifierFlags()),
+        } });
+    }
+
+    pub fn scrollWheel(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        var scroll_delta_x = event.scrollingDeltaX();
+        var scroll_delta_y = event.scrollingDeltaY();
+
+        if (event.hasPreciseScrollingDeltas()) {
+            scroll_delta_x *= 0.1;
+            scroll_delta_y *= 0.1;
+        }
+
+        core.pushEvent(.{ .mouse_scroll = .{
+            .window_id = window_id,
+            .xoffset = @floatCast(scroll_delta_x),
+            .yoffset = @floatCast(scroll_delta_y),
+        } });
+    }
+
+    // This is currently only supported on macOS using a trackpad
+    pub fn magnify(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        core.pushEvent(.{ .zoom_gesture = .{
+            .window_id = window_id,
+            .zoom = @floatCast(event.magnification()),
+            .phase = machPhaseFromPhase(event.phase()),
+        } });
+    }
+
     pub fn keyDown(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;
@@ -306,6 +476,16 @@ const ViewCallbacks = struct {
         }
     }
 
+    pub fn insertText(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event, codepoint: u32) callconv(.C) void {
+        _ = event; // autofix
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+        core.pushEvent(.{ .char_input = .{
+            .codepoint = @intCast(codepoint),
+            .window_id = window_id,
+        } });
+    }
+
     pub fn keyUp(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;
@@ -316,7 +496,42 @@ const ViewCallbacks = struct {
             .mods = machModifierFromModifierFlag(event.modifierFlags()),
         } });
     }
+
+    pub fn flagsChanged(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const window_id = block.context.window_id;
+
+        const key = machKeyFromKeycode(event.keyCode());
+        const mods = machModifierFromModifierFlag(event.modifierFlags());
+
+        const key_flag = switch (key) {
+            .left_shift, .right_shift => objc.app_kit.EventModifierFlagShift,
+            .left_control, .right_control => objc.app_kit.EventModifierFlagControl,
+            .left_alt, .right_alt => objc.app_kit.EventModifierFlagOption,
+            .left_super, .right_super => objc.app_kit.EventModifierFlagCommand,
+            .caps_lock => objc.app_kit.EventModifierFlagCapsLock,
+            else => 0,
+        };
+
+        if (event.modifierFlags() & key_flag != 0) {
+            if (core.input_state.isKeyPressed(key)) {
+                core.pushEvent(.{ .key_release = .{ .window_id = window_id, .key = key, .mods = mods } });
+            } else {
+                core.pushEvent(.{ .key_press = .{ .window_id = window_id, .key = key, .mods = mods } });
+            }
+        } else {
+            core.pushEvent(.{ .key_release = .{ .window_id = window_id, .key = key, .mods = mods } });
+        }
+    }
 };
+
+fn machPhaseFromPhase(phase: objc.app_kit.EventPhase) Core.GesturePhase {
+    return switch (phase) {
+        objc.app_kit.EventPhaseBegan => .began,
+        objc.app_kit.EventPhaseEnded => .ended,
+        else => .began,
+    };
+}
 
 fn machModifierFromModifierFlag(modifier_flag: usize) Core.KeyMods {
     var modifier: Core.KeyMods = .{

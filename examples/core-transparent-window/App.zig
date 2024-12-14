@@ -32,6 +32,7 @@ pub fn init(
     const window = try core.windows.new(.{
         .title = "core-transparent-window",
         .vsync_mode = .double,
+        .transparent = true,
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -124,10 +125,10 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer encoder.release();
 
     // Begin render pass
-    const sky_blue_background = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
+    const transparent_background = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
     const color_attachments = [_]gpu.RenderPassColorAttachment{.{
         .view = back_buffer_view,
-        .clear_value = sky_blue_background,
+        .clear_value = transparent_background,
         .load_op = .clear,
         .store_op = .store,
     }};
@@ -172,7 +173,11 @@ pub fn tick(app: *App, core: *mach.Core) void {
     const green = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 2.0, 0.0, 1.0));
     const alpha = mach.math.lerp(0.3, 1.0, app.color_time / 4.0);
 
-    core.windows.set(app.window, .color, .{ .transparent = .{ .color = .{ .r = red, .g = green, .b = blue, .a = alpha }, .titlebar = true } });
+    core.windows.set(
+        app.window,
+        .decoration_color,
+        .{ .r = red, .g = green, .b = blue, .a = alpha },
+    );
 }
 
 pub fn deinit(app: *App) void {
