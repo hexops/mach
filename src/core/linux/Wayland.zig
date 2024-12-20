@@ -243,7 +243,7 @@ pub fn tick(window_id: mach.ObjectID) !void {
     _ = libwaylandclient.wl_display_roundtrip(wl.display);
 }
 
-pub fn setTitle(wl: *Wayland, title: [:0]const u8) void {
+pub fn setTitle(wl: *const Native, title: [:0]const u8) void {
     c.xdg_toplevel_set_title(wl.toplevel, title);
 }
 

@@ -63,6 +63,7 @@ pub fn tick(core: *Core) !void {
     while (windows.next()) |window_id| {
         const native_opt: ?Native = core.windows.get(window_id, .native);
         if (native_opt) |native| {
+            check_for_mach_updates(core, window_id);
             // check for display server events
             switch (native) {
                 .x11 => try X11.tick(window_id),
@@ -146,16 +147,10 @@ pub fn update(linux: *Linux) !void {
     }
 }
 
-pub fn setTitle(linux: *Linux, title: [:0]const u8) void {
-    const new_title = linux.allocator.dupeZ(u8, title) catch {
-        log.err("Failed to reallocate memory for new window title", .{});
-        return;
-    };
-    linux.allocator.free(linux.title);
-    linux.title = new_title;
-    switch (linux.backend) {
-        .wayland => linux.backend.wayland.setTitle(linux.title),
-        .x11 => linux.backend.x11.setTitle(linux.title),
+fn setTitle(native: *const Native, title: [:0]const u8) void {
+    switch (native.*) {
+        .wayland => |wl| Wayland.setTitle(&wl, title),
+        .x11 => |x| X11.setTitle(&x, title),
     }
 }
 
@@ -190,6 +185,17 @@ pub fn setCursorMode(_: *Linux, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Linux, _: CursorShape) void {
     return;
+}
+
+/// Checks for updates in mach object fields. Does nothing if window is not initialized.
+fn check_for_mach_updates(core: *Core, window_id: mach.ObjectID) void {
+    const core_window = core.windows.getValue(window_id);
+    const native = &core_window.native;
+    if (native.*) |n| {
+        if (core.windows.updated(window_id, .title)) {
+            setTitle(&n, core_window.title);
+        }
+    }
 }
 
 /// Check if gamemode should be activated
