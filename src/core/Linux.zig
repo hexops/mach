@@ -56,7 +56,7 @@ backend: Backend,
 // these arrays are used as info messages to the user that some features are missing
 // please keep these up to date until we can remove them
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
-const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
