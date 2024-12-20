@@ -30,44 +30,43 @@ const log = std.log.scoped(.mach);
 pub const defaultLog = std.log.defaultLog;
 pub const defaultPanic = std.debug.panicImpl;
 
-pub const X11 = @This();
+// TODO: determine if it's really needed to store global pointer
+var core_ptr: *Core = undefined;
 
-allocator: std.mem.Allocator,
-core: *Core,
-
-libx11: LibX11,
-libxrr: ?LibXRR,
-libgl: ?LibGL,
-libxcursor: ?LibXCursor,
-libxkbcommon: LibXkbCommon,
-gl_ctx: ?*LibGL.Context,
-display: *c.Display,
-empty_event_pipe: [2]std.c.fd_t,
-wm_protocols: c.Atom,
-wm_delete_window: c.Atom,
-net_wm_ping: c.Atom,
-net_wm_bypass_compositor: c.Atom,
-motif_wm_hints: c.Atom,
-net_wm_window_type: c.Atom,
-net_wm_window_type_dock: c.Atom,
-root_window: c.Window,
-window: c.Window,
-backend_type: gpu.BackendType,
-hidden_cursor: c.Cursor,
+pub const Native = struct {
+    backend_type: gpu.BackendType,
+    cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
+    display: *c.Display,
+    empty_event_pipe: [2]std.c.fd_t,
+    gl_ctx: ?*LibGL.Context,
+    hidden_cursor: c.Cursor,
+    libgl: ?LibGL,
+    libx11: LibX11,
+    libxcursor: ?LibXCursor,
+    libxkbcommon: LibXkbCommon,
+    libxrr: ?LibXRR,
+    motif_wm_hints: c.Atom,
+    net_wm_bypass_compositor: c.Atom,
+    net_wm_ping: c.Atom,
+    net_wm_window_type: c.Atom,
+    net_wm_window_type_dock: c.Atom,
+    root_window: c.Window,
+    surface_descriptor: gpu.Surface.DescriptorFromXlibWindow,
+    window: c.Window,
+    wm_delete_window: c.Atom,
+    wm_protocols: c.Atom,
+};
 
 // Mutable fields only used by main thread
-cursors: [@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor,
 
 // Mutable state fields; read/write by any thread
-surface_descriptor: *gpu.Surface.DescriptorFromXlibWindow,
 
-pub const Native = struct {};
-
-pub fn init(
-    linux: *Linux,
+pub fn initWindow(
     core: *Core,
-    options: InitOptions,
+    window_id: mach.ObjectID,
 ) !void {
+    core_ptr = core;
+    var core_window = core.windows.getValue(window_id);
     // TODO(core): return errors.NotSupported if not supported
     const libx11 = try LibX11.load();
 
@@ -95,7 +94,10 @@ pub fn init(
     const screen = c.DefaultScreen(display);
     const visual = c.DefaultVisual(display, screen);
     const root_window = c.RootWindow(display, screen);
+
     const colormap = libx11.XCreateColormap(display, root_window, visual, c.AllocNone);
+    defer _ = libx11.XFreeColormap(display, colormap);
+
     var set_window_attrs = c.XSetWindowAttributes{
         .colormap = colormap,
         // TODO: reduce
@@ -104,13 +106,15 @@ pub fn init(
             c.ExposureMask | c.FocusChangeMask | c.VisibilityChangeMask |
             c.EnterWindowMask | c.LeaveWindowMask | c.PropertyChangeMask,
     };
-    const window = libx11.XCreateWindow(
+
+    // TODO: read error after function call and handle
+    const x_window_id = libx11.XCreateWindow(
         display,
         root_window,
         @divFloor(libx11.XDisplayWidth(display, screen), 2), // TODO: add window width?
         @divFloor(libx11.XDisplayHeight(display, screen), 2), // TODO: add window height?
-        linux.size.width,
-        linux.size.height,
+        core_window.width,
+        core_window.height,
         0,
         c.DefaultDepth(display, screen),
         c.InputOutput,
@@ -118,54 +122,47 @@ pub fn init(
         c.CWColormap | c.CWEventMask,
         &set_window_attrs,
     );
-    var window_attrs: c.XWindowAttributes = undefined;
-    _ = libx11.XGetWindowAttributes(display, window, &window_attrs);
-    linux.size = Core.Size{
-        .width = @intCast(window_attrs.width),
-        .height = @intCast(window_attrs.height),
-    };
-    const blank_pixmap = libx11.XCreatePixmap(display, window, 1, 1, 1);
+
+    const blank_pixmap = libx11.XCreatePixmap(display, x_window_id, 1, 1, 1);
     var color = c.XColor{};
-    linux.refresh_rate = blk: {
+    core_window.refresh_rate = blk: {
         if (libxrr != null) {
             const conf = libxrr.?.XRRGetScreenInfo(display, root_window);
             break :blk @intCast(libxrr.?.XRRConfigCurrentRate(conf));
         }
         break :blk 60;
     };
-    const surface_descriptor = try options.allocator.create(gpu.Surface.DescriptorFromXlibWindow);
-    surface_descriptor.* = .{
+
+    const surface_descriptor = gpu.Surface.DescriptorFromXlibWindow{ .display = display, .window = @intCast(x_window_id) };
+    core_window.surface_descriptor = .{ .next_in_chain = .{
+        .from_xlib_window = &surface_descriptor,
+    } };
+
+    core_window.native = .{ .x11 = .{
+        .backend_type = try Core.detectBackendType(core.allocator),
+        .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .display = display,
-        .window = @intCast(window),
-    };
-    linux.backend = .{ .x11 = X11{
-        .core = core,
-        .allocator = options.allocator,
-        .display = display,
-        .libx11 = libx11,
-        .libgl = libgl,
-        .libxcursor = libxcursor,
-        .libxrr = libxrr,
         .empty_event_pipe = try std.posix.pipe(),
         .gl_ctx = null,
-        .wm_protocols = libx11.XInternAtom(display, "WM_PROTOCOLS", c.False),
-        .wm_delete_window = libx11.XInternAtom(display, "WM_DELETE_WINDOW", c.False),
+        .hidden_cursor = libx11.XCreatePixmapCursor(display, blank_pixmap, blank_pixmap, &color, &color, 0, 0),
+        .libgl = libgl,
+        .libx11 = libx11,
+        .libxcursor = libxcursor,
+        .libxkbcommon = try LibXkbCommon.load(),
+        .libxrr = libxrr,
+        .motif_wm_hints = libx11.XInternAtom(display, "_MOTIF_WM_HINTS", c.False),
+        .net_wm_bypass_compositor = libx11.XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", c.False),
         .net_wm_ping = libx11.XInternAtom(display, "NET_WM_PING", c.False),
         .net_wm_window_type = libx11.XInternAtom(display, "_NET_WM_WINDOW_TYPE", c.False),
         .net_wm_window_type_dock = libx11.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DOCK", c.False),
-        .net_wm_bypass_compositor = libx11.XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", c.False),
-        .motif_wm_hints = libx11.XInternAtom(display, "_MOTIF_WM_HINTS", c.False),
         .root_window = root_window,
-        .window = window,
-        .hidden_cursor = libx11.XCreatePixmapCursor(display, blank_pixmap, blank_pixmap, &color, &color, 0, 0),
-        .backend_type = try Core.detectBackendType(options.allocator),
-        .cursors = std.mem.zeroes([@typeInfo(CursorShape).@"enum".fields.len]?c.Cursor),
         .surface_descriptor = surface_descriptor,
-        .libxkbcommon = try LibXkbCommon.load(),
+        .window = x_window_id,
+        .wm_delete_window = libx11.XInternAtom(display, "WM_DELETE_WINDOW", c.False),
+        .wm_protocols = libx11.XInternAtom(display, "WM_PROTOCOLS", c.False),
     } };
-    var x11 = &linux.backend.x11;
-    _ = libx11.XrmInitialize();
-    defer _ = libx11.XFreeColormap(display, colormap);
+    var x11 = &core_window.native.?.x11;
+
     for (0..2) |i| {
         const sf = try std.posix.fcntl(x11.empty_event_pipe[i], std.posix.F.GETFL, 0);
         const df = try std.posix.fcntl(x11.empty_event_pipe[i], std.posix.F.GETFD, 0);
@@ -174,11 +171,12 @@ pub fn init(
     }
     var protocols = [_]c.Atom{ x11.wm_delete_window, x11.net_wm_ping };
     _ = libx11.XSetWMProtocols(x11.display, x11.window, &protocols, protocols.len);
-    _ = libx11.XStoreName(x11.display, x11.window, options.title.ptr);
+    _ = libx11.XStoreName(x11.display, x11.window, core_window.title);
     _ = libx11.XSelectInput(x11.display, x11.window, set_window_attrs.event_mask);
     _ = libx11.XMapWindow(x11.display, x11.window);
-    _ = libx11.XGetWindowAttributes(x11.display, x11.window, &window_attrs);
-    const backend_type = try Core.detectBackendType(options.allocator);
+
+    // TODO: see if this can be removed
+    const backend_type = try Core.detectBackendType(core.allocator);
     switch (backend_type) {
         .opengl, .opengles => {
             if (libgl != null) {
@@ -206,66 +204,73 @@ pub fn init(
         },
         else => {},
     }
+
     // Create hidden cursor
     const gc = libx11.XCreateGC(x11.display, blank_pixmap, 0, null);
     if (gc != null) {
         _ = libx11.XDrawPoint(x11.display, blank_pixmap, gc, 0, 0);
         _ = libx11.XFreeGC(x11.display, gc);
     }
-    // TODO: remove allocation
-    x11.cursors[@intFromEnum(CursorShape.arrow)] = try x11.createStandardCursor(.arrow);
+    x11.cursors[@intFromEnum(CursorShape.arrow)] = try createStandardCursor(x11, .arrow);
+
+    core.windows.setValue(window_id, core_window);
+    try core.initWindow(window_id);
 }
 
-pub fn deinit(
-    x11: *X11,
-    linux: *Linux,
-) void {
-    linux.allocator.destroy(x11.surface_descriptor);
-    for (x11.cursors) |cur| {
-        if (cur) |_| {
-            // _ = x11.libx11.XFreeCursor(x11.display, cur.?);
-        }
-    }
-    if (x11.libxcursor) |*libxcursor| {
-        libxcursor.handle.close();
-    }
-    if (x11.libxrr) |*libxrr| {
-        libxrr.handle.close();
-    }
-    if (x11.libgl) |*libgl| {
-        if (x11.gl_ctx) |gl_ctx| {
-            libgl.glXDestroyContext(x11.display, gl_ctx);
-        }
-        libgl.handle.close();
-    }
-    _ = x11.libx11.XUnmapWindow(x11.display, x11.window);
-    _ = x11.libx11.XDestroyWindow(x11.display, x11.window);
-    _ = x11.libx11.XCloseDisplay(x11.display);
-    x11.libx11.handle.close();
-    std.posix.close(x11.empty_event_pipe[0]);
-    std.posix.close(x11.empty_event_pipe[1]);
-}
+// pub fn deinit(
+//     x11: *X11,
+//     linux: *Linux,
+// ) void {
+//     linux.allocator.destroy(x11.surface_descriptor);
+//     for (x11.cursors) |cur| {
+//         if (cur) |_| {
+//             // _ = x11.libx11.XFreeCursor(x11.display, cur.?);
+//         }
+//     }
+//     if (x11.libxcursor) |*libxcursor| {
+//         libxcursor.handle.close();
+//     }
+//     if (x11.libxrr) |*libxrr| {
+//         libxrr.handle.close();
+//     }
+//     if (x11.libgl) |*libgl| {
+//         if (x11.gl_ctx) |gl_ctx| {
+//             libgl.glXDestroyContext(x11.display, gl_ctx);
+//         }
+//         libgl.handle.close();
+//     }
+//     _ = x11.libx11.XUnmapWindow(x11.display, x11.window);
+//     _ = x11.libx11.XDestroyWindow(x11.display, x11.window);
+//     _ = x11.libx11.XCloseDisplay(x11.display);
+//     x11.libx11.handle.close();
+//     std.posix.close(x11.empty_event_pipe[0]);
+//     std.posix.close(x11.empty_event_pipe[1]);
+// }
 
 // Called on the main thread
-pub fn update(x11: *X11, linux: *Linux) !void {
+pub fn tick(window_id: mach.ObjectID) !void {
+    var core_window = core_ptr.windows.getValue(window_id);
+    var x11 = &core_window.native.?.x11;
     while (c.QLength(x11.display) != 0) {
         var event: c.XEvent = undefined;
         _ = x11.libx11.XNextEvent(x11.display, &event);
-        x11.processEvent(linux, &event);
+        processEvent(window_id, &event);
+        // update in case core_window was changed
+        core_window = core_ptr.windows.getValue(window_id);
+        x11 = &core_window.native.?.x11;
     }
+
     _ = x11.libx11.XFlush(x11.display);
 
     // const frequency_delay = @as(f32, @floatFromInt(x11.input.delay_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
     // TODO: glfw.waitEventsTimeout(frequency_delay);
-
-    x11.core.input.tick();
 }
 
-pub fn setTitle(x11: *X11, title: [:0]const u8) void {
+pub fn setTitle(x11: *const Native, title: [:0]const u8) void {
     _ = x11.libx11.XStoreName(x11.display, x11.window, title);
 }
 
-pub fn setDisplayMode(x11: *X11, linux: *Linux, display_mode: DisplayMode) void {
+pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: bool) void {
     const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
     const wm_fullscreen = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
     switch (display_mode) {
@@ -290,7 +295,7 @@ pub fn setDisplayMode(x11: *X11, linux: *Linux, display_mode: DisplayMode) void 
                 @intCast(atoms.len),
             );
             x11.setFullscreen(false);
-            x11.setDecorated(linux.border);
+            x11.setDecorated(border);
             x11.setFloating(false);
             _ = x11.libx11.XMapWindow(x11.display, x11.window);
             _ = x11.libx11.XFlush(x11.display);
@@ -314,7 +319,7 @@ pub fn setDisplayMode(x11: *X11, linux: *Linux, display_mode: DisplayMode) void 
     }
 }
 
-fn setFullscreen(x11: *X11, enabled: bool) void {
+fn setFullscreen(x11: *const Native, enabled: bool) void {
     const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
     const wm_fullscreen = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
     x11.sendEventToWM(wm_state, &.{ @intFromBool(enabled), @intCast(wm_fullscreen), 0, 1 });
@@ -335,7 +340,7 @@ fn setFullscreen(x11: *X11, enabled: bool) void {
     }
 }
 
-fn setFloating(x11: *X11, enabled: bool) void {
+fn setFloating(x11: *const Native, enabled: bool) void {
     const wm_state = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
     const wm_above = x11.libx11.XInternAtom(x11.display, "_NET_WM_STATE_ABOVE", c.False);
     const net_wm_state_remove = 0;
@@ -344,7 +349,7 @@ fn setFloating(x11: *X11, enabled: bool) void {
     x11.sendEventToWM(wm_state, &.{ action, @intCast(wm_above), 0, 1 });
 }
 
-fn sendEventToWM(x11: *X11, message_type: c.Atom, data: []const c_long) void {
+fn sendEventToWM(x11: *const Native, message_type: c.Atom, data: []const c_long) void {
     var ev = std.mem.zeroes(c.XEvent);
     ev.type = c.ClientMessage;
     ev.xclient.window = x11.window;
@@ -361,7 +366,7 @@ fn sendEventToWM(x11: *X11, message_type: c.Atom, data: []const c_long) void {
     _ = x11.libx11.XFlush(x11.display);
 }
 
-fn setDecorated(x11: *X11, enabled: bool) void {
+fn setDecorated(x11: *const Native, enabled: bool) void {
     const MWMHints = struct {
         flags: u32,
         functions: u32,
@@ -546,7 +551,7 @@ const LibXkbCommon = struct {
     }
 };
 
-fn createStandardCursor(x11: *X11, shape: CursorShape) !c.Cursor {
+fn createStandardCursor(x11: *const Native, shape: CursorShape) !c.Cursor {
     if (x11.libxcursor) |libxcursor| {
         const theme = libxcursor.XcursorGetTheme(x11.display);
         if (theme != null) {
@@ -587,7 +592,7 @@ fn createStandardCursor(x11: *X11, shape: CursorShape) !c.Cursor {
     return cursor;
 }
 
-fn getCursorPos(x11: *X11) Position {
+fn getCursorPos(x11: *const Native) Position {
     var root_window: c.Window = undefined;
     var child_window: c.Window = undefined;
     var root_cursor_x: c_int = 0;
@@ -610,7 +615,10 @@ fn getCursorPos(x11: *X11) Position {
     return .{ .x = @floatFromInt(cursor_x), .y = @floatFromInt(cursor_y) };
 }
 
-fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
+/// Handle XEvents. Window object can be modified.
+fn processEvent(window_id: mach.ObjectID, event: *c.XEvent) void {
+    var core_window = core_ptr.windows.getValue(window_id);
+    const x11 = &core_window.native.?.x11;
     switch (event.type) {
         c.KeyPress, c.KeyRelease => {
             // TODO: key repeat event
@@ -618,19 +626,23 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
             var keysym: c.KeySym = undefined;
             _ = x11.libx11.XLookupString(&event.xkey, null, 0, &keysym, null);
 
-            const key_event = KeyEvent{ .key = toMachKey(keysym), .mods = toMachMods(event.xkey.state) };
+            const key_event = KeyEvent{
+                .key = toMachKey(keysym),
+                .mods = toMachMods(event.xkey.state),
+                .window_id = window_id,
+            };
 
             switch (event.type) {
                 c.KeyPress => {
-                    x11.core.pushEvent(.{ .key_press = key_event });
+                    core_ptr.pushEvent(.{ .key_press = key_event });
 
                     const codepoint = x11.libxkbcommon.xkb_keysym_to_utf32(@truncate(keysym));
                     if (codepoint != 0) {
-                        x11.core.pushEvent(.{ .char_input = .{ .codepoint = @truncate(codepoint) } });
+                        core_ptr.pushEvent(.{ .char_input = .{ .codepoint = @truncate(codepoint), .window_id = window_id } });
                     }
                 },
                 c.KeyRelease => {
-                    x11.core.pushEvent(.{ .key_release = key_event });
+                    core_ptr.pushEvent(.{ .key_release = key_event });
                 },
                 else => unreachable,
             }
@@ -645,28 +657,30 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                     7 => .{ -1.0, 0.0 },
                     else => unreachable,
                 };
-                x11.core.pushEvent(.{ .mouse_scroll = .{ .xoffset = scroll[0], .yoffset = scroll[1] } });
+                core_ptr.pushEvent(.{ .mouse_scroll = .{ .xoffset = scroll[0], .yoffset = scroll[1], .window_id = window_id } });
                 return;
             };
-            const cursor_pos = x11.getCursorPos();
+            const cursor_pos = getCursorPos(x11);
             const mouse_button = MouseButtonEvent{
                 .button = button,
                 .pos = cursor_pos,
                 .mods = toMachMods(event.xbutton.state),
+                .window_id = window_id,
             };
 
-            x11.core.pushEvent(.{ .mouse_press = mouse_button });
+            core_ptr.pushEvent(.{ .mouse_press = mouse_button });
         },
         c.ButtonRelease => {
             const button = toMachButton(event.xbutton.button) orelse return;
-            const cursor_pos = x11.getCursorPos();
+            const cursor_pos = getCursorPos(x11);
             const mouse_button = MouseButtonEvent{
                 .button = button,
                 .pos = cursor_pos,
                 .mods = toMachMods(event.xbutton.state),
+                .window_id = window_id,
             };
 
-            x11.core.pushEvent(.{ .mouse_release = mouse_button });
+            core_ptr.pushEvent(.{ .mouse_release = mouse_button });
         },
         c.ClientMessage => {
             if (event.xclient.message_type == c.None) return;
@@ -676,7 +690,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 if (protocol == c.None) return;
 
                 if (protocol == x11.wm_delete_window) {
-                    x11.core.pushEvent(.close);
+                    core_ptr.pushEvent(.{ .close = .{ .window_id = window_id } });
                 } else if (protocol == x11.net_wm_ping) {
                     // The window manager is pinging the application to ensure
                     // it's still responding to events
@@ -695,26 +709,33 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
         c.EnterNotify => {
             const x: f32 = @floatFromInt(event.xcrossing.x);
             const y: f32 = @floatFromInt(event.xcrossing.y);
-            x11.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
+            core_ptr.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y }, .window_id = window_id } });
         },
         c.MotionNotify => {
             const x: f32 = @floatFromInt(event.xmotion.x);
             const y: f32 = @floatFromInt(event.xmotion.y);
-            x11.core.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y } } });
+            core_ptr.pushEvent(.{ .mouse_motion = .{ .pos = .{ .x = x, .y = y }, .window_id = window_id } });
         },
         c.ConfigureNotify => {
-            if (event.xconfigure.width != linux.size.width or
-                event.xconfigure.height != linux.size.height)
+            if (event.xconfigure.width != core_window.width or
+                event.xconfigure.height != core_window.height)
             {
-                linux.size.width = @intCast(event.xconfigure.width);
-                linux.size.height = @intCast(event.xconfigure.height);
-                x11.core.swap_chain_update.set();
-                x11.core.pushEvent(.{
-                    .framebuffer_resize = .{
-                        .width = linux.size.width,
-                        .height = linux.size.height,
+                core_window.width = @intCast(event.xconfigure.width);
+                core_window.height = @intCast(event.xconfigure.height);
+
+                // FIX: What is the Mach Object System way of doing this?
+                // core_ptr.swap_chain_update.set();
+
+                core_ptr.pushEvent(.{
+                    .window_resize = .{
+                        .size = Core.Size{
+                            .width = core_window.width,
+                            .height = core_window.height,
+                        },
+                        .window_id = window_id,
                     },
                 });
+                core_ptr.windows.setValue(window_id, core_window);
             }
         },
         c.FocusIn => {
@@ -726,7 +747,7 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 return;
             }
 
-            x11.core.pushEvent(.focus_gained);
+            core_ptr.pushEvent(.{ .focus_gained = .{ .window_id = window_id } });
         },
         c.FocusOut => {
             if (event.xfocus.mode == c.NotifyGrab or
@@ -737,7 +758,15 @@ fn processEvent(x11: *X11, linux: *Linux, event: *c.XEvent) void {
                 return;
             }
 
-            x11.core.pushEvent(.focus_lost);
+            core_ptr.pushEvent(.{ .focus_lost = .{ .window_id = window_id } });
+        },
+        c.ResizeRequest => {
+            _ = x11.libx11.XResizeWindow(
+                x11.display,
+                x11.window,
+                @intCast(c.DisplayWidth(x11.display, c.DefaultScreen(x11.display))),
+                @intCast(c.DisplayHeight(x11.display, c.DefaultScreen(x11.display))),
+            );
         },
         else => {},
     }
