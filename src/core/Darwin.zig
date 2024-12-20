@@ -354,29 +354,31 @@ const WindowDelegateCallbacks = struct {
             const frame = native_window.frame();
             const content_rect = native_window.contentRectForFrameRect(frame);
 
-            core_window.width = @intFromFloat(content_rect.size.width);
-            core_window.height = @intFromFloat(content_rect.size.height);
+            if (core_window.width != @as(u32, @intFromFloat(content_rect.size.width)) or core_window.height != @as(u32, @intFromFloat(content_rect.size.height))) {
+                core_window.width = @intFromFloat(content_rect.size.width);
+                core_window.height = @intFromFloat(content_rect.size.height);
 
-            const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
-            const window_width: f32 = @floatFromInt(core_window.width);
-            const window_height: f32 = @floatFromInt(core_window.height);
+                const framebuffer_scale: f32 = @floatCast(native_window.backingScaleFactor());
+                const window_width: f32 = @floatFromInt(core_window.width);
+                const window_height: f32 = @floatFromInt(core_window.height);
 
-            core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
-            core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
+                core_window.framebuffer_width = @intFromFloat(window_width * framebuffer_scale);
+                core_window.framebuffer_height = @intFromFloat(window_height * framebuffer_scale);
 
-            core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
-            core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
-            core_window.swap_chain.release();
+                core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+                core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+                core_window.swap_chain.release();
 
-            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+                core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+
+                core.windows.setValueRaw(block.context.window_id, core_window);
+
+                core.pushEvent(.{ .window_resize = .{
+                    .window_id = block.context.window_id,
+                    .size = .{ .width = core_window.width, .height = core_window.height },
+                } });
+            }
         }
-
-        core.windows.setValueRaw(block.context.window_id, core_window);
-
-        core.pushEvent(.{ .window_resize = .{
-            .window_id = block.context.window_id,
-            .size = .{ .width = core_window.width, .height = core_window.height },
-        } });
     }
 
     pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) bool {
