@@ -109,7 +109,7 @@ pub fn tick(core: *Core) !void {
             if (core.windows.updated(window_id, .cursor_shape)) {
                 const Cursor = objc.app_kit.Cursor;
 
-                Cursor.pop();
+                Cursor.T_pop();
 
                 switch (core_window.cursor_shape) {
                     .arrow => Cursor.arrowCursor().push(),
