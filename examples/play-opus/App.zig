@@ -51,7 +51,7 @@ pub fn init(
         .title = "play-opus",
     });
 
-    // Configure the audio module to send our app's .audio_state_change event when an entity's sound
+    // Configure the audio module to call our App.audioStateChange function when a sound buffer
     // finishes playing.
     audio.on_state_change = app_mod.id.audioStateChange;
 
@@ -86,11 +86,16 @@ pub fn init(
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 }
 
+/// Called on the high-priority audio OS thread when the audio driver needs more audio samples, so
+/// this callback should be fast to respond.
 pub fn audioStateChange(audio: *mach.Audio, app: *App) !void {
     audio.buffers.lock();
     defer audio.buffers.unlock();
 
-    // Find audio entities that are no longer playing
+    app.bgm.lock();
+    defer app.bgm.unlock();
+
+    // Find audio objects that are no longer playing
     var buffers = audio.buffers.slice();
     while (buffers.next()) |buf_id| {
         if (audio.buffers.get(buf_id, .playing)) continue;
