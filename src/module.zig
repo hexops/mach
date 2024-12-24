@@ -318,7 +318,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             // e.g. in release builds
             const unpacked: PackedID = @bitCast(id);
             if (unpacked.generation != generation.items[unpacked.index]) {
-                @panic("mach: " ++ fn_name ++ "() called with an object that is no longer valid");
+                @panic("mach: " ++ fn_name ++ "() called on a dead object (use after delete)");
             }
             if (dead.isSet(unpacked.index)) {
                 @panic("mach: " ++ fn_name ++ "() called on a dead object");
