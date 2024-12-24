@@ -304,7 +304,7 @@ pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: boo
             x11.setFullscreen(true);
             _ = x11.libx11.XFlush(x11.display);
         },
-        .borderless => {
+        .fullscreen_borderless => {
             x11.setDecorated(false);
             x11.setFloating(true);
             x11.setFullscreen(false);

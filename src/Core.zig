@@ -63,9 +63,6 @@ windows: mach.Objects(
         cursor_mode: CursorMode = .normal,
         cursor_shape: CursorShape = .arrow,
 
-        /// Outer border
-        border: bool = true,
-
         /// Width of the window in virtual pixels
         width: u32 = 1920 / 2,
 
@@ -75,16 +72,20 @@ windows: mach.Objects(
         /// Target frames per second
         refresh_rate: u32 = 0,
 
-        /// Titlebar/window decorations
+        /// Whether window decorations (titlebar, borders, etc.) should be shown.
+        ///
+        /// Has no effect on windows who DisplayMode is .fullscreen or .fullscreen_borderless
         decorated: bool = true,
 
-        /// Color of the window decorations, i.e. titlebar
-        /// if null, decoration is the system-determined color
+        /// Color of the window decorations, e.g. titlebar.
+        ///
+        /// if null, system chooses its defaults
         decoration_color: ?gpu.Color = null,
 
-        /// Whether the window should be completely transparent
-        /// or not. On macOS, to achieve a fully transparent window
-        /// decoration_color must also be set fully transparent.
+        /// Whether the window should be completely transparent or not.
+        ///
+        /// on macOS, you must also set decoration_color to a transparent color if you wish to have
+        /// a fully transparent window as it controls the 'background color' of the window.
         transparent: bool = false,
 
         // GPU
@@ -495,20 +496,6 @@ pub const InputState = struct {
     }
 };
 
-pub const WindowColor = union(enum) {
-    system: void, // Default window colors
-    transparent: struct {
-        color: gpu.Color,
-        // If true, and the OS supports it, the titlebar will also be set to color
-        titlebar: bool = false,
-    },
-    solid: struct {
-        color: gpu.Color,
-        // If titlebar is true, and the OS supports it, the titlebar will also be set to color
-        titlebar: bool = false,
-    },
-};
-
 pub const Event = union(enum) {
     key_press: KeyEvent,
     key_repeat: KeyEvent,
@@ -747,10 +734,12 @@ pub const DisplayMode = enum {
     /// Beware that true .fullscreen is also a hint to the OS that is used in various contexts, e.g.
     ///
     /// * macOS: Moving to a virtual space dedicated to fullscreen windows as the user expects
-    /// * macOS: .borderless windows cannot prevent the system menu bar from being displayed
+    /// * macOS: .fullscreen_borderless windows cannot prevent the system menu bar from being
+    ///          displayed, which makes it appear 'not fullscreen' to users who are familiar with
+    ///          macOS.
     ///
     /// Always allow users to choose their preferred display mode.
-    borderless,
+    fullscreen_borderless,
 };
 
 pub const VSyncMode = enum {

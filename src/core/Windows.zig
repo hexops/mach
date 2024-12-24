@@ -79,7 +79,7 @@ fn initWindow(
     var request_window_height: i32 = @bitCast(core_window.height);
 
     const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
-    const window_style: w.WINDOW_STYLE = if (core_window.border) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
+    const window_style: w.WINDOW_STYLE = if (core_window.decorated) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
 
     var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
 
