@@ -321,10 +321,13 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             return false;
         }
 
-        /// Tells if the given object (which must be alive and valid) is from this pool of objects.
+        /// Tells if the given object is from this pool of objects. If it is, then it must also be
+        /// alive/valid or else a panic will occur.
         pub fn is(objs: *const @This(), id: ObjectID) bool {
-            const unpacked = objs.validateAndUnpack(id, "is");
-            return unpacked.type_id == objs.internal.type_id;
+            const unpacked: PackedID = @bitCast(id);
+            if (unpacked.type_id != objs.internal.type_id) return false;
+            _ = objs.validateAndUnpack(id, "is");
+            return true;
         }
 
         /// Get the parent of the child, or null.
