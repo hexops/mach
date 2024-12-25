@@ -309,7 +309,8 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             };
         }
 
-        // TODO: this doesn't type check currently, but it should (verify id is from this pool of objects.)
+        /// Validates the given object is from this list (type check) and alive (not a use after delete
+        /// situation.)
         fn validateAndUnpack(objs: *const @This(), id: ObjectID, comptime fn_name: []const u8) PackedID {
             const dead = &objs.internal.dead;
             const generation = &objs.internal.generation;
@@ -317,11 +318,14 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             // TODO(object): decide whether to disable safety checks like this in some conditions,
             // e.g. in release builds
             const unpacked: PackedID = @bitCast(id);
+            if (unpacked.type_id != objs.internal.type_id) {
+                @panic("mach: " ++ fn_name ++ "() called with object not from this list");
+            }
             if (unpacked.generation != generation.items[unpacked.index]) {
-                @panic("mach: " ++ fn_name ++ "() called on a dead object (use after delete)");
+                @panic("mach: " ++ fn_name ++ "() called with a dead object (use after delete, recycled slot)");
             }
             if (dead.isSet(unpacked.index)) {
-                @panic("mach: " ++ fn_name ++ "() called on a dead object");
+                @panic("mach: " ++ fn_name ++ "() called with a dead object (use after delete)");
             }
             return unpacked;
         }
