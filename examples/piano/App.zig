@@ -20,25 +20,30 @@ const App = @This();
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .start, .init, .deinit, .tick, .audio_state_change };
+pub const mach_systems = .{ .main, .init, .tick, .deinit, .audioStateChange };
 
-// TODO: banish global allocator
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+pub const main = mach.schedule(.{
+    .{ mach.Core, .init },
+    .{ mach.Audio, .init },
+    .{ App, .init },
+    .{ mach.Core, .main },
+});
 
-// TODO(object)
-pub const components = .{
-    .play_after = .{ .type = f32 },
-};
+pub const deinit = mach.schedule(.{
+    .{ mach.Audio, .deinit },
+});
 
+/// Tag object we set as a child of mach.Audio objects to indicate they are background music.
+// TODO(object): consider adding a better object 'tagging' system?
+play_after: mach.Objects(.{}, struct {
+    frequency: f32,
+}),
+
+allocator: std.mem.Allocator,
+window: mach.ObjectID,
 ghost_key_mode: bool = false,
 
-fn start(core: *mach.Core, audio: *mach.Audio, app: *App) void {
-    core.schedule(.init);
-    audio.schedule(.init);
-    app.schedule(.init);
-}
-
-fn init(
+pub fn init(
     core: *mach.Core,
     audio: *mach.Audio,
     app: *App,
@@ -47,12 +52,22 @@ fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
-    // Configure the audio module to send our app's .audio_state_change event when an entity's sound
-    // finishes playing.
-    audio.on_state_change = app_audio_state_change.id;
+    const window = try core.windows.new(.{
+        .title = "piano",
+    });
 
-    // Initialize piano module state
-    app.init(.{});
+    // Configure the audio module to call our App.audioStateChange function when a sound buffer
+    // finishes playing.
+    audio.on_state_change = app_mod.id.audioStateChange;
+
+    // TODO(allocator): find a better way to get an allocator here
+    const allocator = std.heap.c_allocator;
+
+    app.* = .{
+        .allocator = allocator,
+        .play_after = app.play_after,
+        .window = window,
+    };
 
     std.debug.print("controls:\n", .{});
     std.debug.print("[typing]     Play piano noises\n", .{});
@@ -61,41 +76,45 @@ fn init(
     std.debug.print("[arrow down] decrease volume 10%\n", .{});
 }
 
-fn deinit(audio: *mach.Audio) void {
-    audio.schedule(.deinit);
-}
+/// Called on the high-priority audio OS thread when the audio driver needs more audio samples, so
+/// this callback should be fast to respond.
+pub fn audioStateChange(audio: *mach.Audio, app: *App) !void {
+    audio.buffers.lock();
+    defer audio.buffers.unlock();
 
-fn audioStateChange(
-    entities: *mach.Entities.Mod,
-    audio: *mach.Audio,
-    app: *App,
-) !void {
-    // Find audio entities that are no longer playing
-    var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
-        .playings = mach.Audio.read(.playing),
-    });
-    while (q.next()) |v| {
-        for (v.ids, v.playings) |id, playing| {
-            if (playing) continue;
+    app.play_after.lock();
+    defer app.play_after.unlock();
 
-            if (app.get(id, .play_after)) |frequency| {
-                // Play a new sound
-                const e = try entities.new();
-                try audio.set(e, .samples, try fillTone(audio, frequency));
-                try audio.set(e, .channels, @intCast(audio.player.channels().len));
-                try audio.set(e, .playing, true);
-                try audio.set(e, .index, 0);
-            }
+    // Find audio objects that are no longer playing
+    var buffers = audio.buffers.slice();
+    while (buffers.next()) |buf_id| {
+        if (audio.buffers.get(buf_id, .playing)) continue;
 
-            // Remove the entity for the old sound
-            try entities.remove(id);
+        // If this object has a play_after child, then play a new sound.
+        if (try app.play_after.getFirstChildOfType(buf_id)) |play_after_id| {
+            const frequency = app.play_after.get(play_after_id, .frequency);
+
+            std.debug.print("ghost note!\n", .{});
+            _ = try audio.buffers.new(.{
+                .samples = try app.fillTone(audio, frequency),
+                .channels = @intCast(audio.player.channels().len),
+            });
+
+            // TODO(object): support cascading removal of children when parent is deleted?
+            //
+            // TODO(object): potential footgun: if object is deleted, its graph relations remain in
+            // tact still.
+            try app.play_after.removeChild(buf_id, play_after_id);
         }
+
+        // Remove the audio buffer that is no longer playing
+        const samples = audio.buffers.get(buf_id, .samples);
+        audio.buffers.delete(buf_id);
+        app.allocator.free(samples);
     }
 }
 
-fn tick(
-    entities: *mach.Entities.Mod,
+pub fn tick(
     core: *mach.Core,
     audio: *mach.Audio,
     app: *App,
@@ -120,16 +139,23 @@ fn tick(
                     // Piano keys
                     else => {
                         // Play a new sound
-                        const e = try entities.new();
-                        try audio.set(e, .samples, try fillTone(audio, keyToFrequency(ev.key)));
-                        try audio.set(e, .channels, @intCast(audio.player.channels().len));
-                        try audio.set(e, .playing, true);
-                        try audio.set(e, .index, 0);
+                        audio.buffers.lock();
+                        defer audio.buffers.unlock();
+
+                        app.play_after.lock();
+                        defer app.play_after.unlock();
+
+                        const sound_id = try audio.buffers.new(.{
+                            .samples = try app.fillTone(audio, keyToFrequency(ev.key)),
+                            .channels = @intCast(audio.player.channels().len),
+                        });
 
                         if (app.ghost_key_mode) {
                             // After that sound plays, we'll chain on another sound that is one semi-tone higher.
                             const one_semi_tone_higher = keyToFrequency(ev.key) * math.pow(f32, 2.0, (1.0 / 12.0));
-                            try app.set(e, .play_after, one_semi_tone_higher);
+
+                            const play_after_id = try app.play_after.new(.{ .frequency = one_semi_tone_higher });
+                            try audio.buffers.addChild(sound_id, play_after_id);
                         }
                     },
                 }
@@ -139,14 +165,16 @@ fn tick(
         }
     }
 
+    var window = core.windows.getValue(app.window);
+
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
-    const encoder = core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Begin render pass
@@ -171,16 +199,16 @@ fn tick(
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    window.queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-fn fillTone(audio: *mach.Audio, frequency: f32) ![]const f32 {
+fn fillTone(app: *App, audio: *mach.Audio, frequency: f32) ![]const f32 {
     const channels = audio.player.channels().len;
     const sample_rate: f32 = @floatFromInt(audio.player.sampleRate());
     const duration: f32 = 1.5 * @as(f32, @floatFromInt(channels)) * sample_rate; // play the tone for 1.5s
     const gain = 0.1;
 
-    const samples = try gpa.allocator().alloc(f32, @intFromFloat(duration));
+    const samples = try app.allocator.alloc(f32, @intFromFloat(duration));
 
     var i: usize = 0;
     while (i < samples.len) : (i += channels) {
