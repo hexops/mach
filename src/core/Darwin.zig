@@ -66,7 +66,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
-        const core_window = windows.get(window_id);
+        const core_window = core.windows.getValue(window_id);
 
         if (core_window.native) |native| {
             const native_window: *objc.app_kit.Window = native.window;
