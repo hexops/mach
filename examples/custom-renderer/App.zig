@@ -11,76 +11,56 @@ const App = @This();
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .start, .init, .deinit, .tick };
+pub const mach_systems = .{ .main, .init, .deinit, .tick };
 
-// Global state for our game module.
+// Global state for our app module.
 timer: mach.time.Timer,
-player: mach.EntityID,
+player: mach.ObjectID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 spawn_timer: mach.time.Timer,
 
-// TODO(object)
-pub const components = .{
-    // Whether an entity is a "follower" of our player entity or not. The type is void because we
-    // don't need any information, this is just a tag we assign to an entity with no data.
-    .follower = .{ .type = void },
-};
+pub const main = mach.schedule(.{
+    .{ mach.Core, .init },
+    .{ App, .init },
+    .{ mach.Core, .main },
+});
 
-pub fn deinit(renderer: *Renderer) void {
-    renderer.schedule(.deinit);
-}
+pub const deinit = mach.schedule(.{
+    .{ Renderer, .deinit },
+});
 
-fn start(
+pub fn init(
     core: *mach.Core,
-    renderer: *Renderer,
-    app: *App,
-) !void {
-    core.schedule(.init);
-    renderer.schedule(.init);
-    app.schedule(.init);
-}
-
-fn init(
-    // These are injected dependencies - as long as these modules were registered in the top-level
-    // of the program we can have these types injected here, letting us work with other modules in
-    // our program seamlessly and with a type-safe API:
-    entities: *mach.Entities.Mod,
-    core: *mach.Core,
-    renderer: *Renderer,
     app: *App,
     app_mod: mach.Mod(App),
+    renderer: *Renderer,
 ) !void {
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
+    const window = try core.windows.new(.{
+        .title = "custom renderer",
+    });
+    renderer.window = window;
+
     // Create our player entity.
-    const player = try entities.new();
+    const player = try renderer.objects.new(.{
+        .position = vec3(0, 0, 0),
+        .scale = 1.0,
+    });
 
-    // Give our player entity a .renderer.position and .renderer.scale component. Note that these
-    // are defined by the Renderer module, so we use `renderer: *Renderer` to interact with
-    // them.
-    //
-    // Components live in a module's namespace, so e.g. a physics2d module and renderer3d module could
-    // both define a .position component with a different data type, and both could be added to the
-    // same entity.
-    try renderer.set(player, .position, vec3(0, 0, 0));
-    try renderer.set(player, .scale, 1.0);
-
-    // Initialize our game module's state - these are the struct fields defined at the top of this
-    // file. If this is not done, then app. will panic indicating the state was never
-    // initialized.
-    app.init(.{
+    app.* = .{
         .timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
         .player = player,
-    });
+    };
 }
 
-fn tick(
-    entities: *mach.Entities.Mod,
+pub fn tick(
     core: *mach.Core,
     renderer: *Renderer,
+    renderer_mod: mach.Mod(Renderer),
     app: *App,
 ) !void {
     var direction = app.direction;
@@ -107,6 +87,9 @@ fn tick(
                     else => {},
                 }
             },
+            .window_open => |_| {
+                renderer_mod.call(.init);
+            },
             .close => core.exit(),
             else => {},
         }
@@ -121,20 +104,22 @@ fn tick(
     app.spawning = spawning;
 
     // Get the current player position
-    var player_pos = renderer.get(app.player, .position).?;
+    var player = renderer.objects.getValue(app.player);
+    defer renderer.objects.setValue(app.player, player);
 
     // If we want to spawn new entities, then spawn them now. The timer just makes spawning rate
     // independent of frame rate.
     if (spawning and app.spawn_timer.read() > 1.0 / 60.0) {
         _ = app.spawn_timer.lap(); // Reset the timer
         for (0..5) |_| {
-            // Spawn a new entity at the same position as the player, but smaller in scale.
-            const new_entity = try entities.new();
-            try renderer.set(new_entity, .position, player_pos);
-            try renderer.set(new_entity, .scale, 1.0 / 6.0);
+            // Spawn a new object at the same position as the player, but smaller in scale.
+            const new_obj = try renderer.objects.new(.{
+                .position = player.position,
+                .scale = 1.0 / 6.0,
+            });
 
-            // Tag the entity as one that follows the player
-            try app.set(new_entity, .follower, {});
+            // Parent the object to the player, we'll make children 'follow' the parent below.
+            try renderer.objects.addChild(app.player, new_obj);
         }
     }
 
@@ -144,62 +129,51 @@ fn tick(
     // Calculate the player position, by moving in the direction the player wants to go
     // by the speed amount.
     const speed = 1.0;
-    player_pos.v[0] += direction.x() * speed * delta_time;
-    player_pos.v[1] += direction.y() * speed * delta_time;
-    try renderer.set(app.player, .position, player_pos);
+    player.position.v[0] += direction.x() * speed * delta_time;
+    player.position.v[1] += direction.y() * speed * delta_time;
 
-    // Query all the entities that have the .follower tag indicating they should follow the player.
-    // TODO(important): better querying API
+    // Find the children of the player and make them 'follow' the player position.
+    var children = try renderer.objects.getChildren(app.player);
+    defer children.deinit();
+    for (children.items) |child_id| {
+        if (!renderer.objects.is(child_id)) continue;
+        var child = renderer.objects.getValue(child_id);
+        defer renderer.objects.setValue(child_id, child);
 
-    // Iterate the ID and position of each follower entity
-    var q = try entities.query(.{
-        .ids = mach.Entities.Mod.read(.id),
-        .followers = Mod.read(.follower),
-        .positions = Renderer.write(.position),
-    });
-    while (q.next()) |v| {
-        for (v.ids, v.positions) |id, *position| {
-            // Nested query to find all the other follower entities that we should move away from.
-            // We will avoid all other follower entities if we're too close to them.
-            // This is not very efficient, but it works!
-            const close_dist = 1.0 / 15.0;
-            var avoidance = Vec3.splat(0);
-            var avoidance_div: f32 = 1.0;
+        // Nested query to find all the other follower entities that we should move away from.
+        // We will avoid all other follower entities if we're too close to them.
+        // This is not very efficient, but it works!
+        const close_dist = 1.0 / 15.0;
+        var avoidance = Vec3.splat(0);
+        var avoidance_div: f32 = 1.0;
 
-            var q2 = try entities.query(.{
-                .ids = mach.Entities.Mod.read(.id),
-                .followers = Mod.read(.follower),
-                .positions = Renderer.read(.position),
-            });
-            while (q2.next()) |v2| {
-                for (v2.ids, v2.positions) |other_id, other_position| {
-                    if (id == other_id) continue;
-                    if (position.dist(&other_position) < close_dist) {
-                        avoidance = avoidance.sub(&position.dir(&other_position, 0.0000001));
-                        avoidance_div += 1.0;
-                    }
-                }
-            }
-
-            // Avoid the player if we're too close to it
-            var avoid_player_multiplier: f32 = 1.0;
-            if (position.dist(&player_pos) < close_dist * 6.0) {
-                avoidance = avoidance.sub(&position.dir(&player_pos, 0.0000001));
+        var children2 = try renderer.objects.getChildren(app.player);
+        defer children2.deinit();
+        for (children2.items) |child2_id| {
+            if (!renderer.objects.is(child2_id)) continue;
+            if (child_id == child2_id) continue;
+            const child2 = renderer.objects.getValue(child2_id);
+            if (child.position.dist(&child2.position) < close_dist) {
+                avoidance = avoidance.sub(&child.position.dir(&child2.position, 0.0000001));
                 avoidance_div += 1.0;
-                avoid_player_multiplier = 4.0;
             }
-
-            // Determine our new position, taking into account things we want to avoid
-            const move_speed = 1.0 * delta_time;
-            var new_position = position.add(&avoidance.divScalar(avoidance_div).mulScalar(move_speed * avoid_player_multiplier));
-
-            // Try to move towards the center of the world if we don't need to avoid something else
-            new_position = new_position.lerp(&vec3(0, 0, 0), move_speed / avoidance_div);
-
-            // Finally, update our entity position.
-            position.* = new_position;
         }
+
+        // Avoid the player if we're too close to it
+        var avoid_player_multiplier: f32 = 1.0;
+        if (child.position.dist(&player.position) < close_dist * 6.0) {
+            avoidance = avoidance.sub(&child.position.dir(&player.position, 0.0000001));
+            avoidance_div += 1.0;
+            avoid_player_multiplier = 4.0;
+        }
+
+        // Determine our new position, taking into account things we want to avoid
+        const move_speed = 1.0 * delta_time;
+        var new_position = child.position.add(&avoidance.divScalar(avoidance_div).mulScalar(move_speed * avoid_player_multiplier));
+
+        // Try to move towards the center of the world if we don't need to avoid something else
+        child.position = new_position.lerp(&vec3(0, 0, 0), move_speed / avoidance_div);
     }
 
-    renderer.schedule(.render_frame);
+    renderer_mod.call(.renderFrame);
 }

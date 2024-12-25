@@ -4,43 +4,45 @@ const math = mach.math;
 
 const Vec3 = math.Vec3;
 
+pub const mach_module = .renderer;
+
+pub const mach_systems = .{ .init, .deinit, .renderFrame };
+
+const Renderer = @This();
+
 const num_bind_groups = 1024 * 32;
 
 // uniform bind group offset must be 256-byte aligned
 const uniform_offset = 256;
-
-pipeline: *gpu.RenderPipeline,
-bind_groups: [num_bind_groups]*gpu.BindGroup,
-uniform_buffer: *gpu.Buffer,
-
-pub const mach_module = .renderer;
-
-// TODO(object)
-pub const components = .{
-    .position = .{ .type = Vec3 },
-    .rotation = .{ .type = Vec3 },
-    .scale = .{ .type = f32 },
-};
-
-pub const mach_systems = .{ .init, .deinit, .render_frame };
 
 const UniformBufferObject = extern struct {
     offset: Vec3,
     scale: f32,
 };
 
-fn init(
+window: mach.ObjectID,
+pipeline: *gpu.RenderPipeline,
+bind_groups: [num_bind_groups]*gpu.BindGroup,
+uniform_buffer: *gpu.Buffer,
+
+objects: mach.Objects(.{}, struct {
+    position: Vec3,
+    scale: f32,
+}),
+
+pub fn init(
     core: *mach.Core,
-    renderer: *Mod,
+    renderer: *Renderer,
 ) !void {
-    const device = core.device;
+    const window = core.windows.getValue(renderer.window);
+    const device = window.device;
     const shader_module = device.createShaderModuleWGSL("shader.wgsl", @embedFile("shader.wgsl"));
     defer shader_module.release();
 
     // Fragment state
     const blend = gpu.BlendState{};
     const color_target = gpu.ColorTargetState{
-        .format = core.windows.get(core.main_window).?.framebuffer_format,
+        .format = window.framebuffer_format,
         .blend = &blend,
         .write_mask = gpu.ColorWriteMaskFlags.all,
     };
@@ -95,51 +97,50 @@ fn init(
         },
     });
 
-    renderer.init(.{
+    renderer.* = .{
+        .window = renderer.window,
+        .objects = renderer.objects,
         .pipeline = pipeline,
         .bind_groups = bind_groups,
         .uniform_buffer = uniform_buffer,
-    });
+    };
 }
 
-fn deinit(
-    renderer: *Mod,
+pub fn deinit(
+    renderer: *Renderer,
 ) !void {
-    renderer.state().pipeline.release();
-    for (renderer.state().bind_groups) |bind_group| bind_group.release();
-    renderer.state().uniform_buffer.release();
+    renderer.pipeline.release();
+    for (renderer.bind_groups) |bind_group| bind_group.release();
+    renderer.uniform_buffer.release();
 }
 
-fn renderFrame(
-    entities: *mach.Entities.Mod,
+pub fn renderFrame(
     core: *mach.Core,
-    renderer: *Mod,
+    renderer: *Renderer,
 ) !void {
+    const window = core.windows.getValue(renderer.window);
+
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
-    const encoder = core.device.createCommandEncoder(&.{ .label = label });
+    const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     // Update uniform buffer
-    var num_entities: usize = 0;
-    var q = try entities.query(.{
-        .positions = Mod.read(.position),
-        .scales = Mod.read(.scale),
-    });
-    while (q.next()) |v| {
-        for (v.positions, v.scales) |position, scale| {
-            const ubo = UniformBufferObject{
-                .offset = position,
-                .scale = scale,
-            };
-            encoder.writeBuffer(renderer.state().uniform_buffer, uniform_offset * num_entities, &[_]UniformBufferObject{ubo});
-            num_entities += 1;
-        }
+    var num_objects: usize = 0;
+    var objs = renderer.objects.slice();
+    while (objs.next()) |obj_id| {
+        const obj = renderer.objects.getValue(obj_id);
+        const ubo = UniformBufferObject{
+            .offset = obj.position,
+            .scale = obj.scale,
+        };
+        encoder.writeBuffer(renderer.uniform_buffer, uniform_offset * num_objects, &[_]UniformBufferObject{ubo});
+        num_objects += 1;
     }
 
     // Begin render pass
@@ -157,8 +158,8 @@ fn renderFrame(
     defer render_pass.release();
 
     // Draw
-    for (renderer.state().bind_groups[0..num_entities]) |bind_group| {
-        render_pass.setPipeline(renderer.state().pipeline);
+    for (renderer.bind_groups[0..num_objects]) |bind_group| {
+        render_pass.setPipeline(renderer.pipeline);
         render_pass.setBindGroup(0, bind_group, &.{0});
         render_pass.draw(3, 1, 0, 0);
     }
@@ -169,5 +170,5 @@ fn renderFrame(
     // Submit our commands to the queue
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
-    core.queue.submit(&[_]*gpu.CommandBuffer{command});
+    window.queue.submit(&[_]*gpu.CommandBuffer{command});
 }

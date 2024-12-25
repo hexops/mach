@@ -74,7 +74,7 @@ pub fn build(b: *std.Build) !void {
         .{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "core-triangle", .deps = &.{} },
         .{ .name = "core-transparent-window", .deps = &.{} },
-        // .{ .name = "custom-renderer", .deps = &.{} },
+        .{ .name = "custom-renderer", .deps = &.{} },
         // .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
         // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
         .{ .name = "piano", .deps = &.{} },
