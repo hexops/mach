@@ -303,19 +303,33 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             return unpacked;
         }
 
-        /// If options have tracking enabled, this returns true when the given field has been set using the set()
-        /// or setAll() methods. A subsequent call to .updated() will return false until another set() or setAll()
-        /// call is made.
+        /// If options have tracking enabled, this returns true when the given field has been set
+        /// using the set() or setAll() methods. A subsequent call to .updated() or .anyUpdated()
+        /// will return false until another set() or setAll() call is made.
         pub fn updated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
-            if (options.track_fields) {
-                const unpacked = objs.validateAndUnpack(id, "updated");
-                if (std.meta.fieldIndex(T, @tagName(field_name))) |field_index| {
-                    if (objs.internal.updated) |*updated_fields| {
-                        const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
-                        const updated_value = updated_fields.isSet(updated_index);
-                        updated_fields.unset(updated_index);
-                        return updated_value;
-                    }
+            if (!options.track_fields) return false;
+            const unpacked = objs.validateAndUnpack(id, "updated");
+            const field_index = std.meta.fieldIndex(T, @tagName(field_name)).?;
+            const updated_fields = &(objs.internal.updated orelse return false);
+            const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
+            const updated_value = updated_fields.isSet(updated_index);
+            updated_fields.unset(updated_index);
+            return updated_value;
+        }
+
+        /// If options have tracking enabled, this returns true when any field has been set using
+        /// the set() or setAll() methods. A subsequent call to .updated() or .anyUpdated() will
+        /// return false until another set() or setAll() call is made.
+        pub fn anyUpdated(objs: *@This(), id: ObjectID) bool {
+            if (!options.track_fields) return false;
+            const unpacked = objs.validateAndUnpack(id, "updated");
+            const updated_fields = &(objs.internal.updated orelse return false);
+            inline for (0..@typeInfo(T).@"struct".fields.len) |field_index| {
+                const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
+                const updated_value = updated_fields.isSet(updated_index);
+                if (updated_value) {
+                    updated_fields.unset(updated_index);
+                    return true;
                 }
             }
             return false;
