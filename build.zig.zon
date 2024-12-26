@@ -65,8 +65,8 @@
 
         // Dependencies used by examples only
         .zigimg = .{
-            .url = "https://github.com/zigimg/zigimg/archive/d9dbbe22b5f7b5f1f4772169ed93ffeed8e8124d.tar.gz",
-            .hash = "122013646f7038ecc71ddf8a0d7de346d29a6ec40140af57f838b0a975c69af512b0",
+            .url = "https://github.com/zigimg/zigimg/archive/b3e11d8a95efcc2c168c6bedc2416bcfa54cca92.tar.gz",
+            .hash = "122026e50c74ae95bb9ef3a039fa763ccc1c22beef603562a983f6fd3035584dfd8a",
             .lazy = true,
         },
         .mach_opus = .{
