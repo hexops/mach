@@ -4,9 +4,8 @@ const mach = @import("mach");
 // The set of Mach modules our application may use.
 const Modules = mach.Modules(.{
     mach.Core,
-    mach.gfx.sprite_modules,
+    mach.gfx.Sprite,
     @import("App.zig"),
-    @import("Glyphs.zig"),
 });
 
 // TODO: move this to a mach "entrypoint" zig module which handles nuances like WASM requires.
