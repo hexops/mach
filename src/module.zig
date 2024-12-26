@@ -168,7 +168,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
             // If we are tracking fields, we need to resize the bitset to hold another object's fields
             if (objs.internal.updated) |*updated_fields| {
-                try updated_fields.resize(allocator, data.capacity * @typeInfo(T).@"struct".fields.len, false);
+                try updated_fields.resize(allocator, data.capacity * @typeInfo(T).@"struct".fields.len, true);
             }
 
             const index = data.len;
@@ -324,15 +324,16 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             if (!options.track_fields) return false;
             const unpacked = objs.validateAndUnpack(id, "updated");
             const updated_fields = &(objs.internal.updated orelse return false);
+            var any_updated = false;
             inline for (0..@typeInfo(T).@"struct".fields.len) |field_index| {
                 const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
                 const updated_value = updated_fields.isSet(updated_index);
+                updated_fields.unset(updated_index);
                 if (updated_value) {
-                    updated_fields.unset(updated_index);
-                    return true;
+                    any_updated = true;
                 }
             }
-            return false;
+            return any_updated;
         }
 
         /// Tells if the given object is from this pool of objects. If it is, then it must also be
