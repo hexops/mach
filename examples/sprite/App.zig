@@ -1,4 +1,3 @@
-// TODO(important): review all code in this file in-depth
 const std = @import("std");
 const zigimg = @import("zigimg");
 const assets = @import("assets");
@@ -18,90 +17,89 @@ const App = @This();
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .start, .init, .deinit, .tick, .end_frame };
+pub const mach_systems = .{ .main, .init, .tick, .deinit };
 
-// TODO: banish global allocator
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+pub const main = mach.schedule(.{
+    .{ mach.Core, .init },
+    .{ App, .init },
+    .{ mach.Core, .main },
+});
 
+allocator: std.mem.Allocator,
+window: mach.ObjectID,
 timer: mach.time.Timer,
-player: mach.EntityID,
-direction: Vec2 = vec2(0, 0),
-spawning: bool = false,
 spawn_timer: mach.time.Timer,
 fps_timer: mach.time.Timer,
-frame_count: usize,
-sprites: usize,
 rand: std.Random.DefaultPrng,
-time: f32,
-allocator: std.mem.Allocator,
-pipeline: mach.EntityID,
-frame_encoder: *gpu.CommandEncoder = undefined,
-frame_render_pass: *gpu.RenderPassEncoder = undefined,
 
-fn deinit(sprite_pipeline: *gfx.SpritePipeline.Mod) !void {
-    sprite_pipeline.schedule(.deinit);
-}
+frame_count: usize = 0,
+sprites: usize = 0,
+time: f32 = 0,
+direction: Vec2 = vec2(0, 0),
+spawning: bool = false,
+player_id: mach.ObjectID = undefined,
+pipeline_id: mach.ObjectID = undefined,
 
-fn start(
+pub fn init(
     core: *mach.Core,
-    sprite_pipeline: *gfx.SpritePipeline.Mod,
-    app: *App,
-) !void {
-    core.schedule(.init);
-    sprite_pipeline.schedule(.init);
-    app.schedule(.init);
-}
-
-fn init(
-    entities: *mach.Entities.Mod,
-    core: *mach.Core,
-    sprite: *gfx.Sprite.Mod,
-    sprite_pipeline: *gfx.SpritePipeline.Mod,
     app: *App,
     app_mod: mach.Mod(App),
+    sprite: *gfx.Sprite,
 ) !void {
+    _ = sprite; // autofix
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
-    // We can create entities, and set components on them. Note that components live in a module
-    // namespace, e.g. the `.mach_gfx_sprite` module could have a 3D `.location` component with a different
-    // type than the `.physics2d` module's `.location` component if you desire.
+    const window = try core.windows.new(.{
+        .title = "gfx.Sprite",
+    });
 
-    // Create a sprite rendering pipeline
-    const allocator = gpa.allocator();
-    const pipeline = try entities.new();
-    try sprite_pipeline.set(pipeline, .texture, try loadTexture(core, allocator));
-    sprite_pipeline.schedule(.update);
+    // TODO(allocator): find a better way to get an allocator here
+    const allocator = std.heap.c_allocator;
 
-    // Create our player sprite
-    const player = try entities.new();
-    try sprite.set(player, .transform, Mat4x4.translate(vec3(-0.02, 0, 0)));
-    try sprite.set(player, .size, vec2(32, 32));
-    try sprite.set(player, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-    try sprite.set(player, .pipeline, pipeline);
-    sprite.schedule(.update);
-
-    app.init(.{
+    app.* = .{
+        .allocator = allocator,
+        .window = window,
         .timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
-        .player = player,
         .fps_timer = try mach.time.Timer.start(),
-        .frame_count = 0,
-        .sprites = 0,
         .rand = std.Random.DefaultPrng.init(1337),
-        .time = 0,
-        .allocator = allocator,
-        .pipeline = pipeline,
-    });
+    };
 }
 
-fn tick(
-    entities: *mach.Entities.Mod,
+fn setupPipeline(
     core: *mach.Core,
-    sprite: *gfx.Sprite.Mod,
-    sprite_pipeline: *gfx.SpritePipeline.Mod,
     app: *App,
+    sprite: *gfx.Sprite,
+    window_id: mach.ObjectID,
 ) !void {
+    const window = core.windows.getValue(window_id);
+
+    // Create a sprite rendering pipeline
+    app.pipeline_id = try sprite.pipelines.new(.{
+        .window = window_id,
+        .render_pass = undefined,
+        .texture = try loadTexture(window.device, window.queue, app.allocator),
+    });
+
+    // Create our player sprite
+    app.player_id = try sprite.sprites.new(.{
+        .transform = Mat4x4.translate(vec3(-0.02, 0, 0)),
+        .size = vec2(32, 32),
+        .uv_transform = Mat3x3.translate(vec2(0, 0)),
+    });
+    // Attach the sprite to our sprite rendering pipeline.
+    try sprite.pipelines.setParent(app.player_id, app.pipeline_id);
+}
+
+pub fn tick(
+    core: *mach.Core,
+    app: *App,
+    sprite: *gfx.Sprite,
+    sprite_mod: mach.Mod(gfx.Sprite),
+) !void {
+    const label = @tagName(mach_module) ++ ".tick";
+
     var direction = app.direction;
     var spawning = app.spawning;
     while (core.nextEvent()) |event| {
@@ -126,6 +124,7 @@ fn tick(
                     else => {},
                 }
             },
+            .window_open => |ev| try setupPipeline(core, app, sprite, ev.window_id),
             .close => core.exit(),
             else => {},
         }
@@ -133,8 +132,9 @@ fn tick(
     app.direction = direction;
     app.spawning = spawning;
 
-    var player_transform = sprite.get(app.player, .transform).?;
-    var player_pos = player_transform.translation();
+    var player = sprite.sprites.getValue(app.player_id);
+    defer sprite.sprites.setValue(app.player_id, player);
+    var player_pos = player.transform.translation();
     if (spawning and app.spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
         _ = app.spawn_timer.lap();
@@ -143,11 +143,12 @@ fn tick(
             new_pos.v[0] += app.rand.random().floatNorm(f32) * 25;
             new_pos.v[1] += app.rand.random().floatNorm(f32) * 25;
 
-            const new_entity = try entities.new();
-            try sprite.set(new_entity, .transform, Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))));
-            try sprite.set(new_entity, .size, vec2(32, 32));
-            try sprite.set(new_entity, .uv_transform, Mat3x3.translate(vec2(0, 0)));
-            try sprite.set(new_entity, .pipeline, app.pipeline);
+            const new_sprite_id = try sprite.sprites.new(.{
+                .transform = Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))),
+                .size = vec2(32, 32),
+                .uv_transform = Mat3x3.translate(vec2(0, 0)),
+            });
+            try sprite.pipelines.setParent(new_sprite_id, app.pipeline_id);
             app.sprites += 1;
         }
     }
@@ -155,22 +156,20 @@ fn tick(
     // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
     const delta_time = app.timer.lap();
 
-    // Rotate entities
-    var q = try entities.query(.{
-        .transforms = gfx.Sprite.Mod.write(.transform),
-    });
-    while (q.next()) |v| {
-        for (v.transforms) |*entity_transform| {
-            const location = entity_transform.*.translation();
-            // var transform = entity_transform.mul(&Mat4x4.translate(-location));
-            // transform = mat.rotateZ(0.3 * delta_time).mul(&transform);
-            // transform = transform.mul(&Mat4x4.translate(location));
-            var transform = Mat4x4.ident;
-            transform = transform.mul(&Mat4x4.translate(location));
-            transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
-            transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(app.time / 2.0), 0.5)));
-            entity_transform.* = transform;
-        }
+    // Rotate all sprites in the pipeline.
+    var pipeline_children = try sprite.pipelines.getChildren(app.pipeline_id);
+    defer pipeline_children.deinit();
+    for (pipeline_children.items) |sprite_id| {
+        if (!sprite.sprites.is(sprite_id)) continue;
+        if (sprite_id == app.player_id) continue; // don't rotate the player
+        var s = sprite.sprites.getValue(sprite_id);
+        defer sprite.sprites.setValue(sprite_id, s);
+        const location = s.transform.translation();
+        var transform = Mat4x4.ident;
+        transform = transform.mul(&Mat4x4.translate(location));
+        transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
+        transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(app.time / 2.0), 0.5)));
+        s.transform = transform;
     }
 
     // Calculate the player position, by moving in the direction the player wants to go
@@ -178,20 +177,18 @@ fn tick(
     const speed = 200.0;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    try sprite.set(app.player, .transform, Mat4x4.translate(player_pos));
-    sprite.schedule(.update);
+    player.transform = Mat4x4.translate(player_pos);
 
-    // Perform pre-render work
-    sprite_pipeline.schedule(.pre_render);
-
-    // Create a command encoder for this frame
-    const label = @tagName(mach_module) ++ ".tick";
-    app.frame_encoder = core.device.createCommandEncoder(&.{ .label = label });
+    const window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = core.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
     defer back_buffer_view.release();
+
+    // Create a command encoder
+    const encoder = window.device.createCommandEncoder(&.{ .label = label });
+    defer encoder.release();
 
     // Begin render pass
     const sky_blue = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
@@ -201,50 +198,48 @@ fn tick(
         .load_op = .clear,
         .store_op = .store,
     }};
-    app.frame_render_pass = app.frame_encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
         .label = label,
         .color_attachments = &color_attachments,
     }));
 
-    // Render our sprite batch
-    sprite_pipeline.state().render_pass = app.frame_render_pass;
-    sprite_pipeline.schedule(.render);
+    // Render sprites
+    sprite.pipelines.set(app.pipeline_id, .render_pass, render_pass);
+    sprite_mod.call(.tick);
 
-    // Finish the frame once rendering is done.
-    app.schedule(.end_frame);
+    // Finish render pass
+    render_pass.end();
+    var command = encoder.finish(&.{ .label = label });
+    window.queue.submit(&[_]*gpu.CommandBuffer{command});
+    command.release();
+    render_pass.release();
 
+    // TODO(object): window-title
+    // // Every second, update the window title with the FPS
+    // if (app.fps_timer.read() >= 1.0) {
+    //     try core.printTitle(
+    //         core.main_window,
+    //         "sprite [ FPS: {d} ] [ Sprites: {d} ]",
+    //         .{ app.frame_count, app.sprites },
+    //     );
+    //     core.schedule(.update);
+    //     app.fps_timer.reset();
+    //     app.frame_count = 0;
+    // }
+    app.frame_count += 1;
     app.time += delta_time;
 }
 
-fn endFrame(app: *App, core: *mach.Core) !void {
-    // Finish render pass
-    app.frame_render_pass.end();
-    const label = @tagName(mach_module) ++ ".endFrame";
-    var command = app.frame_encoder.finish(&.{ .label = label });
-    core.queue.submit(&[_]*gpu.CommandBuffer{command});
-    command.release();
-    app.frame_encoder.release();
-    app.frame_render_pass.release();
-
-    // Every second, update the window title with the FPS
-    if (app.fps_timer.read() >= 1.0) {
-        try core.printTitle(
-            core.main_window,
-            "sprite [ FPS: {d} ] [ Sprites: {d} ]",
-            .{ app.frame_count, app.sprites },
-        );
-        core.schedule(.update);
-        app.fps_timer.reset();
-        app.frame_count = 0;
-    }
-    app.frame_count += 1;
+pub fn deinit(
+    app: *App,
+    sprite: *gfx.Sprite,
+) void {
+    // Cleanup here, if desired.
+    sprite.sprites.delete(app.player_id);
 }
 
-// TODO: move this helper into gfx module
-fn loadTexture(core: *mach.Core, allocator: std.mem.Allocator) !*gpu.Texture {
-    const device = core.device;
-    const queue = core.queue;
-
+// TODO(sprite): don't require users to copy / write this helper themselves
+fn loadTexture(device: *gpu.Device, queue: *gpu.Queue, allocator: std.mem.Allocator) !*gpu.Texture {
     // Load the image from memory
     var img = try zigimg.Image.fromMemory(allocator, assets.sprites_sheet_png);
     defer img.deinit();
