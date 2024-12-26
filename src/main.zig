@@ -11,8 +11,7 @@ pub const Core = if (build_options.want_core) @import("Core.zig") else struct {}
 
 // note: gamemode requires libc on linux
 pub const gamemode = if (builtin.os.tag != .linux or builtin.link_libc) @import("gamemode.zig");
-// TODO(object)
-// pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
+pub const gfx = if (build_options.want_mach) @import("gfx/main.zig") else struct {};
 pub const Audio = if (build_options.want_sysaudio) @import("Audio.zig") else struct {};
 pub const math = @import("math/main.zig");
 pub const testing = @import("testing.zig");
