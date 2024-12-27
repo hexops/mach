@@ -80,7 +80,7 @@ pub fn build(b: *std.Build) !void {
         .{ .name = "piano", .deps = &.{} },
         .{ .name = "play-opus", .deps = &.{.assets} },
         .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
-        // .{ .name = "text", .deps = &.{.assets} },
+        .{ .name = "text", .deps = &.{.assets} },
     };
 
     var sysaudio_tests = [_]SysAudioTest{

@@ -4,7 +4,7 @@ const mach = @import("mach");
 // The set of Mach modules our application may use.
 const Modules = mach.Modules(.{
     mach.Core,
-    mach.gfx.text_modules,
+    mach.gfx.Text,
     @import("App.zig"),
 });
 
