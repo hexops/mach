@@ -3,14 +3,10 @@ pub const Atlas = @import("atlas/Atlas.zig");
 
 // Mach modules
 pub const Sprite = @import("Sprite.zig");
-// TODO(text): rewrite this using object system
-// pub const Text = @import("Text.zig");
-// pub const TextPipeline = @import("TextPipeline.zig");
-// pub const TextStyle = @import("TextStyle.zig");
+pub const Text = @import("Text.zig");
 
 /// All graphics modules
-// TODO(text): add Text module here
-pub const modules = .{Sprite};
+pub const modules = .{ Sprite, Text };
 
 // Fonts
 pub const Font = @import("font/main.zig").Font;
@@ -27,7 +23,7 @@ test {
     std.testing.refAllDeclsRecursive(util);
     std.testing.refAllDeclsRecursive(Sprite);
     std.testing.refAllDeclsRecursive(Atlas);
-    // std.testing.refAllDeclsRecursive(Text);
+    std.testing.refAllDeclsRecursive(Text);
     std.testing.refAllDeclsRecursive(Font);
     std.testing.refAllDeclsRecursive(TextRun);
     std.testing.refAllDeclsRecursive(Glyph);
