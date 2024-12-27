@@ -19,6 +19,8 @@ pub const mach_module = .mach_gfx_sprite;
 
 pub const mach_systems = .{.tick};
 
+// TODO(sprite): currently not handling deinit properly
+
 const Uniforms = extern struct {
     /// The view * orthographic projection matrix
     view_projection: math.Mat4x4 align(16),
@@ -27,7 +29,7 @@ const Uniforms = extern struct {
     texture_size: math.Vec2 align(16),
 };
 
-pub const BuiltPipeline = struct {
+const BuiltPipeline = struct {
     render: *gpu.RenderPipeline,
     texture_sampler: *gpu.Sampler,
     texture: *gpu.Texture,
@@ -42,7 +44,7 @@ pub const BuiltPipeline = struct {
     uv_transforms: *gpu.Buffer,
     sizes: *gpu.Buffer,
 
-    pub fn deinit(p: *const BuiltPipeline) void {
+    fn deinit(p: *const BuiltPipeline) void {
         p.render.release();
         p.texture_sampler.release();
         p.texture.release();
@@ -57,14 +59,14 @@ pub const BuiltPipeline = struct {
     }
 };
 
-const sprite_buffer_cap = 1024 * 512; // TODO(sprite): allow user to specify preallocation
+const buffer_cap = 1024 * 512; // TODO(sprite): allow user to specify preallocation
 
-pub var cp_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
+var cp_transforms: [buffer_cap]math.Mat4x4 = undefined;
 // TODO(d3d12): uv_transform should be a Mat3x3 but our D3D12/HLSL backend cannot handle it.
-pub var cp_uv_transforms: [sprite_buffer_cap]math.Mat4x4 = undefined;
-pub var cp_sizes: [sprite_buffer_cap]math.Vec2 = undefined;
+var cp_uv_transforms: [buffer_cap]math.Mat4x4 = undefined;
+var cp_sizes: [buffer_cap]math.Vec2 = undefined;
 
-sprites: mach.Objects(.{ .track_fields = true }, struct {
+objects: mach.Objects(.{ .track_fields = true }, struct {
     /// The sprite model transformation matrix. A sprite is measured in pixel units, starting from
     /// (0, 0) at the top-left corner and extending to the size of the sprite. By default, the world
     /// origin (0, 0) lives at the center of the window.
@@ -93,10 +95,8 @@ pipelines: mach.Objects(.{ .track_fields = true }, struct {
     /// Must be specified for a pipeline entity to be valid.
     texture: *gpu.Texture,
 
-    /// View*Projection matrix to use when rendering text with this pipeline. This controls both
+    /// View*Projection matrix to use when rendering with this pipeline. This controls both
     /// the size of the 'virtual canvas' which is rendered onto, as well as the 'camera position'.
-    ///
-    /// This should be configured before .pre_render runs.
     ///
     /// By default, the size is configured to be equal to the window size in virtual pixels (e.g.
     /// if the window size is 1920x1080, the virtual canvas will also be that size even if ran on a
@@ -115,7 +115,6 @@ pipelines: mach.Objects(.{ .track_fields = true }, struct {
     ///     .far = 100000,
     /// });
     /// const view_projection = projection.mul(&Mat4x4.translate(vec3(0, 0, 0)));
-    /// try sprite_pipeline.set(my_sprite_pipeline, .view_projection, view_projection);
     /// ```
     view_projection: ?Mat4x4 = null,
 
@@ -159,7 +158,7 @@ pipelines: mach.Objects(.{ .track_fields = true }, struct {
     layout: ?*gpu.PipelineLayout = null,
 
     /// Number of sprites this pipeline will render.
-    /// Read-only, updated as part of Sprite.update
+    /// Read-only, updated as part of Sprite.tick
     num_sprites: u32 = 0,
 
     /// Internal pipeline state.
@@ -191,19 +190,19 @@ pub fn tick(sprite: *Sprite, core: *mach.Core) !void {
         // information for all its sprites.
         const any_sprites_updated = blk: {
             for (pipeline_children.items) |sprite_id| {
-                if (!sprite.sprites.is(sprite_id)) continue;
-                if (sprite.sprites.anyUpdated(sprite_id)) break :blk true;
+                if (!sprite.objects.is(sprite_id)) continue;
+                if (sprite.objects.anyUpdated(sprite_id)) break :blk true;
             }
             break :blk false;
         };
-        if (any_sprites_updated) updatePipelineSprites(sprite, core, pipeline_id, pipeline_children.items);
+        if (any_sprites_updated) updatePipelineBuffers(sprite, core, pipeline_id, pipeline_children.items);
 
         // Do we actually have any sprites to render?
         pipeline = sprite.pipelines.getValue(pipeline_id);
         if (pipeline.num_sprites == 0) continue;
 
         // TODO(sprite): need a way to specify order of rendering with multiple pipelines
-        renderSprites(sprite, core, pipeline_id);
+        renderPipeline(sprite, core, pipeline_id);
     }
 }
 
@@ -237,20 +236,20 @@ fn rebuildPipeline(
     const transforms = device.createBuffer(&.{
         .label = label ++ " transforms",
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
+        .size = @sizeOf(math.Mat4x4) * buffer_cap,
         .mapped_at_creation = .false,
     });
     const uv_transforms = device.createBuffer(&.{
         .label = label ++ " uv_transforms",
         .usage = .{ .storage = true, .copy_dst = true },
         // TODO(d3d12): uv_transform should be a Mat3x3 but our D3D12/HLSL backend cannot handle it.
-        .size = @sizeOf(math.Mat4x4) * sprite_buffer_cap,
+        .size = @sizeOf(math.Mat4x4) * buffer_cap,
         .mapped_at_creation = .false,
     });
     const sizes = device.createBuffer(&.{
         .label = label ++ " sizes",
         .usage = .{ .storage = true, .copy_dst = true },
-        .size = @sizeOf(math.Vec2) * sprite_buffer_cap,
+        .size = @sizeOf(math.Vec2) * buffer_cap,
         .mapped_at_creation = .false,
     });
 
@@ -296,9 +295,9 @@ fn rebuildPipeline(
             .layout = bind_group_layout,
             .entries = &.{
                 gpu.BindGroup.Entry.initBuffer(0, uniforms, 0, @sizeOf(Uniforms), @sizeOf(Uniforms)),
-                gpu.BindGroup.Entry.initBuffer(1, transforms, 0, @sizeOf(math.Mat4x4) * sprite_buffer_cap, @sizeOf(math.Mat4x4)),
-                gpu.BindGroup.Entry.initBuffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * sprite_buffer_cap, @sizeOf(math.Mat3x3)),
-                gpu.BindGroup.Entry.initBuffer(3, sizes, 0, @sizeOf(math.Vec2) * sprite_buffer_cap, @sizeOf(math.Vec2)),
+                gpu.BindGroup.Entry.initBuffer(1, transforms, 0, @sizeOf(math.Mat4x4) * buffer_cap, @sizeOf(math.Mat4x4)),
+                gpu.BindGroup.Entry.initBuffer(2, uv_transforms, 0, @sizeOf(math.Mat3x3) * buffer_cap, @sizeOf(math.Mat3x3)),
+                gpu.BindGroup.Entry.initBuffer(3, sizes, 0, @sizeOf(math.Vec2) * buffer_cap, @sizeOf(math.Vec2)),
                 gpu.BindGroup.Entry.initSampler(4, texture_sampler),
                 gpu.BindGroup.Entry.initTextureView(5, texture_view),
                 gpu.BindGroup.Entry.initTextureView(6, texture2_view),
@@ -367,7 +366,7 @@ fn rebuildPipeline(
     pipeline.num_sprites = 0;
 }
 
-fn updatePipelineSprites(
+fn updatePipelineBuffers(
     sprite: *Sprite,
     core: *mach.Core,
     pipeline_id: mach.ObjectID,
@@ -377,14 +376,14 @@ fn updatePipelineSprites(
     const window = core.windows.getValue(pipeline.window.?);
     const device = window.device;
 
-    const label = @tagName(mach_module) ++ ".updatePipelineSprites";
+    const label = @tagName(mach_module) ++ ".updatePipelineBuffers";
     const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
     var i: u32 = 0;
     for (pipeline_children) |sprite_id| {
-        if (!sprite.sprites.is(sprite_id)) continue;
-        const s = sprite.sprites.getValue(sprite_id);
+        if (!sprite.objects.is(sprite_id)) continue;
+        const s = sprite.objects.getValue(sprite_id);
 
         cp_transforms[i] = s.transform;
 
@@ -437,7 +436,7 @@ fn updatePipelineSprites(
     }
 }
 
-fn renderSprites(
+fn renderPipeline(
     sprite: *Sprite,
     core: *mach.Core,
     pipeline_id: mach.ObjectID,
@@ -446,7 +445,7 @@ fn renderSprites(
     const window = core.windows.getValue(pipeline.window.?);
     const device = window.device;
 
-    const label = @tagName(mach_module) ++ ".renderSprites";
+    const label = @tagName(mach_module) ++ ".renderPipeline";
     const encoder = device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 

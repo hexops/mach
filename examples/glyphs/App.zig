@@ -124,7 +124,7 @@ fn setupPipeline(
 
     // Create our player sprite
     const r = app.regions.get('?').?;
-    app.player_id = try sprite.sprites.new(.{
+    app.player_id = try sprite.objects.new(.{
         .transform = Mat4x4.translate(vec3(-0.02, 0, 0)),
         .size = vec2(@floatFromInt(r.width), @floatFromInt(r.height)),
         .uv_transform = Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))),
@@ -223,8 +223,8 @@ pub fn tick(
     app.direction = direction;
     app.spawning = spawning;
 
-    var player = sprite.sprites.getValue(app.player_id);
-    defer sprite.sprites.setValue(app.player_id, player);
+    var player = sprite.objects.getValue(app.player_id);
+    defer sprite.objects.setValue(app.player_id, player);
     var player_pos = player.transform.translation();
     if (spawning and app.spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
@@ -237,7 +237,7 @@ pub fn tick(
             const rand_index = app.rand.random().intRangeAtMost(usize, 0, app.regions.count() - 1);
             const r = app.regions.entries.get(rand_index).value;
 
-            const new_sprite_id = try sprite.sprites.new(.{
+            const new_sprite_id = try sprite.objects.new(.{
                 .transform = Mat4x4.translate(new_pos).mul(&Mat4x4.scaleScalar(0.3)),
                 .size = vec2(@floatFromInt(r.width), @floatFromInt(r.height)),
                 .uv_transform = Mat3x3.translate(vec2(@floatFromInt(r.x), @floatFromInt(r.y))),
@@ -256,14 +256,14 @@ pub fn tick(
     var pipeline_children = try sprite.pipelines.getChildren(app.pipeline_id);
     defer pipeline_children.deinit();
     for (pipeline_children.items) |sprite_id| {
-        if (!sprite.sprites.is(sprite_id)) continue;
+        if (!sprite.objects.is(sprite_id)) continue;
         if (sprite_id == app.player_id) continue; // don't rotate the player
-        var s = sprite.sprites.getValue(sprite_id);
+        var s = sprite.objects.getValue(sprite_id);
         const location = s.transform.translation();
 
         if (location.x() < -@as(f32, @floatFromInt(window.width)) / 1.5 or location.x() > @as(f32, @floatFromInt(window.width)) / 1.5 or location.y() < -@as(f32, @floatFromInt(window.height)) / 1.5 or location.y() > @as(f32, @floatFromInt(window.height)) / 1.5) {
-            try sprite.sprites.setParent(sprite_id, null);
-            sprite.sprites.delete(sprite_id);
+            try sprite.objects.setParent(sprite_id, null);
+            sprite.objects.delete(sprite_id);
             app.sprites -= 1;
             continue;
         }
@@ -274,7 +274,7 @@ pub fn tick(
         transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
         transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(app.time / 2.0), 0.2))));
         s.transform = transform;
-        sprite.sprites.setValue(sprite_id, s);
+        sprite.objects.setValue(sprite_id, s);
     }
 
     // Calculate the player position, by moving in the direction the player wants to go
@@ -317,6 +317,9 @@ pub fn tick(
     command.release();
     render_pass.release();
 
+    app.frame_count += 1;
+    app.time += delta_time;
+
     // TODO(object): window-title
     // // Every second, update the window title with the FPS
     // if (app.fps_timer.read() >= 1.0) {
@@ -329,6 +332,4 @@ pub fn tick(
     //     app.fps_timer.reset();
     //     app.frame_count = 0;
     // }
-    app.frame_count += 1;
-    app.time += delta_time;
 }

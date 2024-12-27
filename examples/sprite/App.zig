@@ -44,9 +44,7 @@ pub fn init(
     core: *mach.Core,
     app: *App,
     app_mod: mach.Mod(App),
-    sprite: *gfx.Sprite,
 ) !void {
-    _ = sprite; // autofix
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
@@ -83,7 +81,7 @@ fn setupPipeline(
     });
 
     // Create our player sprite
-    app.player_id = try sprite.sprites.new(.{
+    app.player_id = try sprite.objects.new(.{
         .transform = Mat4x4.translate(vec3(-0.02, 0, 0)),
         .size = vec2(32, 32),
         .uv_transform = Mat3x3.translate(vec2(0, 0)),
@@ -132,8 +130,7 @@ pub fn tick(
     app.direction = direction;
     app.spawning = spawning;
 
-    var player = sprite.sprites.getValue(app.player_id);
-    defer sprite.sprites.setValue(app.player_id, player);
+    var player = sprite.objects.getValue(app.player_id);
     var player_pos = player.transform.translation();
     if (spawning and app.spawn_timer.read() > 1.0 / 60.0) {
         // Spawn new entities
@@ -143,7 +140,7 @@ pub fn tick(
             new_pos.v[0] += app.rand.random().floatNorm(f32) * 25;
             new_pos.v[1] += app.rand.random().floatNorm(f32) * 25;
 
-            const new_sprite_id = try sprite.sprites.new(.{
+            const new_sprite_id = try sprite.objects.new(.{
                 .transform = Mat4x4.translate(new_pos).mul(&Mat4x4.scale(Vec3.splat(0.3))),
                 .size = vec2(32, 32),
                 .uv_transform = Mat3x3.translate(vec2(0, 0)),
@@ -160,16 +157,15 @@ pub fn tick(
     var pipeline_children = try sprite.pipelines.getChildren(app.pipeline_id);
     defer pipeline_children.deinit();
     for (pipeline_children.items) |sprite_id| {
-        if (!sprite.sprites.is(sprite_id)) continue;
+        if (!sprite.objects.is(sprite_id)) continue;
         if (sprite_id == app.player_id) continue; // don't rotate the player
-        var s = sprite.sprites.getValue(sprite_id);
-        defer sprite.sprites.setValue(sprite_id, s);
+        var s = sprite.objects.getValue(sprite_id);
         const location = s.transform.translation();
         var transform = Mat4x4.ident;
         transform = transform.mul(&Mat4x4.translate(location));
         transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
         transform = transform.mul(&Mat4x4.scaleScalar(@min(math.cos(app.time / 2.0), 0.5)));
-        s.transform = transform;
+        sprite.objects.set(sprite_id, .transform, transform);
     }
 
     // Calculate the player position, by moving in the direction the player wants to go
@@ -177,7 +173,7 @@ pub fn tick(
     const speed = 200.0;
     player_pos.v[0] += direction.x() * speed * delta_time;
     player_pos.v[1] += direction.y() * speed * delta_time;
-    player.transform = Mat4x4.translate(player_pos);
+    sprite.objects.set(app.player_id, .transform, Mat4x4.translate(player_pos));
 
     const window = core.windows.getValue(app.window);
 
@@ -214,6 +210,9 @@ pub fn tick(
     command.release();
     render_pass.release();
 
+    app.frame_count += 1;
+    app.time += delta_time;
+
     // TODO(object): window-title
     // // Every second, update the window title with the FPS
     // if (app.fps_timer.read() >= 1.0) {
@@ -226,8 +225,6 @@ pub fn tick(
     //     app.fps_timer.reset();
     //     app.frame_count = 0;
     // }
-    app.frame_count += 1;
-    app.time += delta_time;
 }
 
 pub fn deinit(
@@ -235,7 +232,7 @@ pub fn deinit(
     sprite: *gfx.Sprite,
 ) void {
     // Cleanup here, if desired.
-    sprite.sprites.delete(app.player_id);
+    sprite.objects.delete(app.player_id);
 }
 
 // TODO(sprite): don't require users to copy / write this helper themselves
