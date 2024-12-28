@@ -76,7 +76,7 @@ pub fn build(b: *std.Build) !void {
         .{ .name = "core-transparent-window", .deps = &.{} },
         .{ .name = "custom-renderer", .deps = &.{} },
         .{ .name = "glyphs", .deps = &.{ .assets, .freetype } },
-        // .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
+        .{ .name = "hardware-check", .deps = &.{ .assets, .zigimg } },
         .{ .name = "piano", .deps = &.{} },
         .{ .name = "play-opus", .deps = &.{.assets} },
         .{ .name = "sprite", .deps = &.{ .zigimg, .assets } },
