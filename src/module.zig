@@ -539,7 +539,7 @@ pub fn Modules(module_lists: anytype) type {
                 const module_name_id = try m.module_names.indexOrPut(allocator, @tagName(Mod2.mach_module));
                 inline for (@typeInfo(@TypeOf(mod)).@"struct".fields) |mod_field| {
                     if (@typeInfo(mod_field.type) == .@"struct" and @hasDecl(mod_field.type, "IsMachObjects")) {
-                        const object_name_id = try m.module_names.indexOrPut(allocator, mod_field.name);
+                        const object_name_id = try m.object_names.indexOrPut(allocator, mod_field.name);
 
                         // TODO: use packed struct(TypeID) here. Same thing, just get the type from central location
                         const object_type_id: u16 = @bitCast(PackedObjectTypeID{
