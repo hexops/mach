@@ -145,6 +145,7 @@ pub fn tick(
                         app.play_after.lock();
                         defer app.play_after.unlock();
 
+                        // Play a new piano key sound
                         const sound_id = try audio.buffers.new(.{
                             .samples = try app.fillTone(audio, keyToFrequency(ev.key)),
                             .channels = @intCast(audio.player.channels().len),
