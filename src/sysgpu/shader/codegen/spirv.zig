@@ -625,7 +625,7 @@ fn emitVarProto(spv: *SpirV, section: *Section, inst_idx: InstIndex) !IdRef {
             break :sti struct_type_id;
         } else type_id;
 
-        if (spv.decorated.get(type_id) == null) {
+        if (spv.decorated.get(struct_type_id) == null) {
             try spv.annotations_section.emit(.OpDecorate, .{
                 .target = struct_type_id,
                 .decoration = .Block,
@@ -652,35 +652,38 @@ fn emitVarProto(spv: *SpirV, section: *Section, inst_idx: InstIndex) !IdRef {
                     .decoration = .{ .Offset = .{ .byte_offset = 0 } },
                 });
 
-                switch (spv.air.getInst(inst.type)) {
-                    .array => {
-                        const arr_ty = spv.air.getInst(inst.type).array;
-                        if (spv.air.getInst(arr_ty.elem_type) == .@"struct") {
-                            try spv.decorateStruct(arr_ty.elem_type);
-                        }
-
-                        try spv.annotations_section.emit(.OpDecorate, .{
-                            .target = type_id,
-                            .decoration = .{ .ArrayStride = .{
-                                .array_stride = spv.getStride(inst.type, true),
-                            } },
-                        });
+                sw: switch (inst.type) {
+                    else => |current_type| switch (spv.air.getInst(current_type)) {
+                        .array => |arr_ty| {
+                            if (spv.air.getInst(arr_ty.elem_type) == .@"struct") {
+                                try spv.decorateStruct(arr_ty.elem_type);
+                            }
+                            if (spv.decorated.get(type_id) == null) {
+                                try spv.annotations_section.emit(.OpDecorate, .{
+                                    .target = type_id,
+                                    .decoration = .{ .ArrayStride = .{
+                                        .array_stride = spv.getStride(current_type, true),
+                                    } },
+                                });
+                            }
+                            continue :sw arr_ty.elem_type;
+                        },
+                        .matrix => {
+                            try spv.annotations_section.emit(.OpMemberDecorate, .{
+                                .structure_type = struct_type_id,
+                                .member = 0,
+                                .decoration = .ColMajor,
+                            });
+                            try spv.annotations_section.emit(.OpMemberDecorate, .{
+                                .structure_type = struct_type_id,
+                                .member = 0,
+                                .decoration = .{ .MatrixStride = .{
+                                    .matrix_stride = spv.getStride(current_type, true),
+                                } },
+                            });
+                        },
+                        else => {},
                     },
-                    .matrix => {
-                        try spv.annotations_section.emit(.OpMemberDecorate, .{
-                            .structure_type = struct_type_id,
-                            .member = 0,
-                            .decoration = .ColMajor,
-                        });
-                        try spv.annotations_section.emit(.OpMemberDecorate, .{
-                            .structure_type = struct_type_id,
-                            .member = 0,
-                            .decoration = .{ .MatrixStride = .{
-                                .matrix_stride = spv.getStride(inst.type, true),
-                            } },
-                        });
-                    },
-                    else => {},
                 }
             }
 
