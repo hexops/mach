@@ -275,7 +275,7 @@ pub fn tick(
             sprite.objects.delete(sprite_id);
 
             // Play a new sound
-            const samples = try app.allocator.dupe(f32, app.sfx.samples);
+            const samples = try app.allocator.alignedAlloc(f32, mach.Audio.alignment, app.sfx.samples.len);
             @memcpy(samples, app.sfx.samples);
             audio.buffers.lock();
             defer audio.buffers.unlock();
@@ -283,7 +283,7 @@ pub fn tick(
                 .samples = samples,
                 .channels = app.sfx.channels,
             });
-            _ = sound_id; // autofix
+            _ = sound_id;
             app.score += 1;
         } else {
             var transform = Mat4x4.ident;

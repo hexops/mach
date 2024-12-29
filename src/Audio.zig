@@ -2,6 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const mach = @import("main.zig");
 const sysaudio = mach.sysaudio;
+const testing = mach.testing;
 
 pub const Opus = @import("mach-opus");
 
@@ -15,9 +16,7 @@ pub const mach_systems = .{ .init, .tick, .deinit };
 /// aligned to simd_vector_length * @sizeOf(f32).
 pub const simd_vector_length = std.simd.suggestVectorLength(f32) orelse 1;
 
-/// The number of f32s which should be reserved for padding at the start of an []f32 buffer, assuming
-/// it is @alignOf(f32) / 4-byte aligned, in order to achieve @Vector(simd_vector_length, f32) alignment.
-pub const simd_vector_f32_buffer_padding = (simd_vector_length - (4 % simd_vector_length)) % simd_vector_length;
+pub const alignment = simd_vector_length * @sizeOf(f32);
 
 const log = std.log.scoped(mach_module);
 
@@ -33,7 +32,7 @@ buffers: mach.Objects(
     .{},
     struct {
         /// The actual audio samples
-        samples: []const f32 align(simd_vector_length),
+        samples: []align(alignment) const f32,
 
         /// The number of channels in the samples buffer
         channels: u8,
@@ -62,7 +61,7 @@ player: sysaudio.Player,
 allocator: std.mem.Allocator,
 ctx: sysaudio.Context,
 output: SampleBuffer,
-mixing_buffer: ?std.ArrayListUnmanaged(f32) = null,
+mixing_buffer: ?std.ArrayListAlignedUnmanaged(f32, alignment) = null,
 shutdown: std.atomic.Value(bool) = .init(false),
 mod: mach.Mod(Audio),
 driver_needs_num_samples: usize = 0,
@@ -146,11 +145,11 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
     // Ensure our f32 mixing buffer has enough space for the samples we will render right now.
     // This will allocate to grow but never shrink.
     var mixing_buffer = if (audio.mixing_buffer) |*b| b else blk: {
-        const b = try std.ArrayListUnmanaged(f32).initCapacity(allocator, simd_vector_f32_buffer_padding + render_num_samples);
+        const b = try std.ArrayListAlignedUnmanaged(f32, alignment).initCapacity(allocator, render_num_samples);
         audio.mixing_buffer = b;
         break :blk &audio.mixing_buffer.?;
     };
-    try mixing_buffer.resize(allocator, simd_vector_f32_buffer_padding + render_num_samples); // grows, but never shrinks
+    try mixing_buffer.resize(allocator, render_num_samples); // grows, but never shrinks
 
     // Zero the mixing buffer to silence: if no audio is mixed in below, then we want silence
     // not undefined memory noise.
@@ -167,26 +166,20 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
             if (!buffer.playing) continue;
             defer audio.buffers.setValue(buf_id, buffer);
 
-            const channels_diff = player_channels - buffer.channels + 1;
-            const mixing_buffer_len = mixing_buffer.items.len - simd_vector_f32_buffer_padding;
-            const to_read = (@min(buffer.samples.len - buffer.index, mixing_buffer_len - simd_vector_f32_buffer_padding) / channels_diff) + @rem(@min(buffer.samples.len - buffer.index, mixing_buffer_len), channels_diff);
-            if (buffer.channels == 1 and player_channels > 1) {
-                // Duplicate samples for mono sounds
-                var i: usize = simd_vector_f32_buffer_padding;
-                for (buffer.samples[buffer.index..][0..to_read]) |sample| {
-                    mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample * buffer.volume);
-                    i += player_channels;
-                }
-            } else {
-                mixSamples(mixing_buffer.items[simd_vector_f32_buffer_padding..to_read], buffer.samples[buffer.index..][0..to_read], buffer.volume);
-            }
-
-            if (buffer.index + to_read >= buffer.samples.len) {
+            const new_index = mixSamples(
+                mixing_buffer.items,
+                player_channels,
+                buffer.samples,
+                buffer.index,
+                buffer.channels,
+                buffer.volume,
+            );
+            if (new_index >= buffer.samples.len) {
                 // No longer playing, we've read all samples
                 did_state_change = true;
                 buffer.playing = false;
                 buffer.index = 0;
-            } else buffer.index = buffer.index + to_read;
+            } else buffer.index = new_index;
         }
     }
     if (did_state_change) if (audio.on_state_change) |f| audio_mod.run(f);
@@ -195,10 +188,10 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
     // samples to the format the driver expects.
     const out_buffer_len = render_num_samples * player.format().size();
     const out_buffer = try audio.output.writableWithSize(out_buffer_len); // TODO(audio): handle potential OOM here better
-    std.debug.assert((mixing_buffer.items.len - simd_vector_f32_buffer_padding) == render_num_samples);
+    std.debug.assert(mixing_buffer.items.len == render_num_samples);
     sysaudio.convertTo(
         f32,
-        mixing_buffer.items[simd_vector_f32_buffer_padding..],
+        mixing_buffer.items[0..],
         player.format(),
         out_buffer[0..out_buffer_len], // writableWithSize may return a larger slice than needed
     );
@@ -264,28 +257,217 @@ fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
     }
 }
 
+/// Mixes audio samples using SIMD. Returns the src_index progressed by the number of samples
+/// consumed.
 inline fn mixSamples(
-    a: []align(simd_vector_length) f32,
-    b: []align(simd_vector_length) const f32,
-    volume: f32,
-) void {
-    std.debug.assert(a.len >= b.len);
+    /// The destination where audio buffers should be mixed into. This buffer will be populated with
+    /// as many samples from src as possible, until either dst is full or src has no more available.
+    dst: []align(alignment) f32,
+    /// The number of channels in the dst buffer.
+    dst_channels: u8,
+    /// The audio buffer whose samples src[src_index..] should be mixed into the dst
+    src: []align(alignment) const f32,
+    src_index: usize,
+    /// The number of channels in the src buffer
+    src_channels: u8,
+    /// The volume/gain that should be applied to samples in src before mixing them into dst.
+    src_volume: f32,
+) usize {
+    const dst_frames = dst.len / dst_channels;
+    const src_frames = (src.len - src_index) / src_channels;
+    const frames_to_process = @min(dst_frames, src_frames);
+    const samples_to_process = frames_to_process * src_channels;
+
+    if (samples_to_process == 0) return src_index;
+
     const Vec = @Vector(simd_vector_length, f32);
-    const vec_blocks_len = b.len - (b.len % simd_vector_length);
-    var i: usize = 0;
-    while (i < vec_blocks_len) : (i += simd_vector_length) {
-        const b_vec: Vec = b[i..][0..simd_vector_length].*;
-        const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..simd_vector_length]));
-        a_vec.* += b_vec * @as(Vec, @splat(volume));
+    const volume_vec: Vec = @splat(src_volume);
+
+    var current_index = src_index;
+
+    // Handle unaligned start if necessary, since src[src_index..] may not be SIMD aligned - so
+    // we handle the starting portion with scalars instead.
+    const src_ptr: [*]align(alignment) const f32 = @ptrCast(src.ptr);
+    const misalignment = (@intFromPtr(src_ptr + current_index) % alignment) / @sizeOf(f32);
+    if (misalignment != 0) {
+        const scalar_count = alignment / @sizeOf(f32) - misalignment;
+        const end_index = @min(current_index + scalar_count, src_index + samples_to_process);
+
+        while (current_index < end_index) : (current_index += 1) {
+            const src_sample = src[current_index] * src_volume;
+            const frame_index = (current_index - src_index) / src_channels;
+            const dst_index = frame_index * dst_channels;
+
+            var channel: u8 = 0;
+            while (channel < dst_channels) : (channel += 1) {
+                const src_channel = if (channel < src_channels) channel else channel % src_channels;
+                if (src_channel == (current_index - src_index) % src_channels) {
+                    dst[dst_index + channel] += src_sample;
+                }
+            }
+        }
     }
+
+    // SIMD processing for aligned portion
+    const remaining_samples = samples_to_process - (current_index - src_index);
+    const vec_samples = remaining_samples / simd_vector_length;
+    const vec_count = vec_samples * simd_vector_length;
+    var vec_index: usize = 0;
+    while (vec_index < vec_count) : (vec_index += simd_vector_length) {
+        const src_offset = current_index + vec_index;
+        const src_vec: Vec = src[src_offset..][0..simd_vector_length].*;
+        const scaled_vec = src_vec * volume_vec;
+
+        const frame_index = (src_offset - src_index) / src_channels;
+        var dst_base = frame_index * dst_channels;
+        var i: usize = 0;
+        while (i < simd_vector_length) : (i += 1) {
+            const sample = scaled_vec[i];
+            const src_channel = (src_offset - src_index + i) % src_channels;
+            var channel: u8 = 0;
+
+            while (channel < dst_channels) : (channel += 1) {
+                const dst_channel = if (channel < src_channels) channel else channel % src_channels;
+                if (dst_channel == src_channel) dst[dst_base + channel] += sample;
+            }
+            if (src_channel == src_channels - 1) dst_base += dst_channels;
+        }
+    }
+    current_index += vec_count;
+
+    // Handle remaining samples, similar to how we may need to handle an unaligned start we also
+    // need to handle an unaligned end - if dst wants more samples but not a full SIMD vector worth
+    // at the end.
+    while (current_index < src_index + samples_to_process) : (current_index += 1) {
+        const src_sample = src[current_index] * src_volume;
+        const frame_index = (current_index - src_index) / src_channels;
+        const dst_index = frame_index * dst_channels;
+
+        var channel: u8 = 0;
+        while (channel < dst_channels) : (channel += 1) {
+            const src_channel = if (channel < src_channels) channel else channel % src_channels;
+            if (src_channel == (current_index - src_index) % src_channels) {
+                dst[dst_index + channel] += src_sample;
+            }
+        }
+    }
+
+    return current_index;
 }
 
-inline fn mixSamplesDuplicate(a: []align(simd_vector_length) f32, b: f32) void {
-    const Vec = @Vector(simd_vector_length, f32);
-    const vec_blocks_len = a.len - (a.len % simd_vector_length);
-    var i: usize = 0;
-    while (i < vec_blocks_len) : (i += simd_vector_length) {
-        const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..simd_vector_length]));
-        a_vec.* += @as(Vec, @splat(b));
-    }
+test "mixSamples - basic mono to mono mixing" {
+    var dst_buffer align(alignment) = [_]f32{0} ** 16;
+    const src_buffer align(alignment) = [_]f32{ 1.0, 2.0, 3.0, 4.0 } ** 4;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        1, // dst_channels
+        &src_buffer,
+        0, // src_index
+        1, // src_channels
+        0.5, // src_volume
+    );
+
+    try testing.expect(usize, 16).eql(new_index);
+    try testing.expect(f32, 0.5).eql(dst_buffer[0]);
+    try testing.expect(f32, 1.0).eql(dst_buffer[1]);
+    try testing.expect(f32, 1.5).eql(dst_buffer[2]);
+    try testing.expect(f32, 2.0).eql(dst_buffer[3]);
+}
+
+test "mixSamples - stereo to stereo mixing" {
+    var dst_buffer align(alignment) = [_]f32{0} ** 16;
+    const src_buffer align(alignment) = [_]f32{ 1.0, -1.0, 2.0, -2.0, 3.0, -3.0, 4.0, -4.0 } ** 2;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        2, // dst_channels
+        &src_buffer,
+        0, // src_index
+        2, // src_channels
+        1.0, // src_volume
+    );
+
+    try testing.expect(usize, 16).eql(new_index);
+    try testing.expect(f32, 1.0).eql(dst_buffer[0]); // Left
+    try testing.expect(f32, -1.0).eql(dst_buffer[1]); // Right
+    try testing.expect(f32, 2.0).eql(dst_buffer[2]); // Left
+    try testing.expect(f32, -2.0).eql(dst_buffer[3]); // Right
+}
+
+test "mixSamples - mono to stereo mixing (channel duplication)" {
+    var dst_buffer align(alignment) = [_]f32{0} ** 16;
+    const src_buffer align(alignment) = [_]f32{ 1.0, 2.0, 3.0, 4.0 } ** 2;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        2, // dst_channels
+        &src_buffer,
+        0, // src_index
+        1, // src_channels
+        1.0, // src_volume
+    );
+
+    try testing.expect(usize, 8).eql(new_index);
+    try testing.expect(f32, 1.0).eql(dst_buffer[0]); // Left
+    try testing.expect(f32, 1.0).eql(dst_buffer[1]); // Right
+    try testing.expect(f32, 2.0).eql(dst_buffer[2]); // Left
+    try testing.expect(f32, 2.0).eql(dst_buffer[3]); // Right
+}
+
+test "mixSamples - partial buffer processing" {
+    var dst_buffer align(alignment) = [_]f32{0} ** 8;
+    const src_buffer align(alignment) = [_]f32{ 1.0, 2.0, 3.0, 4.0 } ** 4;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        1, // dst_channels
+        &src_buffer,
+        4, // src_index
+        1, // src_channels
+        1.0, // src_volume
+    );
+
+    try testing.expect(usize, 12).eql(new_index);
+    try testing.expect(f32, 1.0).eql(dst_buffer[0]);
+    try testing.expect(f32, 2.0).eql(dst_buffer[1]);
+    try testing.expect(f32, 3.0).eql(dst_buffer[2]);
+}
+
+test "mixSamples - mixing with volume adjustment" {
+    var dst_buffer align(alignment) = [_]f32{0} ** 8;
+    const src_buffer align(alignment) = [_]f32{ 1.0, 2.0, 3.0, 4.0 } ** 2;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        1, // dst_channels
+        &src_buffer,
+        0, // src_index
+        1, // src_channels
+        0.5, // src_volume
+    );
+
+    try testing.expect(usize, 8).eql(new_index);
+    try testing.expect(f32, 0.5).eql(dst_buffer[0]);
+    try testing.expect(f32, 1.0).eql(dst_buffer[1]);
+    try testing.expect(f32, 1.5).eql(dst_buffer[2]);
+}
+
+test "mixSamples - accumulation test" {
+    var dst_buffer align(alignment) = [_]f32{1.0} ** 8;
+    const src_buffer align(alignment) = [_]f32{ 1.0, 2.0, 3.0, 4.0 } ** 2;
+
+    const new_index = mixSamples(
+        &dst_buffer,
+        1, // dst_channels
+        &src_buffer,
+        0, // src_index
+        1, // src_channels
+        1.0, // src_volume
+    );
+
+    try testing.expect(usize, 8).eql(new_index);
+    try testing.expect(f32, 2.0).eql(dst_buffer[0]);
+    try testing.expect(f32, 3.0).eql(dst_buffer[1]);
+    try testing.expect(f32, 4.0).eql(dst_buffer[2]);
 }

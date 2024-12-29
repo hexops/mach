@@ -203,13 +203,13 @@ pub fn tick(
     window.queue.submit(&[_]*gpu.CommandBuffer{command});
 }
 
-fn fillTone(app: *App, audio: *mach.Audio, frequency: f32) ![]const f32 {
+fn fillTone(app: *App, audio: *mach.Audio, frequency: f32) ![]align(mach.Audio.alignment) const f32 {
     const channels = audio.player.channels().len;
     const sample_rate: f32 = @floatFromInt(audio.player.sampleRate());
     const duration: f32 = 1.5 * @as(f32, @floatFromInt(channels)) * sample_rate; // play the tone for 1.5s
     const gain = 0.1;
 
-    const samples = try app.allocator.alloc(f32, @intFromFloat(duration));
+    const samples = try app.allocator.alignedAlloc(f32, mach.Audio.alignment, @intFromFloat(duration));
 
     var i: usize = 0;
     while (i < samples.len) : (i += channels) {

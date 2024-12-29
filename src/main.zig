@@ -42,8 +42,8 @@ test {
     _ = gpu;
     _ = sysaudio;
     _ = sysgpu;
-    // TODO(object)
-    // _ = gfx;
+    _ = gfx;
+    _ = Audio;
     _ = Audio;
     _ = math;
     _ = testing;
