@@ -11,6 +11,14 @@ pub const mach_module = .mach_audio;
 
 pub const mach_systems = .{ .init, .tick, .deinit };
 
+/// The length of a @Vector(len, f32) used for SIMD mixing of audio buffers. Audio buffers must be
+/// aligned to simd_vector_length * @sizeOf(f32).
+pub const simd_vector_length = std.simd.suggestVectorLength(f32) orelse 1;
+
+/// The number of f32s which should be reserved for padding at the start of an []f32 buffer, assuming
+/// it is @alignOf(f32) / 4-byte aligned, in order to achieve @Vector(simd_vector_length, f32) alignment.
+pub const simd_vector_f32_buffer_padding = (simd_vector_length - (4 % simd_vector_length)) % simd_vector_length;
+
 const log = std.log.scoped(mach_module);
 
 // The number of milliseconds worth of audio to render ahead of time. The lower this number is, the
@@ -25,7 +33,7 @@ buffers: mach.Objects(
     .{},
     struct {
         /// The actual audio samples
-        samples: []const f32,
+        samples: []const f32 align(simd_vector_length),
 
         /// The number of channels in the samples buffer
         channels: u8,
@@ -138,11 +146,11 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
     // Ensure our f32 mixing buffer has enough space for the samples we will render right now.
     // This will allocate to grow but never shrink.
     var mixing_buffer = if (audio.mixing_buffer) |*b| b else blk: {
-        const b = try std.ArrayListUnmanaged(f32).initCapacity(allocator, render_num_samples);
+        const b = try std.ArrayListUnmanaged(f32).initCapacity(allocator, simd_vector_f32_buffer_padding + render_num_samples);
         audio.mixing_buffer = b;
         break :blk &audio.mixing_buffer.?;
     };
-    try mixing_buffer.resize(allocator, render_num_samples); // grows, but never shrinks
+    try mixing_buffer.resize(allocator, simd_vector_f32_buffer_padding + render_num_samples); // grows, but never shrinks
 
     // Zero the mixing buffer to silence: if no audio is mixed in below, then we want silence
     // not undefined memory noise.
@@ -160,16 +168,17 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
             defer audio.buffers.setValue(buf_id, buffer);
 
             const channels_diff = player_channels - buffer.channels + 1;
-            const to_read = (@min(buffer.samples.len - buffer.index, mixing_buffer.items.len) / channels_diff) + @rem(@min(buffer.samples.len - buffer.index, mixing_buffer.items.len), channels_diff);
+            const mixing_buffer_len = mixing_buffer.items.len - simd_vector_f32_buffer_padding;
+            const to_read = (@min(buffer.samples.len - buffer.index, mixing_buffer_len - simd_vector_f32_buffer_padding) / channels_diff) + @rem(@min(buffer.samples.len - buffer.index, mixing_buffer_len), channels_diff);
             if (buffer.channels == 1 and player_channels > 1) {
                 // Duplicate samples for mono sounds
-                var i: usize = 0;
+                var i: usize = simd_vector_f32_buffer_padding;
                 for (buffer.samples[buffer.index..][0..to_read]) |sample| {
                     mixSamplesDuplicate(mixing_buffer.items[i..][0..player_channels], sample * buffer.volume);
                     i += player_channels;
                 }
             } else {
-                mixSamples(mixing_buffer.items[0..to_read], buffer.samples[buffer.index..][0..to_read], buffer.volume);
+                mixSamples(mixing_buffer.items[simd_vector_f32_buffer_padding..to_read], buffer.samples[buffer.index..][0..to_read], buffer.volume);
             }
 
             if (buffer.index + to_read >= buffer.samples.len) {
@@ -186,10 +195,10 @@ pub fn tick(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
     // samples to the format the driver expects.
     const out_buffer_len = render_num_samples * player.format().size();
     const out_buffer = try audio.output.writableWithSize(out_buffer_len); // TODO(audio): handle potential OOM here better
-    std.debug.assert(mixing_buffer.items.len == render_num_samples);
+    std.debug.assert((mixing_buffer.items.len - simd_vector_f32_buffer_padding) == render_num_samples);
     sysaudio.convertTo(
         f32,
-        mixing_buffer.items,
+        mixing_buffer.items[simd_vector_f32_buffer_padding..],
         player.format(),
         out_buffer[0..out_buffer_len], // writableWithSize may return a larger slice than needed
     );
@@ -255,48 +264,28 @@ fn writeFn(audio_opaque: ?*anyopaque, output: []u8) void {
     }
 }
 
-// TODO(audio): remove this switch, currently ReleaseFast/ReleaseSmall have some weird behavior if
-// we use suggestVectorLength
-const vector_length = switch (builtin.mode) {
-    .Debug, .ReleaseSafe => std.simd.suggestVectorLength(f32),
-    else => null,
-};
-
-inline fn mixSamples(a: []f32, b: []const f32, volume: f32) void {
+inline fn mixSamples(
+    a: []align(simd_vector_length) f32,
+    b: []align(simd_vector_length) const f32,
+    volume: f32,
+) void {
     std.debug.assert(a.len >= b.len);
-
+    const Vec = @Vector(simd_vector_length, f32);
+    const vec_blocks_len = b.len - (b.len % simd_vector_length);
     var i: usize = 0;
-
-    // use SIMD when available
-    if (vector_length) |vec_len| {
-        const Vec = @Vector(vec_len, f32);
-        const vec_blocks_len = b.len - (b.len % vec_len);
-        while (i < vec_blocks_len) : (i += vec_len) {
-            const b_vec: Vec = b[i..][0..vec_len].*;
-            const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..vec_len]));
-            a_vec.* += b_vec * @as(Vec, @splat(volume));
-        }
-    }
-
-    for (a[i..b.len], b[i..]) |*a_sample, b_sample| {
-        a_sample.* += b_sample * volume;
+    while (i < vec_blocks_len) : (i += simd_vector_length) {
+        const b_vec: Vec = b[i..][0..simd_vector_length].*;
+        const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..simd_vector_length]));
+        a_vec.* += b_vec * @as(Vec, @splat(volume));
     }
 }
 
-inline fn mixSamplesDuplicate(a: []f32, b: f32) void {
+inline fn mixSamplesDuplicate(a: []align(simd_vector_length) f32, b: f32) void {
+    const Vec = @Vector(simd_vector_length, f32);
+    const vec_blocks_len = a.len - (a.len % simd_vector_length);
     var i: usize = 0;
-
-    // use SIMD when available
-    if (vector_length) |vec_len| {
-        const Vec = @Vector(vec_len, f32);
-        const vec_blocks_len = a.len - (a.len % vec_len);
-        while (i < vec_blocks_len) : (i += vec_len) {
-            const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..vec_len]));
-            a_vec.* += @as(Vec, @splat(b));
-        }
-    }
-
-    for (a[i..]) |*a_sample| {
-        a_sample.* += b;
+    while (i < vec_blocks_len) : (i += simd_vector_length) {
+        const a_vec: *Vec = @ptrCast(@alignCast(a[i..][0..simd_vector_length]));
+        a_vec.* += @as(Vec, @splat(b));
     }
 }
