@@ -140,7 +140,14 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             // recycling bin to fit them.
             if (objs.internal.thrown_on_the_floor >= (data.len / 10)) {
                 var iter = dead.iterator(.{ .kind = .set });
-                while (iter.next()) |index| {
+                dead_object_loop: while (iter.next()) |index| {
+                    // We need to check if this index is already in the recycling bin since
+                    // if it is, it could get recycled a second time while still
+                    // in use.
+                    for (recycling_bin.items) |recycled_index| {
+                        if (index == recycled_index) continue :dead_object_loop;
+                    }
+
                     // dead bitset contains data.capacity number of entries, we only care about ones that are in data.len range.
                     if (index > data.len - 1) break;
                     try recycling_bin.append(allocator, @intCast(index));
