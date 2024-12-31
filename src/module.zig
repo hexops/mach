@@ -747,8 +747,8 @@ fn ModuleTuple(comptime tuple: anytype) type {
                 .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{tuple_fields.len}) catch unreachable,
                 .type = type,
                 .default_value = &elem,
-                .is_comptime = false,
-                .alignment = if (@sizeOf(elem) > 0) @alignOf(elem) else 0,
+                .is_comptime = true,
+                .alignment = 0,
             }};
         } else if (@typeInfo(@TypeOf(elem)) == .@"struct" and @typeInfo(@TypeOf(elem)).@"struct".is_tuple) {
             // Nested tuple
@@ -762,8 +762,8 @@ fn ModuleTuple(comptime tuple: anytype) type {
                     .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{tuple_fields.len}) catch unreachable,
                     .type = type,
                     .default_value = &nested,
-                    .is_comptime = false,
-                    .alignment = if (@sizeOf(nested) > 0) @alignOf(nested) else 0,
+                    .is_comptime = true,
+                    .alignment = 0,
                 }};
             }
         } else {

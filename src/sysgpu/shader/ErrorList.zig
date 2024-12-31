@@ -34,12 +34,11 @@ pub fn add(
     args: anytype,
     note: ?ErrorMsg.Note,
 ) !void {
-    const err_msg = .{
+    try self.list.append(self.arena.allocator(), .{
         .loc = loc,
         .msg = try std.fmt.allocPrint(self.arena.allocator(), comptime format, args),
         .note = note,
-    };
-    try self.list.append(self.arena.allocator(), err_msg);
+    });
 }
 
 pub fn createNote(
