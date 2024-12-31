@@ -3,6 +3,8 @@ const c = @cImport(@cInclude("alsa/asoundlib.h"));
 const main = @import("main.zig");
 const backends = @import("backends.zig");
 const util = @import("util.zig");
+const mach = @import("../main.zig");
+
 const inotify_event = std.os.linux.inotify_event;
 const is_little = @import("builtin").cpu.arch.endian() == .little;
 
@@ -69,7 +71,7 @@ const Lib = struct {
     snd_mixer_selem_has_capture_channel: *const fn (?*c.snd_mixer_elem_t, c.snd_mixer_selem_channel_id_t) callconv(.C) c_int,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.open("libasound.so") catch return error.LibraryNotFound;
+        lib.handle = try mach.dynLibOpen("libasound.so");
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

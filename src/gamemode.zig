@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const mach = @import("main.zig");
 
 const log = std.log.scoped(.gamemode);
 
@@ -100,9 +101,9 @@ const linux_impl = struct {
     pub fn tryInit() LoadError!void {
         if (state == .init) return;
 
-        var dl = std.DynLib.open("libgamemode.so.0") catch |e| switch (e) {
+        var dl = mach.dynLibOpen("libgamemode.so.0") catch |e| switch (e) {
             // backwards-compatibility for old gamemode versions
-            error.FileNotFound => try std.DynLib.open("libgamemode.so"),
+            error.LibraryNotFound => try mach.dynLibOpen("libgamemode.so"),
             else => return e,
         };
         errdefer dl.close();
@@ -128,7 +129,7 @@ const linux_impl = struct {
             .failed => return false,
             .uninit => {
                 tryInit() catch |e| {
-                    if (e != error.FileNotFound) {
+                    if (e != error.LibraryNotFound) {
                         log.warn("Loading gamemode: '{}'. Disabling libgamemode support.", .{e});
                     }
                     state = .failed;

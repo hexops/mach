@@ -3,6 +3,7 @@ const c = @cImport(@cInclude("jack/jack.h"));
 const main = @import("main.zig");
 const backends = @import("backends.zig");
 const util = @import("util.zig");
+const mach = @import("../main.zig");
 
 var lib: Lib = undefined;
 const Lib = struct {
@@ -33,7 +34,7 @@ const Lib = struct {
     jack_port_type_size: *const fn () c_int,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.open("libjack.so") catch return error.LibraryNotFound;
+        lib.handle = try mach.dynLibOpen("libjack.so");
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

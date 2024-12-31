@@ -1,5 +1,6 @@
 const std = @import("std");
 const c = @import("c.zig");
+const mach = @import("../../main.zig");
 
 var libgl: std.DynLib = undefined;
 
@@ -16,7 +17,7 @@ fn getProcAddress(name_ptr: [*:0]const u8) c.PROC {
 }
 
 pub fn init() !void {
-    libgl = try std.DynLib.open("opengl32.dll");
+    libgl = try mach.dynLibOpen("opengl32.dll");
 }
 
 pub fn deinit() void {
