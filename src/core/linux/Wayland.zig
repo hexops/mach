@@ -543,7 +543,7 @@ const keyboard_listener = struct {
         if (pressed) {
             core_ptr.pushEvent(.{ .key_press = key_event });
 
-            var keysyms: ?[*]c.xkb_keysym_t = undefined;
+            var keysyms: ?[*]const c.xkb_keysym_t = undefined;
             //Get the keysym from the keycode (scancode + 8)
             if (libxkbcommon.xkb_state_key_get_syms(wl.xkb_state, scancode + 8, &keysyms) == 1) {
                 //Compose the keysym

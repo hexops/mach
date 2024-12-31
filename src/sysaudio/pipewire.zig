@@ -229,7 +229,7 @@ pub const Context = struct {
             .flags = 0,
             .position = undefined,
         };
-        var params = [1][*c]c.spa_pod{
+        var params = [1][*c]const c.spa_pod{
             sysaudio_spa_format_audio_raw_build(&pod_builder, c.SPA_PARAM_EnumFormat, &info),
         };
 
