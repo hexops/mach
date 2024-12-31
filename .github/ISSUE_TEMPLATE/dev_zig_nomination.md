@@ -53,7 +53,6 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] [xcode-frameworks](https://github.com/hexops/xcode-frameworks)
 * [ ] [vulkan-zig-generated](https://github.com/hexops/vulkan-zig-generated)
 * [ ] [directx-headers](https://github.com/hexops/directx-headers)
-* [ ] [direct3d-headers](https://github.com/hexops/direct3d-headers)
 * [ ] [opus](https://github.com/hexops/opus)
 * [ ] [flac](https://github.com/hexops/flac)
 * [ ] [ogg](https://github.com/hexops/ogg)
