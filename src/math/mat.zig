@@ -1013,83 +1013,93 @@ test "Mat4x4_eqlApprox_ident" {
 }
 
 test "projection2D_xy_centered" {
-    const v = .{
-        .left = -400,
-        .right = 400,
-        .bottom = -200,
-        .top = 200,
-        .near = 0,
-        .far = 100,
-    };
-    const m = math.Mat4x4.projection2D(v);
+    const left = -400;
+    const right = 400;
+    const bottom = -200;
+    const top = 200;
+    const near = 0;
+    const far = 100;
+    const m = math.Mat4x4.projection2D(.{
+        .left = left,
+        .right = right,
+        .bottom = bottom,
+        .top = top,
+        .near = near,
+        .far = far,
+    });
 
     // Calculate some reference points
-    const width = v.right - v.left;
-    const height = v.top - v.bottom;
-    const width_mid = v.left + (width / 2.0);
-    const height_mid = v.bottom + (height / 2.0);
+    const width = right - left;
+    const height = top - bottom;
+    const width_mid = left + (width / 2.0);
+    const height_mid = bottom + (height / 2.0);
     try testing.expect(f32, 800).eql(width);
     try testing.expect(f32, 400).eql(height);
     try testing.expect(f32, 0).eql(width_mid);
     try testing.expect(f32, 0).eql(height_mid);
 
     // Probe some points on the X axis from beyond the left face, all the way to beyond the right face.
-    try testing.expect(math.Vec4, math.vec4(-2, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left - (width / 2), height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(-1, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left + (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-2, 0, 1, 1)).eql(m.mulVec(&math.vec4(left - (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-1, 0, 1, 1)).eql(m.mulVec(&math.vec4(left, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(left + (width / 4.0), height_mid, 0, 1)));
     try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right - (width / 4.0), height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(1, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(2, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right + (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(right - (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(1, 0, 1, 1)).eql(m.mulVec(&math.vec4(right, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(2, 0, 1, 1)).eql(m.mulVec(&math.vec4(right + (width / 2), height_mid, 0, 1)));
 
     // Probe some points on the Y axis from beyond the bottom face, all the way to beyond the top face.
-    try testing.expect(math.Vec4, math.vec4(0, -2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom - (height / 2), 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, -1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, -0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom + (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom - (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom + (height / 4.0), 0, 1)));
     try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top - (height / 4.0), 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top + (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top - (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top + (height / 2), 0, 1)));
 }
 
 test "projection2D_xy_offcenter" {
-    const v = .{
-        .left = 100,
-        .right = 500,
-        .bottom = 100,
-        .top = 500,
-        .near = 0,
-        .far = 100,
-    };
-    const m = math.Mat4x4.projection2D(v);
+    const left = 100;
+    const right = 500;
+    const bottom = 100;
+    const top = 500;
+    const near = 0;
+    const far = 100;
+    const m = math.Mat4x4.projection2D(.{
+        .left = left,
+        .right = right,
+        .bottom = bottom,
+        .top = top,
+        .near = near,
+        .far = far,
+    });
 
     // Calculate some reference points
-    const width = v.right - v.left;
-    const height = v.top - v.bottom;
-    const width_mid = v.left + (width / 2.0);
-    const height_mid = v.bottom + (height / 2.0);
+    const width = right - left;
+    const height = top - bottom;
+    const width_mid = left + (width / 2.0);
+    const height_mid = bottom + (height / 2.0);
     try testing.expect(f32, 400).eql(width);
     try testing.expect(f32, 400).eql(height);
     try testing.expect(f32, 300).eql(width_mid);
     try testing.expect(f32, 300).eql(height_mid);
 
     // Probe some points on the X axis from beyond the left face, all the way to beyond the right face.
-    try testing.expect(math.Vec4, math.vec4(-2, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left - (width / 2), height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(-1, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.left + (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-2, 0, 1, 1)).eql(m.mulVec(&math.vec4(left - (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-1, 0, 1, 1)).eql(m.mulVec(&math.vec4(left, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(-0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(left + (width / 4.0), height_mid, 0, 1)));
     try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right - (width / 4.0), height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(1, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(2, 0, 1, 1)).eql(m.mulVec(&math.vec4(v.right + (width / 2), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0.5, 0, 1, 1)).eql(m.mulVec(&math.vec4(right - (width / 4.0), height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(1, 0, 1, 1)).eql(m.mulVec(&math.vec4(right, height_mid, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(2, 0, 1, 1)).eql(m.mulVec(&math.vec4(right + (width / 2), height_mid, 0, 1)));
 
     // Probe some points on the Y axis from beyond the bottom face, all the way to beyond the top face.
-    try testing.expect(math.Vec4, math.vec4(0, -2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom - (height / 2), 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, -1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, -0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.bottom + (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom - (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, -0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, bottom + (height / 4.0), 0, 1)));
     try testing.expect(math.Vec4, math.vec4(0, 0, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, height_mid, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top - (height / 4.0), 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top, 0, 1)));
-    try testing.expect(math.Vec4, math.vec4(0, 2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, v.top + (height / 2), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 0.5, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top - (height / 4.0), 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 1, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top, 0, 1)));
+    try testing.expect(math.Vec4, math.vec4(0, 2, 1, 1)).eql(m.mulVec(&math.vec4(width_mid, top + (height / 2), 0, 1)));
 }
 
 test "projection2D_z" {
