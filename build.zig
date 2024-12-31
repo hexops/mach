@@ -198,7 +198,7 @@ pub fn build(b: *std.Build) !void {
             while (iter.next()) |e| {
                 lib.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
             }
-            linkSysgpu(b, &lib.root_module);
+            linkSysgpu(b, lib.root_module);
             b.installArtifact(lib);
         }
     }
@@ -224,9 +224,9 @@ pub fn build(b: *std.Build) !void {
         const run_unit_tests = b.addRunArtifact(unit_tests);
         test_step.dependOn(&run_unit_tests.step);
 
-        if (want_sysgpu) linkSysgpu(b, &unit_tests.root_module);
-        if (want_core) linkCore(b, &unit_tests.root_module);
-        if (want_sysaudio) linkSysaudio(b, &unit_tests.root_module);
+        if (want_sysgpu) linkSysgpu(b, unit_tests.root_module);
+        if (want_core) linkCore(b, unit_tests.root_module);
+        if (want_sysaudio) linkSysaudio(b, unit_tests.root_module);
 
         // Documentation
         const docs_obj = b.addObject(.{
