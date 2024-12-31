@@ -31,11 +31,10 @@
             .hash = "122098b9174895f9708bc824b0f9e550c401892c40a900006459acf2cbf78acd99bb",
             .lazy = true,
         },
-        .direct3d_headers = .{
-            .url = "https://pkg.machengine.org/direct3d-headers/e85bc63ad7ed57b465014ff8b8abb2942f7f8a4c.tar.gz",
-            .hash = "122054d8c8aa67bb5fb86f74f5ce24d67238a65bc8ea537eb0e0368589fc3127331f",
-            // TODO(build): be able to mark this dependency as lazy
-            // .lazy = true,
+        .directx_headers = .{
+            .url = "https://pkg.machengine.org/directx-headers/eae9b3b8a84a32ae9e67025fd64e8d8b7755e628.tar.gz",
+            .hash = "1220334a0e3480fef60443cef8b519d08b4dbf16ba37d98a7b77647fa4b7761b6048",
+            .lazy = true,
         },
         .opengl_headers = .{
             .url = "https://pkg.machengine.org/opengl-headers/d0b37fdc3b039ba5b430110545f398f0278c5396.tar.gz",

@@ -285,17 +285,15 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
         }
     } else if (target.result.os.tag == .windows) {
         // TODO(build): Windows should never link OpenGL except in debug builds.
+        module.linkSystemLibrary("dxgi", .{});
         module.linkSystemLibrary("d3d12", .{});
         module.linkSystemLibrary("d3dcompiler_47", .{});
         module.linkSystemLibrary("opengl32", .{});
 
-        if (b.lazyDependency("direct3d_headers", .{
+        if (b.lazyDependency("directx_headers", .{
             .target = target,
             .optimize = optimize,
-        })) |dep| {
-            module.linkLibrary(dep.artifact("direct3d-headers"));
-            @import("direct3d_headers").addLibraryPathToModule(module);
-        }
+        })) |dep| module.linkLibrary(dep.artifact("directx-headers"));
         if (b.lazyDependency("opengl_headers", .{
             .target = target,
             .optimize = optimize,
