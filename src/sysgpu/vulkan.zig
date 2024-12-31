@@ -7,6 +7,7 @@ const shader = @import("shader.zig");
 const utils = @import("utils.zig");
 const conv = @import("vulkan/conv.zig");
 const proc = @import("vulkan/proc.zig");
+const mach = @import("../main.zig");
 
 const log = std.log.scoped(.vulkan);
 const api_version = vk.makeApiVersion(0, 1, 1, 0);
@@ -28,7 +29,7 @@ pub fn init(alloc: std.mem.Allocator, options: InitOptions) !void {
     if (options.baseLoader) |baseLoader| {
         vkb = try proc.loadBase(baseLoader);
     } else {
-        libvulkan = try std.DynLib.open(switch (builtin.target.os.tag) {
+        libvulkan = try mach.dynLibOpen(switch (builtin.target.os.tag) {
             .windows => "vulkan-1.dll",
             .linux => "libvulkan.so.1",
             .macos => "libvulkan.1.dylib",

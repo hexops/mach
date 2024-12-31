@@ -3,6 +3,8 @@ const c = @cImport(@cInclude("pulse/pulseaudio.h"));
 const main = @import("main.zig");
 const backends = @import("backends.zig");
 const util = @import("util.zig");
+const mach = @import("../main.zig");
+
 const is_little = @import("builtin").cpu.arch.endian() == .little;
 
 const default_sample_rate = 44_100; // Hz
@@ -61,7 +63,7 @@ const Lib = struct {
     pa_stream_get_sample_spec: *const fn (s: ?*c.pa_stream) [*c]const c.pa_sample_spec,
 
     pub fn load() !void {
-        lib.handle = std.DynLib.open("libpulse.so") catch return error.LibraryNotFound;
+        lib.handle = try mach.dynLibOpen("libpulse.so");
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

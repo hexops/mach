@@ -4,6 +4,8 @@ const build_options = @import("build-options");
 const builtin = @import("builtin");
 const std = @import("std");
 
+const log = std.log.scoped(.mach);
+
 pub const is_debug = builtin.mode == .Debug;
 
 // Core
@@ -33,6 +35,20 @@ pub const Objects = @import("module.zig").Objects;
 // TODO(object): remove this?
 pub fn schedule(v: anytype) @TypeOf(v) {
     return v;
+}
+
+// Instrumented function to load system libraries and print nicer error
+// messages.
+pub inline fn dynLibOpen(libName: []const u8) !std.DynLib {
+    return std.DynLib.open(libName) catch |err| {
+        switch (err) {
+            error.FileNotFound => {
+                log.err("Missing system library: '{s}'!", .{libName});
+                return error.LibraryNotFound;
+            },
+            else => return err,
+        }
+    };
 }
 
 test {
