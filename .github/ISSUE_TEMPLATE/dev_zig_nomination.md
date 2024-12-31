@@ -34,7 +34,7 @@ You may have been linked to this issue because you sent a pull request to update
 
 > We've just finalized nominating and updating to Zig 2024.1.0-mach. We encourage you to update your projects to that Zig version now. :)
 >
-> * Get the new Zig version: https://machengine.org/about/nominated-zig/#202410-mach
+> * Get the new Zig version: https://machengine.org/docs/nominated-zig/#2024110-mach
 > * Tips on upgrading your own Zig code: https://github.com/hexops/mach/issues/1135#issuecomment-1891175749
 > * Nomination tracking issue: $GITHUB_ISSUE
 
