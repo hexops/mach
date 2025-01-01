@@ -8,7 +8,7 @@ test {
     std.testing.refAllDeclsRecursive(@This());
 }
 
-pub const LoadError = error{MissingSymbol} || std.DynLib.Error;
+pub const LoadError = error{ MissingSymbol, LibraryNotFound } || std.DynLib.Error;
 pub const Error = error{ RequestFailed, RequestRejected };
 
 pub const Status = enum(u8) {
