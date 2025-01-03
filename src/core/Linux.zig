@@ -133,17 +133,6 @@ pub fn initWindow(
     try warnAboutIncompleteFeatures(desired_backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, core.allocator);
 }
 
-// pub fn deinit(linux: *Linux) void {
-//     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-//
-//     linux.allocator.free(linux.title);
-//
-//     switch (linux.backend) {
-//         .wayland => linux.backend.wayland.deinit(linux),
-//         .x11 => linux.backend.x11.deinit(linux),
-//     }
-// }
-
 pub fn update(linux: *Linux) !void {
     switch (linux.backend) {
         .wayland => try linux.backend.wayland.update(linux),
