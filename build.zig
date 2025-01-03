@@ -45,7 +45,6 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
 
     const sysgpu_backend = b.option(SysgpuBackend, "sysgpu_backend", "sysgpu API backend") orelse .default;
-    const core_platform = b.option(Platform, "core_platform", "mach core platform to use") orelse Platform.fromTarget(target.result);
 
     const build_examples = b.option(bool, "examples", "build/install examples specifically");
     const build_libs = b.option(bool, "libs", "build/install libraries specifically");
@@ -68,7 +67,6 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(bool, "want_sysaudio", want_sysaudio);
     build_options.addOption(bool, "want_sysgpu", want_sysgpu);
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
-    build_options.addOption(Platform, "core_platform", core_platform);
 
     var examples = [_]Example{
         .{ .name = "core-custom-entrypoint", .deps = &.{} },
