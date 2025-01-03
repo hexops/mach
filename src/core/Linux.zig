@@ -63,7 +63,11 @@ pub fn tick(core: *Core) !void {
     while (windows.next()) |window_id| {
         const native_opt: ?Native = core.windows.get(window_id, .native);
         if (native_opt) |native| {
-            check_for_mach_updates(core, window_id);
+            // checks for updates in mach object fields
+            const core_window = core.windows.getValue(window_id);
+            if (core.windows.updated(window_id, .title)) {
+                setTitle(&native, core_window.title);
+            }
             // check for display server events
             switch (native) {
                 .x11 => try X11.tick(window_id),
@@ -185,17 +189,6 @@ pub fn setCursorMode(_: *Linux, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Linux, _: CursorShape) void {
     return;
-}
-
-/// Checks for updates in mach object fields. Does nothing if window is not initialized.
-fn check_for_mach_updates(core: *Core, window_id: mach.ObjectID) void {
-    const core_window = core.windows.getValue(window_id);
-    const native = &core_window.native;
-    if (native.*) |n| {
-        if (core.windows.updated(window_id, .title)) {
-            setTitle(&n, core_window.title);
-        }
-    }
 }
 
 /// Check if gamemode should be activated
