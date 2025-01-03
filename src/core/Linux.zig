@@ -58,6 +58,10 @@ backend: Backend,
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 
+pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) void {
+    while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
+}
+
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
