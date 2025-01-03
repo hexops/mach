@@ -58,12 +58,20 @@ backend: Backend,
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
 
+pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) void {
+    while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
+}
+
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const native_opt: ?Native = core.windows.get(window_id, .native);
         if (native_opt) |native| {
-            check_for_mach_updates(core, window_id);
+            // checks for updates in mach object fields
+            const core_window = core.windows.getValue(window_id);
+            if (core.windows.updated(window_id, .title)) {
+                setTitle(&native, core_window.title);
+            }
             // check for display server events
             switch (native) {
                 .x11 => try X11.tick(window_id),
@@ -129,17 +137,6 @@ pub fn initWindow(
     try warnAboutIncompleteFeatures(desired_backend, &MISSING_FEATURES_X11, &MISSING_FEATURES_WAYLAND, core.allocator);
 }
 
-// pub fn deinit(linux: *Linux) void {
-//     if (linux.gamemode != null and linux.gamemode.?) deinitLinuxGamemode();
-//
-//     linux.allocator.free(linux.title);
-//
-//     switch (linux.backend) {
-//         .wayland => linux.backend.wayland.deinit(linux),
-//         .x11 => linux.backend.x11.deinit(linux),
-//     }
-// }
-
 pub fn update(linux: *Linux) !void {
     switch (linux.backend) {
         .wayland => try linux.backend.wayland.update(linux),
@@ -185,17 +182,6 @@ pub fn setCursorMode(_: *Linux, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Linux, _: CursorShape) void {
     return;
-}
-
-/// Checks for updates in mach object fields. Does nothing if window is not initialized.
-fn check_for_mach_updates(core: *Core, window_id: mach.ObjectID) void {
-    const core_window = core.windows.getValue(window_id);
-    const native = &core_window.native;
-    if (native.*) |n| {
-        if (core.windows.updated(window_id, .title)) {
-            setTitle(&n, core_window.title);
-        }
-    }
 }
 
 /// Check if gamemode should be activated

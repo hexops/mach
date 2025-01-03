@@ -209,13 +209,6 @@ pub fn initWindow(
     try core.initWindow(window_id);
 }
 
-// pub fn deinit(
-//     wl: *Wayland,
-//     linux: *Linux,
-// ) void {
-//     linux.allocator.destroy(wl.surface_descriptor);
-// }
-
 pub fn tick(window_id: mach.ObjectID) !void {
     const wl = &core_ptr.windows.getValue(window_id).native.?.wayland;
 
