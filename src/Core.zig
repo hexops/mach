@@ -420,12 +420,17 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
     @panic("unknown MACH_GPU_BACKEND type");
 }
 
-const Platform = switch (build_options.core_platform) {
-    .wasm => @panic("TODO: support mach.Core WASM platform"),
+const Platform = switch (builtin.target.os.tag) {
+    .wasi => @panic("TODO: support mach.Core WASM platform"),
+    .ios => @panic("TODO: support mach.Core IOS platform"),
     .windows => @import("core/Windows.zig"),
-    .linux => @import("core/Linux.zig"),
-    .darwin => @import("core/Darwin.zig"),
-    .null => @import("core/Null.zig"),
+    .linux => blk: {
+        if (builtin.target.abi.isAndroid())
+            @panic("TODO: support mach.Core Android platform");
+        break :blk @import("core/Linux.zig");
+    },
+    .macos => @import("core/Darwin.zig"),
+    else => {},
 };
 
 pub const InputState = struct {
