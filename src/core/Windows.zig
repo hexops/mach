@@ -33,6 +33,10 @@ pub const Context = struct {
     window_id: mach.ObjectID,
 };
 
+pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) void {
+    while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
+}
+
 pub fn tick(core: *Core) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {

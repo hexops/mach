@@ -8,25 +8,7 @@ const log = std.log.scoped(.mach);
 
 const Core = @This();
 
-// Whether or not you can drive the main loop in a non-blocking fashion, or if the underlying
-// platform must take control and drive the main loop itself.
-pub const supports_non_blocking = switch (build_options.core_platform) {
-    // Platforms that support non-blocking mode.
-    .linux => true,
-    .windows => true,
-    .null => true,
-
-    // Platforms which take control of the main loop.
-    .wasm => false,
-    .darwin => false,
-};
-
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
-
-/// Set this to true if you intend to drive the main loop yourself.
-///
-/// A panic will occur if `supports_non_blocking == false` for the platform.
-pub var non_blocking = false;
 
 pub const mach_module = .mach_core;
 
@@ -277,37 +259,12 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     core_mod.run(core.on_tick.?);
     core_mod.call(.presentFrame);
 
-    // If the user doesn't want mach.Core to take control of the main loop, we bail out - the next
-    // app tick is already scheduled to run in the future and they'll .present_frame to return
-    // control to us later.
-    if (non_blocking) {
-        if (!supports_non_blocking) std.debug.panic(
-            "mach.Core: platform {s} does not support non_blocking=true mode.",
-            .{@tagName(build_options.core_platform)},
-        );
-        return;
-    }
+    // Platform drives the main loop.
+    Platform.run(platform_update_callback, .{ core, core_mod });
 
-    // The user wants mach.Core to take control of the main loop.
-    if (supports_non_blocking) {
-        while (core.state != .exited) {
-            try Platform.tick(core);
-            core_mod.run(core.on_tick.?);
-            core_mod.call(.presentFrame);
-        }
-
-        // Don't return, because Platform.run wouldn't either (marked noreturn due to underlying
-        // platform APIs never returning.)
-        std.process.exit(0);
-    } else {
-        // Platform drives the main loop.
-        Platform.run(platform_update_callback, .{ core, core_mod });
-
-        // Platform.run should be marked noreturn, so this shouldn't ever run. But just in case we
-        // accidentally introduce a different Platform.run in the future, we put an exit here for
-        // good measure.
-        std.process.exit(0);
-    }
+    // Platform.run is marked noreturn on some platforms, but not all, so this is here for the
+    // platforms that do return
+    std.process.exit(0);
 }
 
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
