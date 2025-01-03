@@ -217,36 +217,6 @@ pub fn initWindow(
     try core.initWindow(window_id);
 }
 
-// pub fn deinit(
-//     x11: *X11,
-//     linux: *Linux,
-// ) void {
-//     linux.allocator.destroy(x11.surface_descriptor);
-//     for (x11.cursors) |cur| {
-//         if (cur) |_| {
-//             // _ = x11.libx11.XFreeCursor(x11.display, cur.?);
-//         }
-//     }
-//     if (x11.libxcursor) |*libxcursor| {
-//         libxcursor.handle.close();
-//     }
-//     if (x11.libxrr) |*libxrr| {
-//         libxrr.handle.close();
-//     }
-//     if (x11.libgl) |*libgl| {
-//         if (x11.gl_ctx) |gl_ctx| {
-//             libgl.glXDestroyContext(x11.display, gl_ctx);
-//         }
-//         libgl.handle.close();
-//     }
-//     _ = x11.libx11.XUnmapWindow(x11.display, x11.window);
-//     _ = x11.libx11.XDestroyWindow(x11.display, x11.window);
-//     _ = x11.libx11.XCloseDisplay(x11.display);
-//     x11.libx11.handle.close();
-//     std.posix.close(x11.empty_event_pipe[0]);
-//     std.posix.close(x11.empty_event_pipe[1]);
-// }
-
 // Called on the main thread
 pub fn tick(window_id: mach.ObjectID) !void {
     var core_window = core_ptr.windows.getValue(window_id);
