@@ -439,7 +439,7 @@ const LibX11 = struct {
     XFree: *const @TypeOf(c.XFree),
     pub fn load() !LibX11 {
         var lib: LibX11 = undefined;
-        lib.handle = try mach.dynLibOpen("libX11.so.6");
+        lib.handle = try mach.dynLibOpen("libX11.so");
         inline for (@typeInfo(LibX11).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -459,7 +459,7 @@ const LibXCursor = struct {
     XcursorLibraryLoadImage: *const @TypeOf(c.XcursorLibraryLoadImage),
     pub fn load() !LibXCursor {
         var lib: LibXCursor = undefined;
-        lib.handle = try mach.dynLibOpen("libXcursor.so.1");
+        lib.handle = try mach.dynLibOpen("libXcursor.so");
         inline for (@typeInfo(LibXCursor).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -475,7 +475,7 @@ const LibXRR = struct {
     XRRConfigCurrentRate: *const @TypeOf(c.XRRConfigCurrentRate),
     pub fn load() !LibXRR {
         var lib: LibXRR = undefined;
-        lib.handle = try mach.dynLibOpen("libXrandr.so.1");
+        lib.handle = try mach.dynLibOpen("libXrandr.so");
         inline for (@typeInfo(LibXRR).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -506,7 +506,7 @@ const LibGL = struct {
     glXSwapBuffers: *const fn (*c.Display, Drawable) callconv(.C) bool,
     pub fn load() !LibGL {
         var lib: LibGL = undefined;
-        lib.handle = try mach.dynLibOpen("libGL.so.1");
+        lib.handle = try mach.dynLibOpen("libGL.so");
         inline for (@typeInfo(LibGL).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -538,7 +538,7 @@ const LibXkbCommon = struct {
 
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
-        lib.handle = try mach.dynLibOpen("libxkbcommon.so.0");
+        lib.handle = try mach.dynLibOpen("libxkbcommon.so");
         inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

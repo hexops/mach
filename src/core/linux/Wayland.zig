@@ -274,7 +274,7 @@ const LibXkbCommon = struct {
 
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
-        lib.handle = try mach.dynLibOpen("libxkbcommon.so.0");
+        lib.handle = try mach.dynLibOpen("libxkbcommon.so");
         inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -327,7 +327,7 @@ const LibWaylandClient = struct {
 
     pub fn load() !LibWaylandClient {
         var lib: LibWaylandClient = undefined;
-        lib.handle = try mach.dynLibOpen("libwayland-client.so.0");
+        lib.handle = try mach.dynLibOpen("libwayland-client.so");
         inline for (@typeInfo(LibWaylandClient).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

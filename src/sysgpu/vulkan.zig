@@ -31,7 +31,7 @@ pub fn init(alloc: std.mem.Allocator, options: InitOptions) !void {
     } else {
         libvulkan = try mach.dynLibOpen(switch (builtin.target.os.tag) {
             .windows => "vulkan-1.dll",
-            .linux => "libvulkan.so.1",
+            .linux => "libvulkan.so",
             .macos => "libvulkan.1.dylib",
             else => @compileError("Unknown OS!"),
         });
