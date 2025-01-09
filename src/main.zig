@@ -46,7 +46,7 @@ pub inline fn dynLibOpen(libName: []const u8) !std.DynLib {
                 log.err("Missing system library: '{s}'!", .{libName});
                 return error.LibraryNotFound;
             },
-            else => return err,
+            else => |e| return e,
         }
     };
 }

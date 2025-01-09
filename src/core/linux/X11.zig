@@ -78,15 +78,15 @@ pub fn initWindow(
     _ = libx11.XInitThreads();
     const libgl: ?LibGL = LibGL.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
-        else => return err,
+        else => |e| return e,
     };
     const libxcursor: ?LibXCursor = LibXCursor.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
-        else => return err,
+        else => |e| return e,
     };
     const libxrr: ?LibXRR = LibXRR.load() catch |err| switch (err) {
         error.LibraryNotFound => null,
-        else => return err,
+        else => |e| return e,
     };
     const display = libx11.XOpenDisplay(null) orelse {
         return error.FailedToConnectToDisplay;

@@ -88,7 +88,7 @@ pub fn initWindow(
                 // default backend
                 break :blk .wayland;
             },
-            else => return err,
+            else => |e| return e,
         };
         defer core.allocator.free(backend);
 
