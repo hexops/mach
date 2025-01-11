@@ -311,23 +311,43 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
         }
 
         /// If options have tracking enabled, this returns true when the given field has been set
-        /// using the set() or setAll() methods. A subsequent call to .updated() or .anyUpdated()
+        /// using the set() or setAll() methods. A subsequent call to .updated(), .anyUpdated(), etc.
         /// will return false until another set() or setAll() call is made.
         pub fn updated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
+            return objs.updatedOptions(id, field_name, false);
+        }
+
+        /// Same as updated(), but doesn't alter the behavior of subsequent .updated(), .anyUpdated(),
+        /// etc. calls
+        pub fn peekUpdated(objs: *@This(), id: ObjectID, field_name: anytype) bool {
+            return objs.updatedOptions(id, field_name, true);
+        }
+
+        inline fn updatedOptions(objs: *@This(), id: ObjectID, field_name: anytype, comptime peek: bool) bool {
             if (!options.track_fields) return false;
             const unpacked = objs.validateAndUnpack(id, "updated");
             const field_index = std.meta.fieldIndex(T, @tagName(field_name)).?;
             const updated_fields = &(objs.internal.updated orelse return false);
             const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
             const updated_value = updated_fields.isSet(updated_index);
-            updated_fields.unset(updated_index);
+            if (!peek) updated_fields.unset(updated_index);
             return updated_value;
         }
 
         /// If options have tracking enabled, this returns true when any field has been set using
-        /// the set() or setAll() methods. A subsequent call to .updated() or .anyUpdated() will
+        /// the set() or setAll() methods. A subsequent call to .updated(), .anyUpdated(), etc. will
         /// return false until another set() or setAll() call is made.
         pub fn anyUpdated(objs: *@This(), id: ObjectID) bool {
+            return objs.anyUpdatedOptions(id, false);
+        }
+
+        /// Same as anyUpdated(), but doesn't alter the behavior of subsequent .updated(), .anyUpdated(),
+        /// etc. calls
+        pub fn peekAnyUpdated(objs: *@This(), id: ObjectID) bool {
+            return objs.anyUpdatedOptions(id, true);
+        }
+
+        inline fn anyUpdatedOptions(objs: *@This(), id: ObjectID, comptime peek: bool) bool {
             if (!options.track_fields) return false;
             const unpacked = objs.validateAndUnpack(id, "updated");
             const updated_fields = &(objs.internal.updated orelse return false);
@@ -335,10 +355,8 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
             inline for (0..@typeInfo(T).@"struct".fields.len) |field_index| {
                 const updated_index = unpacked.index * @typeInfo(T).@"struct".fields.len + field_index;
                 const updated_value = updated_fields.isSet(updated_index);
-                updated_fields.unset(updated_index);
-                if (updated_value) {
-                    any_updated = true;
-                }
+                if (!peek) updated_fields.unset(updated_index);
+                if (updated_value) any_updated = true;
             }
             return any_updated;
         }

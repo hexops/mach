@@ -259,7 +259,7 @@ pub fn tick(text: *Text, core: *mach.Core) !void {
         const any_updated = blk: {
             for (pipeline_children.items) |text_id| {
                 if (!text.objects.is(text_id)) continue;
-                if (text.objects.anyUpdated(text_id)) break :blk true;
+                if (text.objects.peekAnyUpdated(text_id)) break :blk true;
             }
             break :blk false;
         };
