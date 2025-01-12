@@ -448,7 +448,7 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
             if (builtin.target.os.tag == .windows) return .d3d12;
             return .vulkan;
         },
-        else => return err,
+        else => |e| return e,
     };
     defer allocator.free(backend);
 

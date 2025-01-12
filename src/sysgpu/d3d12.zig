@@ -845,7 +845,7 @@ pub const MemoryAllocator = struct {
                 if (heap.*) |*h| {
                     const allocation = h.gpu_allocator.allocate(@intCast(size)) catch |err| switch (err) {
                         gpu_allocator.Error.OutOfMemory => continue,
-                        else => return err,
+                        else => |e| return e,
                     };
                     return GroupAllocation{
                         .allocation = allocation,

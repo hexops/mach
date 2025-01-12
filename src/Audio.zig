@@ -86,7 +86,7 @@ pub fn init(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
         "MACH_DEBUG_AUDIO",
     ) catch |err| switch (err) {
         error.EnvironmentVariableNotFound => null,
-        else => return err,
+        else => |e| return e,
     };
     const debug = if (debug_str) |s| blk: {
         defer allocator.free(s);
