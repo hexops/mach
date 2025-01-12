@@ -609,6 +609,9 @@ pub fn Modules(module_lists: anytype) type {
                     comptime fn_name: ModuleFunctionName(module_name),
                 ) void {
                     const debug_name = @tagName(module_name) ++ "." ++ @tagName(fn_name);
+                    if (!@hasField(module, @tagName(fn_name)) and !@hasDecl(module, @tagName(fn_name))) {
+                        @compileError("Module ." ++ @tagName(module_name) ++ " declares mach_systems entry ." ++ @tagName(fn_name) ++ " but no pub fn or schedule with that name exists.");
+                    }
                     const f = @field(module, @tagName(fn_name));
                     const F = @TypeOf(f);
 
@@ -619,6 +622,9 @@ pub fn Modules(module_lists: anytype) type {
                         inline for (f) |schedule_entry| {
                             // TODO: unify with Modules(modules).get(M)
                             const callMod: Module(schedule_entry.@"0") = .{ .mods = m.mods, .modules = m.modules };
+                            if (!@hasField(ModuleFunctionName(@TypeOf(callMod).mod_name), @tagName(schedule_entry.@"1"))) {
+                                @compileError("Module ." ++ @tagName(@TypeOf(callMod).mod_name) ++ " has no mach_systems entry '." ++ @tagName(schedule_entry.@"1") ++ "'");
+                            }
                             const callFn = @as(ModuleFunctionName(@TypeOf(callMod).mod_name), schedule_entry.@"1");
                             callMod.run(callFn);
                         }
