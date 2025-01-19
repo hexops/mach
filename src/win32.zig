@@ -27,6 +27,13 @@ pub const WINAPI = w.WINAPI;
 pub const TRUE = w.TRUE;
 pub const FALSE = w.FALSE;
 
+pub const SIZE = extern struct {
+    cx: i32,
+    cy: i32,
+};
+
+pub extern "kernel32" fn GetLastError() callconv(w.WINAPI) u32;
+
 //pub const GetModuleHandleW = w.kernel32.GetModuleHandleW;
 // TODO: this type is limited to platform 'windows5.1.2600'
 pub extern "kernel32" fn GetModuleHandleW(
@@ -99,19 +106,12 @@ pub extern "user32" fn GetWindowRect(
     lpRect: ?*RECT,
 ) callconv(@import("std").os.windows.WINAPI) BOOL;
 
-// TODO: this type is limited to platform 'windows5.0'
-pub extern "user32" fn AdjustWindowRect(
-    lpRect: ?*RECT,
-    dwStyle: WINDOW_STYLE,
-    bMenu: BOOL,
-) callconv(@import("std").os.windows.WINAPI) BOOL;
-
-// TODO: this type is limited to platform 'windows5.0'
-pub extern "user32" fn AdjustWindowRectEx(
+pub extern "user32" fn AdjustWindowRectExForDpi(
     lpRect: ?*RECT,
     dwStyle: WINDOW_STYLE,
     bMenu: BOOL,
     dwExStyle: WINDOW_EX_STYLE,
+    dpi: u32,
 ) callconv(@import("std").os.windows.WINAPI) BOOL;
 
 // TODO: this type is limited to platform 'windows5.0'
@@ -270,6 +270,14 @@ pub extern "user32" fn SetWindowLongW(
     nIndex: WINDOW_LONG_PTR_INDEX,
     dwNewLong: i32,
 ) callconv(@import("std").os.windows.WINAPI) i32;
+
+pub extern "user32" fn BringWindowToTop(
+    hWnd: ?HWND,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
+
+pub extern "user32" fn SetForegroundWindow(
+    hWnd: ?HWND,
+) callconv(@import("std").os.windows.WINAPI) BOOL;
 
 //pub extern "user32" fn SetWindowPos(hWnd: HWND, hWndInsertAfter: HWND, X: i32, Y: i32, cx: i32, cy: i32, uFlags: u32) callconv(WINAPI) BOOL;
 pub extern "user32" fn SetWindowPos(
@@ -1206,13 +1214,13 @@ pub const LPDIENUMDEVICEOBJECTSCALLBACKW = switch (@import("builtin").zig_backen
     ) callconv(@import("std").os.windows.WINAPI) BOOL,
 };
 
-pub const IDI_APPLICATION = 32512;
+pub const IDI_APPLICATION: [*:0]align(1) const u16 = @ptrFromInt(32512);
 pub extern "user32" fn LoadIconW(
     hInstance: ?HINSTANCE,
     lpIconName: ?[*:0]align(1) const u16,
 ) callconv(@import("std").os.windows.WINAPI) ?HICON;
 
-pub const IDC_ARROW = 32512;
+pub const IDC_ARROW: [*:0]align(1) const u16 = @ptrFromInt(32512);
 pub const IDC_HAND = 32649;
 pub const IDC_HELP = 32651;
 pub const IDC_IBEAM = 32513;
@@ -1636,6 +1644,7 @@ pub const WM_QUERYOPEN = @as(u32, 19);
 pub const WM_ENDSESSION = @as(u32, 22);
 pub const WM_QUIT = @as(u32, 18);
 pub const WM_GETMINMAXINFO = @as(u32, 36);
+pub const WM_WINDOWPOSCHANGED = @as(u32, 71);
 pub const WM_KEYFIRST = @as(u32, 256);
 pub const WM_KEYDOWN = @as(u32, 256);
 pub const WM_KEYUP = @as(u32, 257);
@@ -1712,6 +1721,7 @@ pub const WM_SIZING = @as(u32, 532);
 pub const WM_CAPTURECHANGED = @as(u32, 533);
 pub const WM_MOVING = @as(u32, 534);
 pub const WM_POWERBROADCAST = @as(u32, 536);
+pub const WM_DPICHANGED = @as(u32, 736);
 
 pub const KEYBD_EVENT_FLAGS = packed struct(u32) {
     EXTENDEDKEY: u1 = 0,
@@ -2604,6 +2614,10 @@ pub extern "kernel32" fn GetProcAddress(
     hModule: ?*anyopaque,
     lpProcName: ?[*:0]const u8,
 ) callconv(WINAPI) ?*const fn () callconv(WINAPI) isize;
+pub extern "kernel32" fn ExitProcess(
+    uExitCode: u32,
+) callconv(@import("std").os.windows.WINAPI) noreturn;
+
 pub const INFINITE = 4294967295;
 pub const SECURITY_ATTRIBUTES = extern struct {
     nLength: u32,
@@ -4157,3 +4171,83 @@ pub const AUDCLNT_E_HEADTRACKING_ENABLED = -2004287440;
 pub const AUDCLNT_E_HEADTRACKING_UNSUPPORTED = -2004287424;
 pub const AUDCLNT_E_EFFECT_NOT_AVAILABLE = -2004287423;
 pub const AUDCLNT_E_EFFECT_STATE_READ_ONLY = -2004287422;
+
+pub extern "user32" fn GetDpiForWindow(
+    hwnd: ?HWND,
+) callconv(@import("std").os.windows.WINAPI) u32;
+
+pub fn dpiFromHwnd(hwnd: HWND) u32 {
+    const value = GetDpiForWindow(hwnd);
+    if (value == 0) std.debug.panic(
+        "GetDpiForWindow failed, error={}",
+        .{GetLastError()},
+    );
+    return value;
+}
+
+fn getDpiFactor(dpi: u32) f32 {
+    std.debug.assert(dpi >= 96);
+    return @as(f32, @floatFromInt(dpi)) / 96.0;
+}
+
+pub fn pxFromPt(comptime T: type, value: T, dpi: u32) T {
+    switch (@typeInfo(T)) {
+        .float => return value * getDpiFactor(dpi),
+        .int => return @intFromFloat(@round(@as(f32, @floatFromInt(value)) * getDpiFactor(dpi))),
+        else => @compileError("scaleDpi does not support type " ++ @typeName(@TypeOf(value))),
+    }
+}
+
+pub fn ptFromPx(comptime T: type, value: T, dpi: u32) T {
+    switch (@typeInfo(T)) {
+        .float => return value / getDpiFactor(dpi),
+        .int => return @intFromFloat(@round(@as(f32, @floatFromInt(value)) / getDpiFactor(dpi))),
+        else => @compileError("scaleDpi does not support type " ++ @typeName(@TypeOf(value))),
+    }
+}
+
+pub const CREATESTRUCTW = extern struct {
+    lpCreateParams: ?*anyopaque,
+    hInstance: ?HINSTANCE,
+    hMenu: ?HMENU,
+    hwndParent: ?HWND,
+    cy: i32,
+    cx: i32,
+    y: i32,
+    x: i32,
+    style: i32,
+    lpszName: ?[*:0]const u16,
+    lpszClass: ?[*:0]const u16,
+    dwExStyle: u32,
+};
+
+pub fn loword(value: anytype) u16 {
+    switch (@typeInfo(@TypeOf(value))) {
+        .int => |int| switch (int.signedness) {
+            .signed => return loword(@as(@Type(.{ .int = .{ .signedness = .unsigned, .bits = int.bits } }), @bitCast(value))),
+            .unsigned => return if (int.bits <= 16) value else @intCast(0xffff & value),
+        },
+        else => {},
+    }
+    @compileError("unsupported type " ++ @typeName(@TypeOf(value)));
+}
+pub fn hiword(value: anytype) u16 {
+    switch (@typeInfo(@TypeOf(value))) {
+        .int => |int| switch (int.signedness) {
+            .signed => return hiword(@as(@Type(.{ .int = .{ .signedness = .unsigned, .bits = int.bits } }), @bitCast(value))),
+            .unsigned => return @intCast(0xffff & (value >> 16)),
+        },
+        else => {},
+    }
+    @compileError("unsupported type " ++ @typeName(@TypeOf(value)));
+}
+
+fn xFromLparam(lparam: LPARAM) i16 {
+    return @bitCast(loword(lparam));
+}
+fn yFromLparam(lparam: LPARAM) i16 {
+    return @bitCast(hiword(lparam));
+}
+pub fn pointFromLparam(lparam: LPARAM) POINT {
+    return POINT{ .x = xFromLparam(lparam), .y = yFromLparam(lparam) };
+}
