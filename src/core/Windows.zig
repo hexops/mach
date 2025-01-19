@@ -3,6 +3,8 @@ const w = @import("../win32.zig");
 const mach = @import("../main.zig");
 const Core = @import("../Core.zig");
 
+const windowmsg = @import("windowmsg.zig");
+
 const gpu = mach.gpu;
 const Event = Core.Event;
 const KeyEvent = Core.KeyEvent;
@@ -17,20 +19,19 @@ const Position = Core.Position;
 const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 
+const log = std.log.scoped(.mach);
 const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 const Win32 = @This();
 
-pub const Native = struct {
-    window: w.HWND = undefined,
-    surrogate: u16 = 0,
-    dinput: *w.IDirectInput8W = undefined,
-    saved_window_rect: w.RECT = undefined,
-    surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND = undefined,
+const window_ex_style: w.WINDOW_EX_STYLE = .{
+    .APPWINDOW = 1,
+    .NOREDIRECTIONBITMAP = 1,
 };
 
-pub const Context = struct {
-    core: *Core,
-    window_id: mach.ObjectID,
+pub const Native = struct {
+    hwnd: w.HWND,
+    surrogate: u16 = 0,
+    // dinput: *w.IDirectInput8W = undefined,
 };
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) void {
@@ -38,140 +39,250 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
 }
 
 pub fn tick(core: *Core) !void {
-    var windows = core.windows.slice();
-    while (windows.next()) |window_id| {
-        const native_opt: ?Native = core.windows.get(window_id, .native);
-
-        if (native_opt) |native| {
-            _ = native; // autofix
-            var msg: w.MSG = undefined;
-            while (w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE) != 0) {
-                _ = w.TranslateMessage(&msg);
-                _ = w.DispatchMessageW(&msg);
+    {
+        var windows = core.windows.slice();
+        while (windows.next()) |window_id| {
+            if (core.windows.get(window_id, .native) != null) {
+                // TODO: propagate window.decorated and all others
+                // Handle resizing the window when the user changes width or height
+                if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {
+                    setWindowSize(
+                        core.windows.get(window_id, .native).?.hwnd,
+                        .{
+                            .width = core.windows.get(window_id, .width),
+                            .height = core.windows.get(window_id, .height),
+                        },
+                    );
+                }
+            } else {
+                try initWindow(core, window_id);
+                std.debug.assert(core.windows.getValue(window_id).native != null);
             }
-
-            // Handle resizing the window when the user changes width or height
-            if (core.windows.updated(window_id, .width) or core.windows.updated(window_id, .height)) {}
-        } else {
-            try initWindow(core, window_id);
         }
     }
+
+    var msg: w.MSG = undefined;
+    while (true) {
+        const result = w.PeekMessageW(&msg, null, 0, 0, w.PM_REMOVE);
+        if (result < 0) fatalWin32("PeekMessage", w.GetLastError());
+        if (result == 0) break;
+        if (msg.message == w.WM_QUIT) {
+            std.log.info("quit (exit code {})", .{msg.wParam});
+            w.ExitProcess(std.math.cast(u32, msg.wParam) orelse 0xffffffff);
+        }
+        _ = w.TranslateMessage(&msg);
+        _ = w.DispatchMessageW(&msg);
+    }
 }
+
+fn setWindowSize(hwnd: w.HWND, size_pt: Size) void {
+    const dpi = w.dpiFromHwnd(hwnd);
+    const style = styleFromHwnd(hwnd);
+    var rect: w.RECT = .{
+        .left = 0,
+        .top = 0,
+        .right = w.pxFromPt(i32, @intCast(size_pt.width), dpi),
+        .bottom = w.pxFromPt(i32, @intCast(size_pt.height), dpi),
+    };
+    if (0 == w.AdjustWindowRectExForDpi(&rect, style, w.FALSE, window_ex_style, dpi)) fatalWin32(
+        "AdjustWindowRectExForDpi",
+        w.GetLastError(),
+    );
+    if (0 == w.SetWindowPos(
+        hwnd,
+        null,
+        undefined,
+        undefined,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        .{ .NOZORDER = 1, .NOMOVE = 1 },
+    )) fatalWin32("SetWindowPos", w.GetLastError());
+}
+
+fn updateWindowSize(
+    dpi: u32,
+    window_style: w.WINDOW_STYLE,
+    hwnd: w.HWND,
+    requested_client_size: w.SIZE,
+) void {
+    const monitor = blk: {
+        var rect: w.RECT = undefined;
+        if (0 == w.GetWindowRect(hwnd, &rect)) fatalWin32("GetWindowRect", w.GetLastError());
+
+        break :blk w.MonitorFromPoint(
+            .{ .x = rect.left, .y = rect.top },
+            w.MONITOR_DEFAULTTONULL,
+        ) orelse {
+            log.warn("MonitorFromPoint {},{} failed with {}", .{ rect.left, rect.top, w.GetLastError() });
+            return;
+        };
+    };
+
+    const work_rect: w.RECT = blk: {
+        var info: w.MONITORINFO = undefined;
+        info.cbSize = @sizeOf(w.MONITORINFO);
+        if (0 == w.GetMonitorInfoW(monitor, &info)) {
+            log.warn("GetMonitorInfo failed with {}", .{w.GetLastError()});
+            return;
+        }
+        break :blk info.rcWork;
+    };
+
+    const work_size: w.SIZE = .{
+        .cx = work_rect.right - work_rect.left,
+        .cy = work_rect.bottom - work_rect.top,
+    };
+    log.debug(
+        "primary monitor work topleft={},{} size={}x{}",
+        .{ work_rect.left, work_rect.top, work_size.cx, work_size.cy },
+    );
+
+    const wanted_size: w.SIZE = blk: {
+        var rect: w.RECT = .{
+            .left = 0,
+            .top = 0,
+            .right = requested_client_size.cx,
+            .bottom = requested_client_size.cy,
+        };
+        if (0 == w.AdjustWindowRectExForDpi(&rect, window_style, w.FALSE, window_ex_style, dpi)) fatalWin32(
+            "AdjustWindowRectExForDpi",
+            w.GetLastError(),
+        );
+        break :blk .{
+            .cx = rect.right - rect.left,
+            .cy = rect.bottom - rect.top,
+        };
+    };
+
+    const window_size: w.SIZE = .{
+        .cx = @min(wanted_size.cx, work_size.cx),
+        .cy = @min(wanted_size.cy, work_size.cy),
+    };
+    if (0 == w.SetWindowPos(
+        hwnd,
+        null,
+        work_rect.left + @divTrunc(work_size.cx - window_size.cx, 2),
+        work_rect.top + @divTrunc(work_size.cy - window_size.cy, 2),
+        window_size.cx,
+        window_size.cy,
+        .{ .NOZORDER = 1 },
+    )) fatalWin32("SetWindowPos", w.GetLastError());
+}
+
+const CreateWindowArgs = struct {
+    window_id: mach.ObjectID,
+};
+
+var wndproc_core: *Core = undefined;
 
 fn initWindow(
     core: *Core,
     window_id: mach.ObjectID,
 ) !void {
+    wndproc_core = core;
+
     var core_window = core.windows.getValue(window_id);
 
     const hInstance = w.GetModuleHandleW(null);
     const class_name = w.L("mach");
-    const class = std.mem.zeroInit(w.WNDCLASSW, .{
-        .style = w.CS_OWNDC,
-        .lpfnWndProc = wndProc,
-        .hInstance = hInstance,
-        .hIcon = w.LoadIconW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDI_APPLICATION)))),
-        .hCursor = w.LoadCursorW(null, @as([*:0]align(1) const u16, @ptrFromInt(@as(u32, w.IDC_ARROW)))),
-        .lpszClassName = class_name,
-    });
-    if (w.RegisterClassW(&class) == 0) return error.Unexpected;
+    {
+        const class: w.WNDCLASSW = .{
+            .style = .{},
+            .lpfnWndProc = wndProc,
+            .cbClsExtra = 0,
+            .cbWndExtra = @sizeOf(mach.ObjectID),
+            .hInstance = hInstance,
+            .hIcon = w.LoadIconW(null, w.IDI_APPLICATION),
+            .hCursor = w.LoadCursorW(null, w.IDC_ARROW),
+            .hbrBackground = null,
+            .lpszMenuName = null,
+            .lpszClassName = class_name,
+        };
+        if (w.RegisterClassW(&class) == 0) fatalWin32("RegisterClass", w.GetLastError());
+    }
 
     const title = try std.unicode.utf8ToUtf16LeAllocZ(core.allocator, core_window.title);
     defer core.allocator.free(title);
 
-    var request_window_width: i32 = @bitCast(core_window.width);
-    var request_window_height: i32 = @bitCast(core_window.height);
-
-    const window_ex_style: w.WINDOW_EX_STYLE = .{ .APPWINDOW = 1 };
     const window_style: w.WINDOW_STYLE = if (core_window.decorated) w.WS_OVERLAPPEDWINDOW else w.WS_POPUPWINDOW; // w.WINDOW_STYLE{.POPUP = 1};
 
-    var rect: w.RECT = .{ .left = 0, .top = 0, .right = request_window_width, .bottom = request_window_height };
-
-    if (w.TRUE == w.AdjustWindowRectEx(&rect, window_style, w.FALSE, window_ex_style)) {
-        request_window_width = rect.right - rect.left;
-        request_window_height = rect.bottom - rect.top;
-    }
-
-    const native_window = w.CreateWindowExW(
+    const create_args: CreateWindowArgs = .{
+        .window_id = window_id,
+    };
+    const hwnd = w.CreateWindowExW(
         window_ex_style,
         class_name,
         title,
         window_style,
         w.CW_USEDEFAULT,
         w.CW_USEDEFAULT,
-        request_window_width,
-        request_window_height,
+        w.CW_USEDEFAULT,
+        w.CW_USEDEFAULT,
         null,
         null,
         hInstance,
-        null,
+        @constCast(@ptrCast(&create_args)),
     ) orelse return error.Unexpected;
 
-    var native: Native = .{};
+    const dpi = w.dpiFromHwnd(hwnd);
 
-    var dinput: ?*w.IDirectInput8W = undefined;
-    const ptr: ?*?*anyopaque = @ptrCast(&dinput);
-    if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
-        return error.Unexpected;
-    }
-    native.dinput = dinput.?;
+    updateWindowSize(dpi, window_style, hwnd, .{
+        .cx = @bitCast(core_window.width),
+        .cy = @bitCast(core_window.height),
+    });
 
-    native.surface_descriptor_from_hwnd = .{
-        .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
-        .hwnd = native_window,
-    };
+    // const dinput = blk: {
+    //     var dinput: ?*w.IDirectInput8W = undefined;
+    //     const ptr: ?*?*anyopaque = @ptrCast(&dinput);
+    //     if (w.DirectInput8Create(hInstance, w.DIRECTINPUT_VERSION, w.IID_IDirectInput8W, ptr, null) != w.DI_OK) {
+    //         return error.Unexpected;
+    //     }
+    //     break :blk dinput;
+    // };
 
-    core_window.surface_descriptor = .{ .next_in_chain = .{
-        .from_windows_hwnd = &native.surface_descriptor_from_hwnd,
-    } };
-
-    const context = try core.allocator.create(Context);
-    context.* = .{ .core = core, .window_id = window_id };
-
-    _ = w.SetWindowLongPtrW(native_window, w.GWLP_USERDATA, @bitCast(@intFromPtr(context)));
-
-    restoreWindowPosition(core, window_id);
-
-    const size = getClientRect(core, window_id);
+    const size = getClientSize(hwnd);
     core_window.width = size.width;
     core_window.height = size.height;
 
-    _ = w.GetWindowRect(native.window, &native.saved_window_rect);
+    _ = w.ShowWindow(hwnd, w.SW_SHOW);
 
-    core_window.native = native;
-    core.windows.setValueRaw(window_id, core_window);
-    try core.initWindow(window_id);
-    _ = w.ShowWindow(native_window, w.SW_SHOW);
+    // try some things to bring our window to the top
+    const HWND_TOP: ?w.HWND = null;
+    _ = w.SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, .{ .NOMOVE = 1, .NOSIZE = 1 });
+    _ = w.SetForegroundWindow(hwnd);
+    _ = w.BringWindowToTop(hwnd);
+
+    {
+        // TODO: make this lifetime better
+        var surface_descriptor_from_hwnd: gpu.Surface.DescriptorFromWindowsHWND = .{
+            .hinstance = std.os.windows.kernel32.GetModuleHandleW(null).?,
+            .hwnd = hwnd,
+        };
+        core.windows.setRaw(window_id, .surface_descriptor, .{ .next_in_chain = .{
+            .from_windows_hwnd = &surface_descriptor_from_hwnd,
+        } });
+        try core.initWindow(window_id);
+    }
 }
 
+fn windowIdFromHwnd(hwnd: w.HWND) mach.ObjectID {
+    const userdata: usize = @bitCast(w.GetWindowLongPtrW(hwnd, @enumFromInt(0)));
+    if (userdata == 0) unreachable;
+    return @bitCast(userdata - 1);
+}
+fn styleFromHwnd(hwnd: w.HWND) w.WINDOW_STYLE {
+    return @bitCast(@as(u32, @truncate(@as(usize, @bitCast(w.GetWindowLongPtrW(hwnd, w.GWL_EXSTYLE))))));
+}
 // -----------------------------
 //  Internal functions
 // -----------------------------
-fn getClientRect(core: *Core, window_id: mach.ObjectID) Size {
-    const window = core.windows.getValue(window_id);
-
-    if (window.native) |native| {
-        var rect: w.RECT = undefined;
-        _ = w.GetClientRect(native.window, &rect);
-
-        const width: u32 = @intCast(rect.right - rect.left);
-        const height: u32 = @intCast(rect.bottom - rect.top);
-
-        return .{ .width = width, .height = height };
-    }
-
-    return .{ .width = 0, .height = 0 };
-}
-
-fn restoreWindowPosition(core: *Core, window_id: mach.ObjectID) void {
-    const window = core.windows.getValue(window_id);
-    if (window.native) |native| {
-        if (native.saved_window_rect.right - native.saved_window_rect.left == 0) {
-            _ = w.ShowWindow(native.window, w.SW_RESTORE);
-        } else {
-            _ = w.SetWindowPos(native.window, null, native.saved_window_rect.left, native.saved_window_rect.top, native.saved_window_rect.right - native.saved_window_rect.left, native.saved_window_rect.bottom - native.saved_window_rect.top, w.SWP_SHOWWINDOW);
-        }
-    }
+fn getClientSize(hwnd: w.HWND) Size {
+    var rect: w.RECT = undefined;
+    if (0 == w.GetClientRect(hwnd, &rect))
+        fatalWin32("GetClientRect", w.GetLastError());
+    std.debug.assert(rect.left == 0);
+    std.debug.assert(rect.top == 0);
+    return .{ .width = @intCast(rect.right), .height = @intCast(rect.bottom) };
 }
 
 fn getKeyboardModifiers() mach.Core.KeyMods {
@@ -186,52 +297,79 @@ fn getKeyboardModifiers() mach.Core.KeyMods {
     };
 }
 
-fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w.WINAPI) w.LRESULT {
-    const context = blk: {
-        const userdata: usize = @bitCast(w.GetWindowLongPtrW(wnd, w.GWLP_USERDATA));
-        const ptr: ?*Context = @ptrFromInt(userdata);
-        break :blk ptr orelse return w.DefWindowProcW(wnd, msg, wParam, lParam);
+const debug_wndproc_log = false;
+var global_msg_tail: ?*windowmsg.MessageNode = null;
+
+fn wndProc(hwnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w.WINAPI) w.LRESULT {
+    var msg_node: windowmsg.MessageNode = undefined;
+    if (debug_wndproc_log) msg_node.init(&global_msg_tail, hwnd, msg, wParam, lParam);
+    defer if (debug_wndproc_log) msg_node.deinit();
+    if (debug_wndproc_log) switch (msg) {
+        w.WM_MOUSEMOVE => {},
+        else => std.log.info("{}", .{msg_node.fmtPath()}),
     };
 
-    const core = context.core;
-    const window_id = context.window_id;
-
-    var core_window = core.windows.getValue(window_id);
-
+    const core = wndproc_core;
     switch (msg) {
-        w.WM_CLOSE => {
-            core.pushEvent(.{ .close = .{ .window_id = window_id } });
+        w.WM_CREATE => {
+            const create_struct: *w.CREATESTRUCTW = @ptrFromInt(@as(usize, @bitCast(lParam)));
+            const create_args: *CreateWindowArgs = @alignCast(@ptrCast(create_struct.lpCreateParams));
+            const window_id = create_args.window_id;
+
+            core.windows.setRaw(window_id, .native, .{ .hwnd = hwnd });
+            // we add 1 to distinguish between a valid window id and an uninitialized slot
+            std.debug.assert(0 == w.SetWindowLongPtrW(hwnd, @enumFromInt(0), @bitCast(create_args.window_id + 1)));
+            std.debug.assert(create_args.window_id == windowIdFromHwnd(hwnd));
             return 0;
         },
-        w.WM_SIZE => {
-            const width: u32 = @as(u32, @intCast(lParam & 0xFFFF));
-            const height: u32 = @as(u32, @intCast((lParam >> 16) & 0xFFFF));
+        w.WM_DESTROY => @panic("Mach doesn't support destroying windows yet"),
+        w.WM_CLOSE => {
+            core.pushEvent(.{ .close = .{ .window_id = windowIdFromHwnd(hwnd) } });
+            return 0;
+        },
+        w.WM_DPICHANGED, w.WM_WINDOWPOSCHANGED => {
+            const client_size_px = getClientSize(hwnd);
 
-            if (core_window.width != width or core_window.height != height) {
+            const window_id = windowIdFromHwnd(hwnd);
+            var core_window = core.windows.getValue(window_id);
+
+            var change = false;
+            if (core_window.framebuffer_width != client_size_px.width or core_window.framebuffer_height != client_size_px.height) {
+                change = true;
                 // Recreate the swap_chain
                 core_window.swap_chain.release();
-                core_window.swap_chain_descriptor.width = width;
-                core_window.swap_chain_descriptor.height = height;
+                core_window.swap_chain_descriptor.width = client_size_px.width;
+                core_window.swap_chain_descriptor.height = client_size_px.height;
                 core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-
-                core_window.width = width;
-                core_window.height = height;
-                core_window.framebuffer_width = width;
-                core_window.framebuffer_height = height;
-
-                core.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .width = width, .height = height } } });
-
-                core.windows.setValueRaw(window_id, core_window);
+                core_window.framebuffer_width = client_size_px.width;
+                core_window.framebuffer_height = client_size_px.height;
             }
 
-            // TODO (win32): only send resize event when sizing is done.
-            //               the main mach loops does not run while resizing.
-            //               Which means if events are pushed here they will
-            //               queue up until resize is done.
+            const dpi = w.dpiFromHwnd(hwnd);
+            const client_size_pt: Size = .{
+                .width = w.ptFromPx(u32, client_size_px.width, dpi),
+                .height = w.ptFromPx(u32, client_size_px.height, dpi),
+            };
+            if (core_window.width != client_size_pt.width or core_window.height != client_size_pt.height) {
+                change = true;
+                core_window.width = client_size_pt.width;
+                core_window.height = client_size_pt.height;
+            }
 
+            if (change) {
+                core.pushEvent(.{ .window_resize = .{
+                    .window_id = window_id,
+                    .size = .{ .width = client_size_pt.width, .height = client_size_pt.height },
+                } });
+                core.windows.setValueRaw(window_id, core_window);
+            }
             return 0;
         },
         w.WM_KEYDOWN, w.WM_KEYUP, w.WM_SYSKEYDOWN, w.WM_SYSKEYUP => {
+            // ScanCode: Unique Identifier for a physical button.
+            // Virtulkey: A key with a name, multiple physical buttons can produce the same virtual key.
+            const window_id = windowIdFromHwnd(hwnd);
+
             const vkey: w.VIRTUAL_KEY = @enumFromInt(wParam);
             if (vkey == w.VK_PROCESSKEY) return 0;
 
@@ -241,43 +379,47 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                 return 0;
             }
 
-            const flags = lParam >> 16;
-            const scancode: u9 = @intCast(flags & 0x1FF);
+            const WinKeyFlags = packed struct(u32) {
+                repeat_count: u16,
+                scancode: u8,
+                extended: bool,
+                reserved: u4,
+                context: bool,
+                previous: bool,
+                transition: bool,
+            };
 
+            const flags: WinKeyFlags = @bitCast(@as(u32, @truncate(@as(usize, @bitCast(lParam)))));
+            const scancode: u9 = flags.scancode | (@as(u9, if (flags.extended) 1 else 0) << 8);
             if (scancode == 0x1D) {
                 // right alt sends left control first
                 var next: w.MSG = undefined;
                 const time = w.GetMessageTime();
-                if (core_window.native) |native| {
-                    if (w.PeekMessageW(&next, native.window, 0, 0, w.PM_NOREMOVE) != 0 and
-                        next.time == time and
-                        (next.message == msg or (msg == w.WM_SYSKEYDOWN and next.message == w.WM_KEYUP)) and
-                        ((next.lParam >> 16) & 0x1FF) == 0x138)
-                    {
-                        return 0;
-                    }
+                if (w.PeekMessageW(&next, hwnd, 0, 0, w.PM_NOREMOVE) != 0 and
+                    next.time == time and
+                    (next.message == msg or (msg == w.WM_SYSKEYDOWN and next.message == w.WM_KEYUP)) and
+                    ((next.lParam >> 16) & 0x1FF) == 0x138)
+                {
+                    return 0;
                 }
             }
 
             const mods = getKeyboardModifiers();
             const key = keyFromScancode(scancode);
             if (msg == w.WM_KEYDOWN or msg == w.WM_SYSKEYDOWN) {
-                if (flags & w.KF_REPEAT == 0)
-                    core.pushEvent(.{
-                        .key_press = .{
-                            .window_id = window_id,
-                            .key = key,
-                            .mods = mods,
-                        },
-                    })
-                else
-                    core.pushEvent(.{
-                        .key_repeat = .{
-                            .window_id = window_id,
-                            .key = key,
-                            .mods = mods,
-                        },
-                    });
+                if (flags.previous) core.pushEvent(.{
+                    .key_repeat = .{
+                        .window_id = window_id,
+                        .key = key,
+                        .mods = mods,
+                    },
+                }) else core.pushEvent(.{
+                    .key_press = .{
+                        .window_id = window_id,
+                        .key = key,
+                        .mods = mods,
+                    },
+                });
             } else core.pushEvent(.{
                 .key_release = .{
                     .window_id = window_id,
@@ -289,29 +431,32 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_CHAR => {
-            if (core_window.native) |*native| {
-                const char: u16 = @truncate(wParam);
-                var chars: []const u16 = undefined;
-                if (native.surrogate != 0) {
-                    chars = &.{ native.surrogate, char };
-                    native.surrogate = 0;
-                } else if (std.unicode.utf16IsHighSurrogate(char)) {
-                    native.surrogate = char;
+            const window_id = windowIdFromHwnd(hwnd);
+
+            const chars: [2]u16 = blk: {
+                var native = core.windows.get(window_id, .native).?;
+                defer core.windows.setRaw(window_id, .native, native);
+                const chars = [2]u16{ native.surrogate, @truncate(wParam) };
+                if (std.unicode.utf16IsHighSurrogate(chars[1])) {
+                    native.surrogate = chars[1];
                     return 0;
-                } else {
-                    chars = &.{char};
                 }
-                var iter = std.unicode.Utf16LeIterator.init(chars);
-                if (iter.nextCodepoint()) |codepoint| {
-                    core.pushEvent(.{ .char_input = .{
-                        .window_id = window_id,
-                        .codepoint = codepoint.?,
-                    } });
-                } else |err| {
-                    err catch {};
+                native.surrogate = 0;
+                break :blk chars;
+            };
+            const codepoint: u21 = blk: {
+                if (std.unicode.utf16IsHighSurrogate(chars[0])) {
+                    if (std.unicode.utf16DecodeSurrogatePair(&chars)) |c| break :blk c else |e| switch (e) {
+                        error.ExpectedSecondSurrogateHalf => {},
+                    }
                 }
-                return 0;
-            }
+                break :blk chars[1];
+            };
+            core.pushEvent(.{ .char_input = .{
+                .window_id = window_id,
+                .codepoint = codepoint,
+            } });
+            return 0;
         },
         w.WM_LBUTTONDOWN,
         w.WM_LBUTTONUP,
@@ -322,15 +467,26 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
         w.WM_XBUTTONDOWN,
         w.WM_XBUTTONUP,
         => {
+            const window_id = windowIdFromHwnd(hwnd);
             const mods = getKeyboardModifiers();
-            const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
-            const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
-            const xbutton: u32 = @truncate(wParam >> 16);
+            const point = w.pointFromLparam(lParam);
+
+            const MouseFlags = packed struct(u8) {
+                left_down: bool,
+                right_down: bool,
+                shift_down: bool,
+                control_down: bool,
+                middle_down: bool,
+                xbutton1_down: bool,
+                xbutton2_down: bool,
+                _: bool,
+            };
+            const flags: MouseFlags = @bitCast(@as(u8, @truncate(wParam)));
             const button: MouseButton = switch (msg) {
                 w.WM_LBUTTONDOWN, w.WM_LBUTTONUP => .left,
                 w.WM_RBUTTONDOWN, w.WM_RBUTTONUP => .right,
                 w.WM_MBUTTONDOWN, w.WM_MBUTTONUP => .middle,
-                else => if (xbutton == @as(u32, @bitCast(w.XBUTTON1))) .four else .five,
+                else => if (flags.xbutton1_down) .four else .five,
             };
 
             switch (msg) {
@@ -343,7 +499,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                         .window_id = window_id,
                         .button = button,
                         .mods = mods,
-                        .pos = .{ .x = x, .y = y },
+                        .pos = .{ .x = @floatFromInt(point.x), .y = @floatFromInt(point.y) },
                     },
                 }),
                 else => core.pushEvent(.{
@@ -351,7 +507,7 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
                         .window_id = window_id,
                         .button = button,
                         .mods = mods,
-                        .pos = .{ .x = x, .y = y },
+                        .pos = .{ .x = @floatFromInt(point.x), .y = @floatFromInt(point.y) },
                     },
                 }),
             }
@@ -359,20 +515,21 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return if (msg == w.WM_XBUTTONDOWN or msg == w.WM_XBUTTONUP) w.TRUE else 0;
         },
         w.WM_MOUSEMOVE => {
-            const x: f64 = @floatFromInt(@as(i16, @truncate(lParam & 0xFFFF)));
-            const y: f64 = @floatFromInt(@as(i16, @truncate((lParam >> 16) & 0xFFFF)));
+            const window_id = windowIdFromHwnd(hwnd);
+            const point = w.pointFromLparam(lParam);
             core.pushEvent(.{
                 .mouse_motion = .{
                     .window_id = window_id,
                     .pos = .{
-                        .x = x,
-                        .y = y,
+                        .x = @floatFromInt(point.x),
+                        .y = @floatFromInt(point.y),
                     },
                 },
             });
             return 0;
         },
         w.WM_MOUSEWHEEL => {
+            const window_id = windowIdFromHwnd(hwnd);
             const WHEEL_DELTA = 120.0;
             const wheel_high_word: u16 = @truncate((wParam >> 16) & 0xffff);
             const delta_y: f32 = @as(f32, @floatFromInt(@as(i16, @bitCast(wheel_high_word)))) / WHEEL_DELTA;
@@ -387,17 +544,17 @@ fn wndProc(wnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(w
             return 0;
         },
         w.WM_SETFOCUS => {
+            const window_id = windowIdFromHwnd(hwnd);
             core.pushEvent(.{ .focus_gained = .{ .window_id = window_id } });
             return 0;
         },
         w.WM_KILLFOCUS => {
+            const window_id = windowIdFromHwnd(hwnd);
             core.pushEvent(.{ .focus_lost = .{ .window_id = window_id } });
             return 0;
         },
-        else => return w.DefWindowProcW(wnd, msg, wParam, lParam),
+        else => return w.DefWindowProcW(hwnd, msg, wParam, lParam),
     }
-
-    return w.DefWindowProcW(wnd, msg, wParam, lParam);
 }
 
 fn keyFromScancode(scancode: u9) Key {
@@ -542,7 +699,10 @@ fn keyFromScancode(scancode: u9) Key {
     return if (scancode > 0 and scancode <= table.len) table[scancode - 1] else .unknown;
 }
 
+fn fatalWin32(what: []const u8, last_error: u32) noreturn {
+    std.debug.panic("{s} failed, error={}", .{ what, last_error });
+}
+
 // TODO (win32) Implement consistent error handling when interfacing with the Windows API.
-// TODO (win32) Support High DPI awareness
 // TODO (win32) Consider to add support for mouse capture
 // TODO (win32) Change to using WM_INPUT for mouse movement.

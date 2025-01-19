@@ -402,6 +402,7 @@ fn buildExamples(
             .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
             .target = target,
             .optimize = optimize,
+            .win32_manifest = b.path("src/core/windows/win32.manifest"),
         });
         exe.root_module.addImport("mach", mach_mod);
 
