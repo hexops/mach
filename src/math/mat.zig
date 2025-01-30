@@ -2,6 +2,7 @@ const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
 const vec = @import("vec.zig");
+const quat = @import("quat.zig");
 
 pub fn Mat2x2(
     comptime Scalar: type,
@@ -431,6 +432,22 @@ pub fn Mat4x4(
                 &RowVec.init(c, -s, 0, 0),
                 &RowVec.init(s, c, 0, 0),
                 &RowVec.init(0, 0, 1, 0),
+                &RowVec.init(0, 0, 0, 1),
+            );
+        }
+
+        //https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/jay.htm
+        //Requires a normalized quaternion
+        pub inline fn rotateByQuaternion(quaternion: quat.Quat(T)) Matrix {
+            const qx = quaternion.v.x();
+            const qy = quaternion.v.y();
+            const qz = quaternion.v.z();
+            const qw = quaternion.v.w();
+
+            return Matrix.init(
+                &RowVec.init(1 - 2 * qy * qy - 2 * qz * qz, 2 * qx * qy - 2 * qz * qw, 2 * qx * qz + 2 * qy * qw, 0),
+                &RowVec.init(2 * qx * qy + 2 * qz * qw, 1 - 2 * qx * qx - 2 * qz * qz, 2 * qy * qz - 2 * qx * qw, 0),
+                &RowVec.init(2 * qx * qz - 2 * qy * qw, 2 * qy * qz + 2 * qx * qw, 1 - 2 * qx * qx - 2 * qy * qy, 0),
                 &RowVec.init(0, 0, 0, 1),
             );
         }
@@ -1172,4 +1189,18 @@ test "projection2D_model_to_clip_space" {
     try testing.expect(math.Vec4, math.vec4(0, -1, 1, 1)).eql(mvp.mul(&math.Mat4x4.rotateX(math.degreesToRadians(90))).mulVec(&math.vec4(0, 0, 50, 1)));
     try testing.expect(math.Vec4, math.vec4(1, 0, 1, 1)).eql(mvp.mul(&math.Mat4x4.rotateY(math.degreesToRadians(90))).mulVec(&math.vec4(0, 0, 50, 1)));
     try testing.expect(math.Vec4, math.vec4(0, 0, 0.5, 1)).eql(mvp.mul(&math.Mat4x4.rotateZ(math.degreesToRadians(90))).mulVec(&math.vec4(0, 0, 50, 1)));
+}
+
+test "quaternion_rotation" {
+    const expected = math.Mat4x4.init(
+        &math.vec4(0.7716905, 0.5519065, 0.3160585, 0),
+        &math.vec4(-0.0782971, -0.4107276, 0.9083900, 0),
+        &math.vec4(0.6311602, -0.7257425, -0.2737419, 0),
+        &math.vec4(0, 0, 0, 1),
+    );
+
+    const q = math.Quat.fromAxisAngle(math.vec3(0.9182788, 0.1770672, 0.3541344), 4.2384558);
+    const result = math.Mat4x4.rotateByQuaternion(q.normalize());
+
+    try testing.expect(bool, true).eql(expected.eqlApprox(&result, 0.0000002));
 }
