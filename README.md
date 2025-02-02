@@ -18,3 +18,6 @@ Zig game engine & graphics toolkit for building high-performance, truly cross-pl
 ## Join the community
 
 Join the [Mach community on Discord](https://discord.gg/XNG3NZgCqp) to discuss this project, ask questions, get help, etc.
+
+**We're here to make games and have fun, so please help keep the community focused on that.** No politics/heated topics are allowed. Unfortunately, [the political landscape today makes it such that we must also state]([https://emidoots.com/2025/i-want-code-not-politics](https://emidoots.com/2025/i-want-code-not-politics/)): fascists can go f*k themselves, we support LGBTQ+ and minorities here - their existence is not political.
+
