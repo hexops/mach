@@ -1452,6 +1452,7 @@ fn genNumber(astgen: *AstGen, node: NodeIndex) !InstIndex {
             }
             // else is part of a hex literal
         },
+        '.' => has_dot = true,
         else => {},
     }
 
