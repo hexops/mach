@@ -301,7 +301,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
         /// Removes a tag on an object
         pub fn removeTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M)) void {
-            _ = objs.validateAndUnpack(id, "setTag");
+            _ = objs.validateAndUnpack(id, "removeTag");
             const tagged = TaggedObject{
                 .object_id = id,
                 .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
@@ -321,7 +321,7 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
         /// Get an object's tag value, or null.
         pub fn getTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M)) ?mach.ObjectID {
-            _ = objs.validateAndUnpack(id, "hasTag");
+            _ = objs.validateAndUnpack(id, "getTag");
             const tagged = TaggedObject{
                 .object_id = id,
                 .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
