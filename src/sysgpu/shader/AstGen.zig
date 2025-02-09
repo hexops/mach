@@ -1452,6 +1452,21 @@ fn genNumber(astgen: *AstGen, node: NodeIndex) !InstIndex {
             }
             // else is part of a hex literal
         },
+        'e', 'E' => {
+            if (!is_hex) {
+                try astgen.errors.add(node_loc, "incomplete exponent", .{}, null);
+                return error.AnalysisFail;
+            } // else part of a hex literal
+        },
+        'p', 'P' => |c| {
+            if (!is_hex) {
+                try astgen.errors.add(node_loc, "hexadecimal exponent '{c}' in decimal float", .{c}, null);
+                return error.AnalysisFail;
+            }
+            // TODO
+            try astgen.errors.add(node_loc, "hexadecimal float literals not implemented", .{}, null);
+            return error.AnalysisFail;
+        },
         '.' => has_dot = true,
         else => {},
     }
