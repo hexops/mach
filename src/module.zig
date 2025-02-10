@@ -70,12 +70,20 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
             /// A bitset used to track per-field changes. Only used if options.track_fields == true.
             updated: ?std.bit_set.DynamicBitSetUnmanaged = if (options.track_fields) .{} else null,
+
+            /// Tags storage
+            tags: std.AutoHashMapUnmanaged(TaggedObject, ?ObjectID) = .{},
         },
 
         pub const IsMachObjects = void;
 
         const Generation = u16;
         const Index = u32;
+
+        const TaggedObject = struct {
+            object_id: ObjectID,
+            tag_hash: u64,
+        };
 
         const PackedID = packed struct(u64) {
             type_id: ObjectTypeID,
@@ -273,6 +281,52 @@ pub fn Objects(options: ObjectsOptions, comptime T: type) type {
 
             dead.set(unpacked.index);
             if (mach.is_debug) data.set(unpacked.index, undefined);
+        }
+
+        // TODO(objects): evaluate whether tag operations should ever return an error
+
+        /// Sets a tag on an object
+        pub fn setTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M), value_id: ?ObjectID) !void {
+            _ = objs.validateAndUnpack(id, "setTag");
+
+            // TODO: validate that value_id is an object coming from the mach.Objects(T) list indicated by the tag value in M.mach_tags.
+            //const value_mach_objects = moduleTagValueObjects(M, tag);
+
+            const tagged = TaggedObject{
+                .object_id = id,
+                .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
+            };
+            try objs.internal.tags.put(objs.internal.allocator, tagged, value_id);
+        }
+
+        /// Removes a tag on an object
+        pub fn removeTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M)) void {
+            _ = objs.validateAndUnpack(id, "removeTag");
+            const tagged = TaggedObject{
+                .object_id = id,
+                .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
+            };
+            _ = objs.internal.tags.remove(tagged);
+        }
+
+        /// Whether an object has a tag
+        pub fn hasTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M)) bool {
+            _ = objs.validateAndUnpack(id, "hasTag");
+            const tagged = TaggedObject{
+                .object_id = id,
+                .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
+            };
+            return objs.internal.tags.contains(tagged);
+        }
+
+        /// Get an object's tag value, or null.
+        pub fn getTag(objs: *@This(), id: ObjectID, comptime M: type, tag: ModuleTagEnum(M)) ?mach.ObjectID {
+            _ = objs.validateAndUnpack(id, "getTag");
+            const tagged = TaggedObject{
+                .object_id = id,
+                .tag_hash = std.hash.Wyhash.hash(0, @tagName(tag)),
+            };
+            return objs.internal.tags.get(tagged) orelse null;
         }
 
         pub fn slice(objs: *@This()) Slice {
@@ -486,6 +540,46 @@ fn ModuleFunctionName2(comptime M: type) type {
         // TODO: verify decls are Fn or mach.schedule() decl
         enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(fn_tag), .value = i }};
         i += 1;
+    }
+    return @Type(.{
+        .@"enum" = .{
+            .tag_type = if (enum_fields.len > 0) std.math.IntFittingRange(0, enum_fields.len - 1) else u0,
+            .fields = enum_fields,
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_exhaustive = true,
+        },
+    });
+}
+
+/// Enum describing all mach_tags for a given comptime-known module.
+fn ModuleTagEnum(comptime M: type) type {
+    // TODO(object): handle duplicate enum field case in mach_tags with a more clear error?
+    // TODO(object): improve validation error messages here
+    validate(M);
+    if (@typeInfo(@TypeOf(M.mach_tags)) != .@"struct") {
+        @compileError("mach: invalid module, `pub const mach_tags must be `.{ .is_monster, .{ .renderer, mach.Renderer.objects } }`, found: " ++ @typeName(@TypeOf(M.mach_tags)));
+    }
+    var enum_fields: []const std.builtin.Type.EnumField = &[0]std.builtin.Type.EnumField{};
+    var i: u32 = 0;
+    inline for (@typeInfo(@TypeOf(M.mach_tags)).@"struct".fields, 0..) |field, field_index| {
+        const f = M.mach_tags[field_index];
+        if (@typeInfo(field.type) == .enum_literal) {
+            enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(f), .value = i }};
+            i += 1;
+        } else {
+            if (@typeInfo(field.type) != .@"struct") {
+                @compileError("mach: invalid module, mach_tags entry is not an enum literal or struct, found: " ++ @typeName(field.type));
+            }
+            // TODO(objects): validate length of struct
+            const tag = f.@"0";
+            const M2 = f.@"1";
+            const object_list_tag = f.@"2";
+            _ = object_list_tag; // autofix
+            validate(M2);
+            // TODO: validate that M2.object_list_tag is a mach objects list
+            enum_fields = enum_fields ++ [_]std.builtin.Type.EnumField{.{ .name = @tagName(tag), .value = i }};
+            i += 1;
+        }
     }
     return @Type(.{
         .@"enum" = .{
