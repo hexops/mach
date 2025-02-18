@@ -164,6 +164,7 @@ pub fn initWindow(
                 error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                 else => "An unknown error occured while trying to connect to Wayland",
             };
+
             log.err("{s}\n\nFalling back to X11\n", .{err_msg});
             X11.initWindow(core, window_id) catch |e| {
                 log.err("Failed to connect to fallback display server, X11.\n", .{});
