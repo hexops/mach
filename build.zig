@@ -389,6 +389,34 @@ const Example = struct {
     run_step: *std.Build.Step = undefined,
 };
 
+pub fn addExecutable(
+    mach_builder: *std.Build,
+    options: struct {
+        name: []const u8,
+        app: *std.Build.Module,
+        target: std.Build.ResolvedTarget,
+        optimize: std.builtin.OptimizeMode,
+    },
+) *std.Build.Step.Compile {
+    const entrypoint_mod = mach_builder.addModule(
+        mach_builder.fmt("{s}-entrypoint", .{options.name}),
+        .{
+            .root_source_file = mach_builder.path("src/entrypoint/main.zig"),
+            .optimize = options.optimize,
+            .target = options.target,
+        },
+    );
+    entrypoint_mod.addImport("app", options.app);
+
+    return mach_builder.addExecutable(.{
+        .name = options.name,
+        .root_module = entrypoint_mod,
+
+        // Win32 manifest file for DPI-awareness configuration
+        .win32_manifest = mach_builder.path("src/core/windows/win32.manifest"),
+    });
+}
+
 fn buildExamples(
     b: *std.Build,
     optimize: std.builtin.OptimizeMode,
@@ -397,14 +425,16 @@ fn buildExamples(
     examples: []Example,
 ) void {
     for (examples) |*example| {
-        const exe = b.addExecutable(.{
+        const app_mod = b.addModule(example.name, .{
+            .root_source_file = b.path(b.fmt("examples/{s}/App.zig", .{example.name})),
+        });
+        app_mod.addImport("mach", mach_mod);
+        const exe = addExecutable(b, .{
             .name = example.name,
-            .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
+            .app = app_mod,
             .target = target,
             .optimize = optimize,
-            .win32_manifest = b.path("src/core/windows/win32.manifest"),
         });
-        exe.root_module.addImport("mach", mach_mod);
 
         for (example.deps) |d| {
             switch (d) {
@@ -412,19 +442,19 @@ fn buildExamples(
                     if (b.lazyDependency("mach_example_assets", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| exe.root_module.addImport("assets", dep.module("mach-example-assets"));
+                    })) |dep| app_mod.addImport("assets", dep.module("mach-example-assets"));
                 },
                 .freetype => {
                     if (b.lazyDependency("mach_freetype", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| exe.root_module.addImport("freetype", dep.module("mach-freetype"));
+                    })) |dep| app_mod.addImport("freetype", dep.module("mach-freetype"));
                 },
                 .zigimg => {
                     if (b.lazyDependency("zigimg", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| exe.root_module.addImport("zigimg", dep.module("zigimg"));
+                    })) |dep| app_mod.addImport("zigimg", dep.module("zigimg"));
                 },
             }
         }
