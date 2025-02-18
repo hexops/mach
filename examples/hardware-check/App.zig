@@ -14,6 +14,15 @@ const Mat4x4 = math.Mat4x4;
 
 const App = @This();
 
+// The set of Mach modules our application may use.
+pub const Modules = mach.Modules(.{
+    mach.Core,
+    mach.gfx.Sprite,
+    mach.gfx.Text,
+    mach.Audio,
+    App,
+});
+
 pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .tick, .deinit, .deinit2, .audioStateChange };

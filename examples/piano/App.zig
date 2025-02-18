@@ -18,6 +18,13 @@ const sysaudio = mach.sysaudio;
 
 const App = @This();
 
+// The set of Mach modules our application may use.
+pub const Modules = mach.Modules(.{
+    mach.Core,
+    mach.Audio,
+    App,
+});
+
 pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .tick, .deinit, .audioStateChange };
