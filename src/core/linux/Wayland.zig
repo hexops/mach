@@ -980,11 +980,6 @@ const libdecor_listener = struct {
         log.err("{s}", .{message});
     }
 
-    fn printDesc(desc: gpu.SwapChain.Descriptor) void {
-        log.info("w: {}, h: {}", .{ desc.width, desc.height });
-        log.info("label: {s}", .{desc.label.?});
-    }
-
     fn libdecor_configure(frame: ?*c.struct_libdecor_frame, configuration: ?*c.struct_libdecor_configuration, user_data: ?*anyopaque) callconv(.c) void {
         const window_id = @intFromPtr(user_data);
         var core_window = core_ptr.windows.getValue(window_id);
@@ -998,7 +993,6 @@ const libdecor_listener = struct {
             width = @intCast(core_window.width);
             height = @intCast(core_window.height);
         } else {
-            log.info("going from {}x{} -> {}x{}", .{ core_window.width, core_window.height, width, height });
             const new_width: u32 = @intCast(width);
             const new_height: u32 = @intCast(height);
             if (core_window.width != new_width or core_window.height != new_height) {
