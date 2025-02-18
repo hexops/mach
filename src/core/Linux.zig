@@ -136,7 +136,7 @@ pub fn initWindow(
         .wayland => {
             Wayland.initWindow(core, window_id) catch |err| {
                 const err_msg = switch (err) {
-                    error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
+                    error.NoDecorationSupport => "No window decoration support available",
                     error.LibraryNotFound => "Missing Wayland library",
                     error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                     else => "An unknown error occured while trying to connect to Wayland",

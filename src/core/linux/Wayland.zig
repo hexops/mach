@@ -21,6 +21,7 @@ pub const c = @cImport({
     @cInclude("xkbcommon/xkbcommon.h");
     @cInclude("xkbcommon/xkbcommon-compose.h");
     @cInclude("linux/input-event-codes.h");
+    @cInclude("libdecor.h");
 });
 
 // This needs to be declared here so it can be used in the exported functions below,
@@ -30,6 +31,10 @@ pub var libwaylandclient: ?LibWaylandClient = null;
 // This does not need to be declared here, but we are declaring it here to be consistent
 // with `libwaylandclient`.
 pub var libxkbcommon: ?LibXkbCommon = null;
+
+// LibDecor allows wayland clients to draw window decorations for them, this is dynamically
+// loaded and should not be used if use_client_side_decorations is false
+pub var libdecor: ?LibDecor = null;
 
 var core_ptr: *Core = undefined;
 
@@ -73,6 +78,14 @@ pub const Native = struct {
     keymap: ?*c.xkb_keymap = null,
     modifiers: Core.KeyMods,
     modifier_indices: KeyModInd,
+
+    // whether to use client side decorations or server side
+    use_client_side_decorations: bool,
+    libdecor_context: ?*c.libdecor = null,
+    libdecor_frame: ?*c.libdecor_frame = null,
+
+    // scaling factor, this is updated by the wl_output scale event
+    scale: u32 = 1,
 };
 
 pub fn initWindow(
@@ -83,6 +96,13 @@ pub fn initWindow(
     var core_window = core.windows.getValue(window_id);
     libwaylandclient = try LibWaylandClient.load();
     libxkbcommon = try LibXkbCommon.load();
+
+    var use_csd = true;
+    libdecor = LibDecor.load() catch blk: {
+        log.warn("Failed to load libdecor, falling back to server side rendering", .{});
+        use_csd = false;
+        break :blk null;
+    };
 
     core_window.native = .{
         .wayland = .{
@@ -109,6 +129,7 @@ pub fn initWindow(
             .surface = undefined,
             .toplevel = undefined,
             .xkb_context = libxkbcommon.?.xkb_context_new(0) orelse return error.FailedToGetXkbContext,
+            .use_client_side_decorations = use_csd,
         },
     };
 
@@ -133,10 +154,6 @@ pub fn initWindow(
     core_window = core.windows.getValue(window_id);
     wl = &core_window.native.?.wayland;
 
-    if (wl.interfaces.zxdg_decoration_manager_v1 == null) {
-        return error.NoServerSideDecorationSupport;
-    }
-
     // Setup surface
     wl.surface = c.wl_compositor_create_surface(wl.interfaces.wl_compositor) orelse return error.UnableToCreateSurface;
     wl.surface_descriptor = .{ .display = wl.display, .surface = wl.surface };
@@ -159,20 +176,28 @@ pub fn initWindow(
         c.wl_region_destroy(region);
     }
 
-    const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
-    wl.toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
-
-    // Save so that xdg listeners can use the `wl.surface`
     core_ptr.windows.setValue(window_id, core_window);
-
-    if (c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, @ptrFromInt(window_id)) != 0) {
-        return error.ListenerHasAlreadyBeenSet;
+    wl = &core_window.native.?.wayland;
+    if (wl.use_client_side_decorations) {
+        setupLibDecor(window_id) catch {
+            wl.use_client_side_decorations = false;
+        };
     }
 
-    if (c.xdg_toplevel_add_listener(wl.toplevel, &xdg_toplevel_listener.listener, @ptrFromInt(window_id)) != 0) {
-        return error.ListenerHasAlreadyBeenSet;
-    }
+    if (!wl.use_client_side_decorations) {
+        const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
+        wl.toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
+        if (c.xdg_surface_add_listener(xdg_surface, &xdg_surface_listener.listener, @ptrFromInt(window_id)) != 0) {
+            return error.ListenerHasAlreadyBeenSet;
+        }
 
+        if (c.xdg_toplevel_add_listener(wl.toplevel, &xdg_toplevel_listener.listener, @ptrFromInt(window_id)) != 0) {
+            return error.ListenerHasAlreadyBeenSet;
+        }
+
+        // Save so that xdg listeners can use the `wl.surface`
+        core_ptr.windows.setValue(window_id, core_window);
+    }
     // Wait for events to get pushed
     _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
 
@@ -182,8 +207,17 @@ pub fn initWindow(
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
 
+    if (!wl.use_client_side_decorations and wl.interfaces.zxdg_decoration_manager_v1 == null) {
+        //unable to use csd or ssd at this point
+        return error.NoDecorationSupport;
+    }
+
+    const NON_BLOCKING = 0;
     while (true) {
-        const result = libwaylandclient.?.wl_display_dispatch(wl.display);
+        const result = if (wl.use_client_side_decorations)
+            libdecor.?.libdecor_dispatch(wl.libdecor_context, NON_BLOCKING)
+        else
+            libwaylandclient.?.wl_display_dispatch(wl.display);
 
         core_window = core.windows.getValue(window_id);
         wl = &core_window.native.?.wayland;
@@ -191,14 +225,15 @@ pub fn initWindow(
         if (result != -1 and wl.configured) break;
     }
 
-    c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
+    if (!wl.use_client_side_decorations) {
+        c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
+        const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
+            wl.interfaces.zxdg_decoration_manager_v1,
+            wl.toplevel,
+        ) orelse return error.UnableToGetToplevelDecoration;
 
-    const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
-        wl.interfaces.zxdg_decoration_manager_v1,
-        wl.toplevel,
-    ) orelse return error.UnableToGetToplevelDecoration;
-
-    c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+        c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
 
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
@@ -237,7 +272,11 @@ pub fn tick(window_id: mach.ObjectID) !void {
 }
 
 pub fn setTitle(wl: *const Native, title: [:0]const u8) void {
-    c.xdg_toplevel_set_title(wl.toplevel, title);
+    if (wl.use_client_side_decorations) {
+        libdecor.?.libdecor_frame_set_title(wl.libdecor_frame, title);
+    } else {
+        c.xdg_toplevel_set_title(wl.toplevel, title);
+    }
 }
 
 pub fn setDisplayMode(wl: *Wayland, display_mode: DisplayMode) void {
@@ -296,6 +335,7 @@ pub const LibWaylandClient = struct {
     wl_proxy_marshal_flags: *const @TypeOf(c.wl_proxy_marshal_flags),
     wl_proxy_set_tag: *const @TypeOf(c.wl_proxy_set_tag),
     wl_proxy_destroy: *const @TypeOf(c.wl_proxy_destroy),
+    wl_display_get_error: *@TypeOf(c.wl_display_get_error),
 
     //Interfaces
     wl_compositor_interface: *@TypeOf(c.wl_compositor_interface),
@@ -326,6 +366,36 @@ pub const LibWaylandClient = struct {
         var lib: LibWaylandClient = undefined;
         lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibWaylandClient).@"struct".fields[1..]) |field| {
+            const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
+            const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
+            @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse {
+                log.err("Symbol lookup failed for {s}", .{name});
+                return error.SymbolLookup;
+            };
+        }
+        return lib;
+    }
+};
+
+pub const LibDecor = struct {
+    handle: std.DynLib,
+
+    libdecor_new: *@TypeOf(c.libdecor_new),
+    libdecor_decorate: *@TypeOf(c.libdecor_decorate),
+    libdecor_frame_set_title: *@TypeOf(c.libdecor_frame_set_title),
+    libdecor_frame_map: *@TypeOf(c.libdecor_frame_map),
+    libdecor_configuration_get_content_size: *@TypeOf(c.libdecor_configuration_get_content_size),
+    libdecor_frame_commit: *@TypeOf(c.libdecor_frame_commit),
+    libdecor_state_new: *@TypeOf(c.libdecor_state_new),
+    libdecor_state_free: *@TypeOf(c.libdecor_state_free),
+    libdecor_dispatch: *@TypeOf(c.libdecor_dispatch),
+
+    pub const lib_name = "libdecor-0.so.0";
+
+    pub fn load() !LibDecor {
+        var lib: LibDecor = undefined;
+        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        inline for (@typeInfo(LibDecor).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
             @field(lib, field.name) = lib.handle.lookup(field.type, name_z) orelse {
@@ -387,13 +457,13 @@ const registry_listener = struct {
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
         } else if (std.mem.eql(u8, "wl_output", interface)) {
-            // TODO: Determine if this is being used. If it is, make a comment here
             wl.interfaces.wl_output = @ptrCast(c.wl_registry_bind(
                 registry,
                 name,
                 libwaylandclient.?.wl_output_interface,
                 @min(3, version),
             ) orelse @panic("uh idk how to proceed"));
+            _ = c.wl_output_add_listener(wl.interfaces.wl_output, &wl_output_listener.listener, @ptrFromInt(window_id));
             // } else if (std.mem.eql(u8, "wl_data_device_manager", interface)) {
             //     wl.interfaces.wl_data_device_manager = @ptrCast(c.wl_registry_bind(
             //         registry,
@@ -446,6 +516,64 @@ const registry_listener = struct {
         .global = @ptrCast(&registryHandleGlobal),
         // ptrcast is for the wl param, which is guarenteed to be our type (and if its not, it should be caught by safety checks)
         .global_remove = @ptrCast(&registryHandleGlobalRemove),
+    };
+};
+
+const wl_output_listener = struct {
+    fn output_scale(user_data: ?*anyopaque, wl_output: ?*c.struct_wl_output, scale: i32) callconv(.c) void {
+        const window_id = @intFromPtr(user_data);
+        var core_window = core_ptr.windows.getValue(window_id);
+        const wl = &core_window.native.?.wayland;
+
+        wl.scale = @intCast(scale);
+
+        _ = wl_output;
+    }
+
+    fn output_geometry(
+        user_data: ?*anyopaque,
+        wl_output: ?*c.struct_wl_output,
+        x: i32,
+        y: i32,
+        physical_width: i32,
+        physical_height: i32,
+        subpixel: i32,
+        make: [*c]const u8,
+        model: [*c]const u8,
+        transform: i32,
+    ) callconv(.c) void {
+        _ = user_data;
+        _ = wl_output;
+        _ = x;
+        _ = y;
+        _ = physical_width;
+        _ = physical_height;
+        _ = subpixel;
+        _ = make;
+        _ = model;
+        _ = transform;
+    }
+
+    fn output_mode(user_data: ?*anyopaque, wl_output: ?*c.struct_wl_output, flags: u32, width: i32, height: i32, refresh: i32) callconv(.c) void {
+        _ = user_data;
+        _ = wl_output;
+        _ = flags;
+        _ = width;
+        _ = height;
+        _ = refresh;
+    }
+
+    fn output_done(user_data: ?*anyopaque, wl_output: ?*c.struct_wl_output) callconv(.c) void {
+        _ = user_data;
+        _ = wl_output;
+    }
+
+    const listener = c.wl_output_listener{
+        .scale = output_scale,
+        //below are not implemented but must be set since listener attempts to call them
+        .geometry = output_geometry,
+        .mode = output_mode,
+        .done = output_done,
     };
 };
 
@@ -844,6 +972,92 @@ const xdg_toplevel_listener = struct {
     };
 };
 
+const libdecor_listener = struct {
+    fn handle_error(context: ?*c.struct_libdecor, err: c_uint, message: [*c]const u8) callconv(.c) void {
+        _ = context;
+        _ = err;
+
+        log.err("{s}", .{message});
+    }
+
+    fn printDesc(desc: gpu.SwapChain.Descriptor) void {
+        log.info("w: {}, h: {}", .{ desc.width, desc.height });
+        log.info("label: {s}", .{desc.label.?});
+    }
+
+    fn libdecor_configure(frame: ?*c.struct_libdecor_frame, configuration: ?*c.struct_libdecor_configuration, user_data: ?*anyopaque) callconv(.c) void {
+        const window_id = @intFromPtr(user_data);
+        var core_window = core_ptr.windows.getValue(window_id);
+        var wl = &core_window.native.?.wayland;
+
+        var width: c_int = 0;
+        var height: c_int = 0;
+        var changed_size = false;
+        if (!libdecor.?.libdecor_configuration_get_content_size(configuration, frame, &width, &height)) {
+            //Set initial window size configuration
+            width = @intCast(core_window.width);
+            height = @intCast(core_window.height);
+        } else {
+            log.info("going from {}x{} -> {}x{}", .{ core_window.width, core_window.height, width, height });
+            const new_width: u32 = @intCast(width);
+            const new_height: u32 = @intCast(height);
+            if (core_window.width != new_width or core_window.height != new_height) {
+                changed_size = true;
+                //Handle Resize
+                core_window.height = new_height;
+                core_window.width = new_width;
+
+                core_window.framebuffer_width = core_window.width * wl.scale;
+                core_window.framebuffer_height = core_window.height * wl.scale;
+                core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+                core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+
+                setContentAreaOpaque(wl, Core.Size{ .width = core_window.width, .height = core_window.height });
+                core_ptr.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .height = core_window.height, .width = core_window.width } } });
+            }
+        }
+
+        wl.configured = true;
+        const state = libdecor.?.libdecor_state_new(width, height);
+        defer libdecor.?.libdecor_state_free(state);
+
+        c.wl_surface_commit(wl.surface);
+        libdecor.?.libdecor_frame_commit(wl.libdecor_frame, state, configuration);
+
+        if (changed_size) {
+            //does not work :(
+            //core_window.swap_chain.release();
+            //core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+        }
+
+        core_ptr.windows.setValue(window_id, core_window);
+    }
+
+    fn libdecor_commit(frame: ?*c.struct_libdecor_frame, user_data: ?*anyopaque) callconv(.c) void {
+        const window_id = @intFromPtr(user_data);
+        var core_window = core_ptr.windows.getValue(window_id);
+        const wl = &core_window.native.?.wayland;
+
+        //wl should be have configured = true
+        c.wl_surface_commit(wl.surface);
+
+        _ = frame;
+    }
+
+    fn libdecor_close(frame: ?*c.struct_libdecor_frame, user_data: ?*anyopaque) callconv(.c) void {
+        const window_id = @intFromPtr(user_data);
+        core_ptr.pushEvent(.{ .close = .{ .window_id = window_id } });
+        _ = frame;
+    }
+
+    var interface = c.libdecor_interface{ .@"error" = handle_error };
+    var frame_interface = c.libdecor_frame_interface{
+        .configure = libdecor_configure,
+        .commit = libdecor_commit,
+        .close = libdecor_close,
+    };
+};
+
 fn composeSymbol(wl: *const Native, sym: c.xkb_keysym_t) c.xkb_keysym_t {
     if (sym == c.XKB_KEY_NoSymbol or wl.compose_state == null)
         return sym;
@@ -989,4 +1203,23 @@ fn setContentAreaOpaque(wl: *const Native, new_size: Core.Size) void {
 
     // FIX: What is the Mach Object System way of doing this?
     // core_ptr.swap_chain_update.set();
+}
+
+fn setupLibDecor(window_id: mach.ObjectID) !void {
+    var core_window = core_ptr.windows.getValue(window_id);
+    var wl = &core_window.native.?.wayland;
+
+    wl.libdecor_context = libdecor.?.libdecor_new(wl.display, &libdecor_listener.interface);
+    if (wl.libdecor_context == null) {
+        return error.FailedLibDecorInitialization;
+    }
+
+    wl.libdecor_frame = libdecor.?.libdecor_decorate(wl.libdecor_context, wl.surface, &libdecor_listener.frame_interface, @ptrFromInt(window_id));
+    if (wl.libdecor_frame == null) {
+        return error.FailedLibDecorFrameDecoration;
+    }
+
+    libdecor.?.libdecor_frame_set_title(wl.libdecor_frame, core_window.title);
+    libdecor.?.libdecor_frame_map(wl.libdecor_frame);
+    core_ptr.windows.setValue(window_id, core_window);
 }
