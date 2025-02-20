@@ -150,6 +150,9 @@ pub fn initWindow(
     // Round trip to get all initial output events
     _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
 
+    // Needed otherwise variables set by keyboardHandleKeymap like wl.xkb_state are not set by the
+    // time we do another core.windows.setValue
+    _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
     // Update `core_window` since registry listener and seat listener changed values in it
     core_window = core.windows.getValue(window_id);
     wl = &core_window.native.?.wayland;
@@ -1020,8 +1023,8 @@ const libdecor_listener = struct {
 
         if (changed_size) {
             //does not work :(
-            //core_window.swap_chain.release();
-            //core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+            core_window.swap_chain.release();
+            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         }
 
         core_ptr.windows.setValue(window_id, core_window);
