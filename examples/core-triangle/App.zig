@@ -4,6 +4,12 @@ const gpu = mach.gpu;
 
 const App = @This();
 
+// The set of Mach modules our application may use.
+pub const Modules = mach.Modules(.{
+    mach.Core,
+    App,
+});
+
 pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .tick, .deinit };
