@@ -215,7 +215,7 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
 }
 
 pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
-    // TODO(core)(slimsag): consider execution order of mach.Core (e.g. creating a new window
+    // TODO(core)(emidoots): consider execution order of mach.Core (e.g. creating a new window
     // during application execution, rendering to multiple windows, etc.) and how
     // that relates to Platform.tick being responsible for both handling window updates
     // (like title/size changes) and window creation, plus multi-threaded rendering.
@@ -268,7 +268,7 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
 }
 
 fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
-    // TODO(core)(slimsag): consider execution order of mach.Core (e.g. creating a new window
+    // TODO(core)(emidoots): consider execution order of mach.Core (e.g. creating a new window
     // during application execution, rendering to multiple windows, etc.) and how
     // that relates to Platform.tick being responsible for both handling window updates
     // (like title/size changes) and window creation, plus multi-threaded rendering.

@@ -3,7 +3,7 @@ name: (dev) Release checklist
 about: The checklist we follow to perform a Mach release
 title: 'all: Mach 0.3 release checklist'
 labels: all, zig-update
-assignees: 'slimsag'
+assignees: 'emidoots'
 
 ---
 

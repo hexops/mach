@@ -3,7 +3,7 @@ name: (dev) Zig version update
 about: The process we follow to perform a Zig version update
 title: 'all: nominate Zig YYYY.MM.0-mach'
 labels: all, zig-update
-assignees: 'slimsag'
+assignees: 'emidoots'
 
 ---
 
@@ -29,7 +29,7 @@ You may have been linked to this issue because you sent a pull request to update
 * [ ] https://machengine.org/docs/zig-version has been updated
 * [ ] In `machengine.org` repository `static/zig` folder, `wrench script nominate-zig-index-update finalize 2024.1.0-mach-wip` has been ran and the [`index.json`](https://machengine.org/zig/index.json) has had `-wip` removed and the `mach-latest` entry has been updated.
 * [ ] The `**IN-PROGRESS**` warning in the _Nomination history_ has been removed.
-* [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=slimsag&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
+* [ ] A [new issue](https://github.com/hexops/mach/issues/new?assignees=emidoots&labels=all%2C+zig-update&projects=&template=dev_zig_nomination.md&title=all%3A+nominate+Zig+YYYY.MM) has been filed for the next nomination.
 * [ ] A #progress announcement has been made:
 
 > We've just finalized nominating and updating to Zig 2024.1.0-mach. We encourage you to update your projects to that Zig version now. :)
