@@ -27,6 +27,7 @@ pub const Native = struct {
 
 pub const Context = struct {
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 };
 
@@ -63,7 +64,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     // TODO: support UIKit.
 }
 
-pub fn tick(core: *Core) !void {
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const core_window = core.windows.getValue(window_id);
@@ -124,19 +125,21 @@ pub fn tick(core: *Core) !void {
                 }
             }
         } else {
-            try initWindow(core, window_id);
+            try initWindow(core, core_mod, window_id);
         }
     }
 }
 
 fn initWindow(
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 ) !void {
     var core_window = core.windows.getValue(window_id);
 
     const context = try core.allocator.create(Context);
-    context.* = .{ .core = core, .window_id = window_id };
+    context.* = .{ .core = core, .core_mod = core_mod, .window_id = window_id };
+
     // If the application is not headless, we need to make the application a genuine UI application
     // by setting the activation policy, this moves the process to foreground
     // TODO: Only call this on the first window creation
@@ -222,6 +225,14 @@ fn initWindow(
         // TODO(core): free this allocation
 
         {
+            var render = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.render,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_render(render.asBlock().copy());
+
             var keyDown = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyDown,
                 context,
@@ -342,6 +353,27 @@ fn initWindow(
     } else std.debug.panic("mach: window failed to initialize", .{});
 }
 
+pub fn waitEventTimeout(seconds: f64) !void {
+    if (seconds > 0.0) {
+        const ns_app = objc.app_kit.Application.sharedApplication();
+
+        const expiration_date = objc.app_kit.Date.dateWithTimeIntervalSinceNow(seconds);
+
+        // For some reason, no matter what I seem to do no events are ever fired here
+        // and it never returns before the expiration date. It also seems to interfere with the DVDisplayLink
+        // callback (render).
+
+        if (ns_app.nextEventMatchingMask_untilDate_inMode_dequeue(
+            objc.app_kit.EventMaskAny,
+            expiration_date,
+            objc.app_kit.NSDefaultRunLoopMode,
+            true,
+        )) |_| {
+            std.log.debug("event!", .{});
+        }
+    }
+}
+
 const WindowDelegateCallbacks = struct {
     pub fn windowDidResize(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) void {
         const core: *Core = block.context.core;
@@ -392,6 +424,18 @@ const WindowDelegateCallbacks = struct {
 };
 
 const ViewCallbacks = struct {
+    pub fn render(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const core_mod = block.context.core_mod;
+        const window_id = block.context.window_id;
+
+        const window = core.windows.getValue(window_id);
+
+        if (window.on_tick) |function_id| {
+            core_mod.run(function_id);
+        }
+    }
+
     pub fn mouseMoved(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;
