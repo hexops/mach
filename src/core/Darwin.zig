@@ -429,9 +429,11 @@ const ViewCallbacks = struct {
         const core_mod = block.context.core_mod;
         const window_id = block.context.window_id;
 
-        const window = core.windows.getValue(window_id);
+        var window = core.windows.getValue(window_id);
+        defer core.windows.setValueRaw(window_id, window);
 
         if (window.on_tick) |function_id| {
+            window.frame.tick();
             core_mod.run(function_id);
         }
     }
