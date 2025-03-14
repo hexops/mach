@@ -210,7 +210,7 @@ pub const Graph = struct {
         while (!graph.should_stop.load(.acquire)) {
             // Process the entire queue
             while (graph.queue.pop()) |op| graph.processOp(allocator, op);
-            std.Thread.sleep(std.time.ns_per_s);
+            std.Thread.yield() catch {};
         }
     }
 
