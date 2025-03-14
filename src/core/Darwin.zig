@@ -216,14 +216,16 @@ fn initWindow(
 
         native_window.setReleasedWhenClosed(false);
 
+        // Create our custom NSView, and set whether or not it creates a background thread
+        // for rendering based on whether or not we have an on_tick function ID.
+        // Then set the layer to our metal layer.
         var view = objc.mach.View.allocInit();
-
-        // initWithFrame is overridden in our MACHView, which creates a tracking area for mouse tracking
-        view = view.initWithFrame(rect);
+        view = view.initWithFrame_withThread(rect, core_window.on_tick != null);
         view.setLayer(@ptrCast(layer));
+        defer native_window.setContentView(@ptrCast(view));
 
         // TODO(core): free this allocation
-
+        // Set all of our view blocks for event callbacks
         {
             var render = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.render,
@@ -305,7 +307,8 @@ fn initWindow(
             );
             view.setBlock_scrollWheel(scrollWheel.asBlock().copy());
         }
-        native_window.setContentView(@ptrCast(view));
+
+        // Set other native window settings
         native_window.center();
         native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
@@ -325,6 +328,7 @@ fn initWindow(
         defer string.release();
         native_window.setTitle(string.initWithUTF8String(core_window.title));
 
+        // Set our delegate for the window, which provides resize and should close callbacks
         const delegate = objc.mach.WindowDelegate.allocInit();
         defer native_window.setDelegate(@ptrCast(delegate));
         {
