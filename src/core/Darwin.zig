@@ -220,7 +220,7 @@ fn initWindow(
         // for rendering based on whether or not we have an on_tick function ID.
         // Then set the layer to our metal layer.
         var view = objc.mach.View.allocInit();
-        view = view.initWithFrame_withThread(rect, core_window.on_tick != null);
+        view = view.initWithFrame_withRenderLoop(rect, core_window.on_tick != null);
         view.setLayer(@ptrCast(layer));
         defer native_window.setContentView(@ptrCast(view));
 
