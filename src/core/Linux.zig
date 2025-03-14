@@ -62,7 +62,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
 }
 
-pub fn tick(core: *Core) !void {
+pub fn tick(core: *Core, _: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const native_opt: ?Native = core.windows.get(window_id, .native);
