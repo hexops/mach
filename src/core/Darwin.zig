@@ -310,7 +310,6 @@ fn initWindow(
 
         // Set other native window settings
         native_window.center();
-        native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
         if (core_window.decoration_color) |decoration_color| {
@@ -355,27 +354,6 @@ fn initWindow(
         core.windows.setValueRaw(window_id, core_window);
         try core.initWindow(window_id);
     } else std.debug.panic("mach: window failed to initialize", .{});
-}
-
-pub fn waitEventTimeout(seconds: f64) !void {
-    if (seconds > 0.0) {
-        const ns_app = objc.app_kit.Application.sharedApplication();
-
-        const expiration_date = objc.app_kit.Date.dateWithTimeIntervalSinceNow(seconds);
-
-        // For some reason, no matter what I seem to do no events are ever fired here
-        // and it never returns before the expiration date. It also seems to interfere with the DVDisplayLink
-        // callback (render).
-
-        if (ns_app.nextEventMatchingMask_untilDate_inMode_dequeue(
-            objc.app_kit.EventMaskAny,
-            expiration_date,
-            objc.app_kit.NSDefaultRunLoopMode,
-            true,
-        )) |_| {
-            std.log.debug("event!", .{});
-        }
-    }
 }
 
 const WindowDelegateCallbacks = struct {

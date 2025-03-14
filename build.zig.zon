@@ -24,8 +24,8 @@
         },
         .mach_objc = .{
             //.path = "../mach-objc-dev",
-            .url = "https://github.com/foxnne/mach-objc/archive/60022b32ae8d1f90bf425f84242d7c7c2f93ed6d.tar.gz",
-            .hash = "1220326e869daa634901c57442c01254b8c84039ebeb0ffc053382e76436bb177619",
+            .url = "https://github.com/foxnne/mach-objc/archive/59b75ebc1253a2517a08940086e66e574e63f2e1.tar.gz",
+            .hash = "1220097d6c23dc1f4ec7c46a8f94171b4a09f954ee09156951db81edb20405a7ebf8",
             .lazy = true,
         },
         .xcode_frameworks = .{
