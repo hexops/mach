@@ -4,6 +4,8 @@ const util = @import("util.zig");
 const backends = @import("backends.zig");
 const conv = @import("conv.zig");
 
+const log = std.log.scoped(.sysaudio);
+
 pub const Backend = backends.Backend;
 pub const Range = util.Range;
 
@@ -33,18 +35,23 @@ pub const Context = struct {
     pub fn init(comptime backend: ?Backend, allocator: std.mem.Allocator, options: Options) InitError!Context {
         const data: backends.Context = blk: {
             if (backend) |b| {
-                break :blk try @typeInfo(
+                const d = try @typeInfo(
                     std.meta.fieldInfo(backends.Context, b).type,
                 ).pointer.child.init(allocator, options);
+                log.info("Backend selected: {s}", .{b.name});
+                break :blk d;
             } else {
                 inline for (std.meta.fields(Backend), 0..) |b, i| {
                     if (@typeInfo(
                         std.meta.fieldInfo(backends.Context, @as(Backend, @enumFromInt(b.value))).type,
                     ).pointer.child.init(allocator, options)) |d| {
+                        log.info("Backend selected: {s}", .{b.name});
                         break :blk d;
                     } else |err| {
-                        if (i == std.meta.fields(Backend).len - 1)
+                        if (i == std.meta.fields(Backend).len - 1) {
+                            log.info("Init failed of Backend: {s}", .{b.name});
                             return err;
+                        }
                     }
                 }
                 unreachable;
