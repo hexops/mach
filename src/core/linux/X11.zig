@@ -135,7 +135,7 @@ pub fn initWindow(
 
     const blank_pixmap = libx11.?.XCreatePixmap(display, x_window_id, 1, 1, 1);
     var color = c.XColor{};
-    core_window.refresh_rate = blk: {
+    core_window.frame.target = blk: {
         if (libxrr) |_libxrr| {
             const conf = _libxrr.XRRGetScreenInfo(display, root_window);
             break :blk @intCast(_libxrr.XRRConfigCurrentRate(conf));

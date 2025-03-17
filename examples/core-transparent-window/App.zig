@@ -4,6 +4,8 @@ const gpu = mach.gpu;
 
 const App = @This();
 
+const title = "core-transparent-window [ {d}fps ] [ Input {d}hz ]";
+
 // The set of Mach modules our application may use.
 pub const Modules = mach.Modules(.{
     mach.Core,
@@ -36,8 +38,7 @@ pub fn init(
     core.on_exit = app_mod.id.deinit;
 
     const window = try core.windows.new(.{
-        .title = "core-transparent-window",
-        .vsync_mode = .double,
+        .title = try std.fmt.allocPrintZ(core.allocator, title, .{ 0, 0 }),
         .transparent = true,
     });
 
@@ -156,11 +157,15 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer command.release();
     window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
+    mach.sysgpu.Impl.deviceTick(window.device);
+
+    window.swap_chain.present();
+
     if (app.title_timer.read() >= 1.0) {
         app.title_timer.reset();
         // TODO(object): window-title
 
-        core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, "core-transparent-window [ {d}fps ] [ Input {d}hz ]", .{ core.frame.rate, core.input.rate }) catch unreachable);
+        core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, title, .{ window.frame.rate, core.frame.rate }) catch unreachable);
     }
 
     if (app.color_time >= 4.0 or app.color_time <= 0.0) {

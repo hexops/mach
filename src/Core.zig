@@ -12,7 +12,7 @@ const EventQueue = std.fifo.LinearFifo(Event, .Dynamic);
 
 pub const mach_module = .mach_core;
 
-pub const mach_systems = .{ .main, .init, .tick, .presentFrame, .deinit };
+pub const mach_systems = .{ .main, .init, .tick, .deinit };
 
 // Set track_fields to true so that when these field values change, we know about it
 // and can update the platform windows.
@@ -24,6 +24,13 @@ windows: mach.Objects(
         // TODO: allocation/free strategy
         title: [:0]const u8 = "Mach Window",
 
+        /// Callback called directly from backend when a frame is needed to be rendered
+        /// Will match the monitors refresh rate
+        on_tick: ?mach.FunctionID = null,
+
+        /// Frequency to get ticks per second
+        frame: mach.time.Frequency = .{ .target = 0 },
+
         /// Texture format of the framebuffer (read-only)
         framebuffer_format: gpu.Texture.Format = .bgra8_unorm,
 
@@ -34,9 +41,6 @@ windows: mach.Objects(
         /// Height of the framebuffer in texels (read-only)
         /// Will be updated to reflect the actual framebuffer dimensions after window creation.
         framebuffer_height: u32 = 1080 / 2,
-
-        /// Vertical sync mode, prevents screen tearing.
-        vsync_mode: VSyncMode = .none,
 
         /// Window display mode: fullscreen, windowed or borderless fullscreen
         display_mode: DisplayMode = .windowed,
@@ -50,9 +54,6 @@ windows: mach.Objects(
 
         /// Height of the window in virtual pixels
         height: u32 = 1080 / 2,
-
-        /// Target frames per second
-        refresh_rate: u32 = 0,
 
         /// Whether window decorations (titlebar, borders, etc.) should be shown.
         ///
@@ -111,7 +112,6 @@ state: enum {
 } = .running,
 
 frame: mach.time.Frequency,
-input: mach.time.Frequency,
 
 // Internal module state
 allocator: std.mem.Allocator,
@@ -136,12 +136,10 @@ pub fn init(core: *Core) !void {
         .events = events,
         .input_state = .{},
 
-        .input = .{ .target = 0 },
         .frame = .{ .target = 1 },
     };
 
     try core.frame.start();
-    try core.input.start();
 }
 
 pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
@@ -204,13 +202,10 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
         .format = .bgra8_unorm,
         .width = core_window.framebuffer_width,
         .height = core_window.framebuffer_height,
-        .present_mode = switch (core_window.vsync_mode) {
-            .none => .immediate,
-            .double => .fifo,
-            .triple => .mailbox,
-        },
+        .present_mode = .fifo,
     };
     core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+    try core_window.frame.start();
     core.pushEvent(.{ .window_open = .{ .window_id = window_id } });
 }
 
@@ -219,25 +214,11 @@ pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
     // during application execution, rendering to multiple windows, etc.) and how
     // that relates to Platform.tick being responsible for both handling window updates
     // (like title/size changes) and window creation, plus multi-threaded rendering.
-    try Platform.tick(core);
+    try Platform.tick(core, core_mod);
 
     core_mod.run(core.on_tick.?);
-    core_mod.call(.presentFrame);
-}
-
-pub fn presentFrame(core: *Core, core_mod: mach.Mod(Core)) !void {
-    var windows = core.windows.slice();
-    while (windows.next()) |window_id| {
-        var core_window = core.windows.getValue(window_id);
-        defer core.windows.setValueRaw(window_id, core_window);
-
-        mach.sysgpu.Impl.deviceTick(core_window.device);
-
-        core_window.swap_chain.present();
-    }
-
-    // Record to frame rate frequency monitor that a frame was finished.
     core.frame.tick();
+    //core_mod.call(.presentFrame);
 
     switch (core.state) {
         .running => {},
@@ -255,9 +236,20 @@ pub fn main(core: *Core, core_mod: mach.Mod(Core)) !void {
     if (core.on_tick == null) @panic("core.on_tick callback must be set");
     if (core.on_exit == null) @panic("core.on_exit callback must be set");
 
-    try Platform.tick(core);
+    try Platform.tick(core, core_mod);
     core_mod.run(core.on_tick.?);
-    core_mod.call(.presentFrame);
+    core.frame.tick();
+
+    switch (core.state) {
+        .running => {},
+        .exiting => {
+            core.state = .deinitializing;
+            core_mod.run(core.on_exit.?);
+            core_mod.call(.deinit);
+        },
+        .deinitializing => {},
+        .exited => @panic("application not running"),
+    }
 
     // Platform drives the main loop.
     Platform.run(platform_update_callback, .{ core, core_mod });
@@ -272,10 +264,22 @@ fn platform_update_callback(core: *Core, core_mod: mach.Mod(Core)) !bool {
     // during application execution, rendering to multiple windows, etc.) and how
     // that relates to Platform.tick being responsible for both handling window updates
     // (like title/size changes) and window creation, plus multi-threaded rendering.
-    try Platform.tick(core);
+
+    try Platform.tick(core, core_mod);
 
     core_mod.run(core.on_tick.?);
-    core_mod.call(.presentFrame);
+    core.frame.tick();
+
+    switch (core.state) {
+        .running => {},
+        .exiting => {
+            core.state = .deinitializing;
+            core_mod.run(core.on_exit.?);
+            core_mod.call(.deinit);
+        },
+        .deinitializing => {},
+        .exited => @panic("application not running"),
+    }
 
     return core.state != .exited;
 }
