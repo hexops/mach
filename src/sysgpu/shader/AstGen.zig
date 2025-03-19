@@ -2530,17 +2530,20 @@ fn genStructConstruct(astgen: *AstGen, scope: *Scope, decl: InstIndex, node: Nod
     const scratch_top = astgen.scratch.items.len;
     defer astgen.scratch.shrinkRetainingCapacity(scratch_top);
 
-    const struct_members = astgen.refToList(astgen.getInst(decl).@"struct".members);
+    const struct_member_count = astgen.refToList(astgen.getInst(decl).@"struct".members).len;
     if (node_lhs != .none) {
         const arg_nodes = astgen.tree.spanToList(node_lhs);
-        if (struct_members.len != arg_nodes.len) {
+        if (struct_member_count != arg_nodes.len) {
             try astgen.errors.add(node_loc, "struct members count mismatch", .{}, null);
             return error.AnalysisFail;
         }
         for (arg_nodes, 0..) |arg_node, i| {
             const arg = try astgen.genExpr(scope, arg_node);
             const arg_res = try astgen.resolve(arg);
-            if (try astgen.coerce(arg_res, astgen.getInst(struct_members[i]).struct_member.type)) {
+            // genExpr may change the address of the astgen.refs array (#1343),
+            // so fetch the current struct member here instead of outside the loop to prevent invalid pointers.
+            const curr_member = astgen.refToList(astgen.getInst(decl).@"struct".members)[i];
+            if (try astgen.coerce(arg_res, astgen.getInst(curr_member).struct_member.type)) {
                 try astgen.scratch.append(astgen.allocator, arg);
             } else {
                 try astgen.errors.add(
@@ -2553,7 +2556,7 @@ fn genStructConstruct(astgen: *AstGen, scope: *Scope, decl: InstIndex, node: Nod
             }
         }
     } else {
-        if (struct_members.len != 0) {
+        if (struct_member_count != 0) {
             try astgen.errors.add(node_loc, "struct members count mismatch", .{}, null);
             return error.AnalysisFail;
         }
