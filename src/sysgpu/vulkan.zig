@@ -3548,59 +3548,31 @@ const MemoryAllocator = struct {
         mem_kind: MemoryKind,
     ) ?u32 {
         const mem_types = mem_alloc.info.memory_types[0..mem_alloc.info.memory_type_count];
-        const mem_heaps = mem_alloc.info.memory_heaps[0..mem_alloc.info.memory_heap_count];
+        const property_flags = getMemoryPropertyFlags(mem_kind);
 
-        var best_type: ?u32 = null;
         for (mem_types, 0..) |mem_type, i| {
-            if (requirements.memory_type_bits & (@as(u32, @intCast(1)) << @intCast(i)) == 0) continue;
+            const is_compatible = (requirements.memory_type_bits & (@as(u32, 1) << @truncate(i))) != 0;
+            if (!is_compatible) continue;
 
             const flags = mem_type.property_flags;
-            const heap_size = mem_heaps[mem_type.heap_index].size;
-            const candidate = switch (mem_kind) {
-                .lazily_allocated => flags.lazily_allocated_bit,
-                .linear_write_mappable => flags.host_visible_bit and flags.host_coherent_bit and !flags.device_coherent_bit_amd,
-                .linear_read_mappable => blk: {
-                    if (flags.host_visible_bit and flags.host_coherent_bit and !flags.device_coherent_bit_amd) {
-                        if (best_type) |best| {
-                            if (mem_types[best].property_flags.host_cached_bit) {
-                                if (flags.host_cached_bit) {
-                                    const best_heap_size = mem_heaps[mem_types[best].heap_index].size;
-                                    if (heap_size > best_heap_size) {
-                                        break :blk true;
-                                    }
-                                }
+            if (flags != property_flags) continue;
 
-                                break :blk false;
-                            }
-                        }
-
-                        break :blk true;
-                    }
-
-                    break :blk false;
-                },
-                .linear => blk: {
-                    if (best_type) |best| {
-                        if (mem_types[best].property_flags.device_local_bit) {
-                            if (flags.device_local_bit and !flags.device_coherent_bit_amd) {
-                                const best_heap_size = mem_heaps[mem_types[best].heap_index].size;
-                                if (heap_size > best_heap_size or flags.host_visible_bit) {
-                                    break :blk true;
-                                }
-                            }
-
-                            break :blk false;
-                        }
-                    }
-
-                    break :blk true;
-                },
-            };
-
-            if (candidate) best_type = @intCast(i);
+            return @intCast(i);
         }
 
-        return best_type;
+        return 0;
+    }
+
+    fn getMemoryPropertyFlags(mem_kind: MemoryKind) vk.MemoryPropertyFlags {
+        return switch (mem_kind) {
+            .lazily_allocated => vk.MemoryPropertyFlags{ .lazily_allocated_bit = true },
+            .linear => vk.MemoryPropertyFlags{ .device_local_bit = true },
+            .linear_read_mappable => vk.MemoryPropertyFlags{ .host_visible_bit = true },
+            .linear_write_mappable => vk.MemoryPropertyFlags{
+                .host_visible_bit = true,
+                .host_coherent_bit = true,
+            },
+        };
     }
 };
 
