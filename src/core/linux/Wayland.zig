@@ -187,6 +187,11 @@ pub fn initWindow(
         };
     }
 
+    if (!wl.use_client_side_decorations and wl.interfaces.zxdg_decoration_manager_v1 == null) {
+        //unable to use csd or ssd at this point
+        return error.NoDecorationSupport;
+    }
+
     if (!wl.use_client_side_decorations) {
         const xdg_surface = c.xdg_wm_base_get_xdg_surface(wl.interfaces.xdg_wm_base, wl.surface) orelse return error.UnableToCreateXdgSurface;
         wl.toplevel = c.xdg_surface_get_toplevel(xdg_surface) orelse return error.UnableToGetXdgTopLevel;
@@ -210,17 +215,12 @@ pub fn initWindow(
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
 
-    if (!wl.use_client_side_decorations and wl.interfaces.zxdg_decoration_manager_v1 == null) {
-        //unable to use csd or ssd at this point
-        return error.NoDecorationSupport;
-    }
-
+    const dispatch: *const DispatchFn = if (wl.use_client_side_decorations) @ptrCast(libdecor.?.libdecor_dispatch) else wlDispatchHelper;
+    const ctx: *anyopaque = if (wl.use_client_side_decorations) @ptrCast(wl.libdecor_context) else @ptrCast(wl.display);
     const NON_BLOCKING = 0;
+
     while (true) {
-        const result = if (wl.use_client_side_decorations)
-            libdecor.?.libdecor_dispatch(wl.libdecor_context, NON_BLOCKING)
-        else
-            libwaylandclient.?.wl_display_dispatch(wl.display);
+        const result = dispatch(ctx, NON_BLOCKING);
 
         core_window = core.windows.getValue(window_id);
         wl = &core_window.native.?.wayland;
@@ -245,6 +245,13 @@ pub fn initWindow(
 
     core.windows.setValue(window_id, core_window);
     try core.initWindow(window_id);
+}
+
+const DispatchFn = fn (*anyopaque, c_int) callconv(.C) c_int;
+
+// thin wrapper to match the function signature of libdecor dispatch
+fn wlDispatchHelper(ctx: *anyopaque, _: c_int) callconv(.C) c_int {
+    return libwaylandclient.?.wl_display_dispatch(@ptrCast(ctx));
 }
 
 pub fn tick(window_id: mach.ObjectID) !void {
