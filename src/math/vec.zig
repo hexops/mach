@@ -322,23 +322,23 @@ pub fn VecShared(comptime Scalar: type, comptime VecN: type) type {
         }
 
         /// Element-wise a < b
-        pub inline fn less(a: *const VecN, b: Scalar) bool {
-            return a.v < b.v;
+        pub inline fn less(a: *const VecN, b: *const VecN) bool {
+            return @reduce(.And, a.v < b.v);
         }
 
         /// Element-wise a <= b
-        pub inline fn lessEq(a: *const VecN, b: Scalar) bool {
-            return a.v <= b.v;
+        pub inline fn lessEq(a: *const VecN, b: *const VecN) bool {
+            return @reduce(.And, a.v <= b.v);
         }
 
         /// Element-wise a > b
-        pub inline fn greater(a: *const VecN, b: Scalar) bool {
-            return a.v > b.v;
+        pub inline fn greater(a: *const VecN, b: *const VecN) bool {
+            return @reduce(.And, a.v > b.v);
         }
 
         /// Element-wise a >= b
-        pub inline fn greaterEq(a: *const VecN, b: Scalar) bool {
-            return a.v >= b.v;
+        pub inline fn greaterEq(a: *const VecN, b: *const VecN) bool {
+            return @reduce(.And, a.v >= b.v);
         }
 
         /// Returns a vector with all components set to the `scalar` value:
