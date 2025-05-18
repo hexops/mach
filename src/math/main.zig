@@ -49,71 +49,92 @@ const ray = @import("ray.zig");
 /// Public namespaces
 pub const collision = @import("collision.zig");
 
+pub const Vec = vec.Vec;
+pub const Mat = mat.Mat;
+
 /// Standard f32 precision types
 pub const Vec2 = vec.Vec2(f32);
 pub const Vec3 = vec.Vec3(f32);
 pub const Vec4 = vec.Vec4(f32);
+pub fn VecN(comptime length: usize) type {
+    return Vec(f32, length);
+}
 pub const Quat = q.Quat(f32);
 pub const Mat2x2 = mat.Mat2x2(f32);
 pub const Mat3x3 = mat.Mat3x3(f32);
 pub const Mat4x4 = mat.Mat4x4(f32);
+pub fn MatMxN(comptime rows: usize, comptime cols: usize) type {
+    return Mat(f32, rows, cols);
+}
 pub const Ray = ray.Ray3(f32);
 
 /// Half-precision f16 types
 pub const Vec2h = vec.Vec2(f16);
 pub const Vec3h = vec.Vec3(f16);
 pub const Vec4h = vec.Vec4(f16);
+pub fn VecNh(comptime length: usize) type {
+    return Vec(f16, length);
+}
 pub const Quath = q.Quat(f16);
 pub const Mat2x2h = mat.Mat2x2(f16);
 pub const Mat3x3h = mat.Mat3x3(f16);
 pub const Mat4x4h = mat.Mat4x4(f16);
+pub fn MatMxNh(comptime rows: usize, comptime cols: usize) type {
+    return Mat(f16, rows, cols);
+}
 pub const Rayh = ray.Ray3(f16);
 
 /// Double-precision f64 types
 pub const Vec2d = vec.Vec2(f64);
 pub const Vec3d = vec.Vec3(f64);
 pub const Vec4d = vec.Vec4(f64);
+pub fn VecNd(comptime length: usize) type {
+    return Vec(f64, length);
+}
 pub const Quatd = q.Quat(f64);
 pub const Mat2x2d = mat.Mat2x2(f64);
 pub const Mat3x3d = mat.Mat3x3(f64);
 pub const Mat4x4d = mat.Mat4x4(f64);
+pub fn MatMxNd(comptime rows: usize, comptime cols: usize) type {
+    return Mat(f64, rows, cols);
+}
 pub const Rayd = ray.Ray3(f64);
 
 /// Standard f32 precision initializers
-pub const vec2 = Vec2.init;
-pub const vec3 = Vec3.init;
-pub const vec4 = Vec4.init;
-pub const vec2FromInt = Vec2.fromInt;
-pub const vec3FromInt = Vec3.fromInt;
-pub const vec4FromInt = Vec4.fromInt;
+pub const vec2 = Vec2.init2;
+pub const vec3 = Vec3.init3;
+pub const vec4 = Vec4.init4;
+pub const vec2FromInt = Vec2.fromInt2;
+pub const vec3FromInt = Vec3.fromInt3;
+pub const vec4FromInt = Vec4.fromInt4;
 pub const quat = Quat.init;
-pub const mat2x2 = Mat2x2.init;
-pub const mat3x3 = Mat3x3.init;
-pub const mat4x4 = Mat4x4.init;
+pub const mat2x2 = Mat2x2.init2;
+pub const mat3x3 = Mat3x3.init3;
+pub const mat4x4 = Mat4x4.init4;
 
 /// Half-precision f16 initializers
-pub const vec2h = Vec2h.init;
-pub const vec3h = Vec3h.init;
-pub const vec4h = Vec4h.init;
-pub const vec2hFromInt = Vec2h.fromInt;
-pub const vec3hFromInt = Vec3h.fromInt;
-pub const vec4hFromInt = Vec4h.fromInt;
+pub const vec2h = Vec2h.init2;
+pub const vec3h = Vec3h.init3;
+pub const vec4h = Vec4h.init4;
+pub const vec2hFromInt = Vec2h.fromInt2;
+pub const vec3hFromInt = Vec3h.fromInt3;
+pub const vec4hFromInt = Vec4h.fromInt4;
 pub const quath = Quath.init;
-pub const mat2x2h = Mat2x2h.init;
-pub const mat3x3h = Mat3x3h.init;
-pub const mat4x4h = Mat4x4h.init;
+pub const mat2x2h = Mat2x2h.init2;
+pub const mat3x3h = Mat3x3h.init3;
+pub const mat4x4h = Mat4x4h.init4;
 
 /// Double-precision f64 initializers
-pub const vec2d = Vec2d.init;
-pub const vec3d = Vec3d.init;
-pub const vec4d = Vec4d.init;
-pub const vec2dFromInt = Vec2d.fromInt;
-pub const vec3dFromInt = Vec3d.fromInt;
-pub const vec4dFromInt = Vec4d.fromInt;
+pub const vec2d = Vec2d.init2;
+pub const vec3d = Vec3d.init3;
+pub const vec4d = Vec4d.init4;
+pub const vec2dFromInt = Vec2d.fromInt2;
+pub const vec3dFromInt = Vec3d.fromInt3;
+pub const vec4dFromInt = Vec4d.fromInt4;
 pub const quatd = Quatd.init;
-pub const mat2x2d = Mat2x2d.init;
-pub const mat3x3d = Mat3x3d.init;
-pub const mat4x4d = Mat4x4d.init;
+pub const mat2x2d = Mat2x2d.init2;
+pub const mat3x3d = Mat3x3d.init3;
+pub const mat4x4d = Mat4x4d.init4;
 
 test {
     testing.refAllDeclsRecursive(@This());
