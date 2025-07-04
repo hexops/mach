@@ -1624,13 +1624,30 @@ fn genDeref(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex {
 fn genAddrOf(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex {
     const expr = try astgen.genExpr(scope, astgen.tree.nodeLHS(node));
     const expr_res = try astgen.resolve(expr);
-    const result_type = try astgen.addInst(.{
-        .ptr_type = .{
-            .elem_type = expr_res,
-            .addr_space = .function, // TODO
-            .access_mode = .read_write, // TODO
+    var ptr_type: Air.Inst.PointerType = .{
+        .elem_type = expr_res,
+        .addr_space = .function,
+        .access_mode = .read_write,
+    };
+
+    switch (astgen.getInst(expr_res)) {
+        .@"var" => |v| {
+            ptr_type.addr_space = v.addr_space;
+            ptr_type.access_mode = v.access_mode;
         },
-    });
+        else => {
+            for (astgen.global_var_refs.entries.slice().items(.key)) |gvr| {
+                const @"var" = astgen.getInst(gvr).@"var";
+                if (@"var".type == expr_res) {
+                    ptr_type.access_mode = @"var".access_mode;
+                    ptr_type.addr_space = @"var".addr_space;
+                    break;
+                }
+            }
+        },
+    }
+
+    const result_type = try astgen.addInst(.{ .ptr_type = ptr_type });
 
     const inst = try astgen.addInst(.{
         .unary = .{
@@ -1956,6 +1973,16 @@ fn genCall(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex {
             .textureDimensions => return astgen.genTextureDimensionsBuiltin(scope, node),
             .textureLoad => return astgen.genTextureLoadBuiltin(scope, node),
             .textureStore => return astgen.genTextureStoreBuiltin(scope, node),
+            .atomicLoad => return astgen.genAtomicLoad(scope, node, &.{ .u32, .i32 }),
+            .atomicStore => return astgen.genAtomicStore(scope, node, &.{ .u32, .i32 }),
+            .atomicAdd => return astgen.genAtomicBinaryBuiltin(scope, node, .add, &.{ .u32, .i32 }),
+            .atomicSub => return astgen.genAtomicBinaryBuiltin(scope, node, .sub, &.{ .u32, .i32 }),
+            .atomicMax => return astgen.genAtomicBinaryBuiltin(scope, node, .max, &.{ .u32, .i32 }),
+            .atomicMin => return astgen.genAtomicBinaryBuiltin(scope, node, .min, &.{ .u32, .i32 }),
+            .atomicAnd => return astgen.genAtomicBinaryBuiltin(scope, node, .@"and", &.{ .u32, .i32 }),
+            .atomicOr => return astgen.genAtomicBinaryBuiltin(scope, node, .@"or", &.{ .u32, .i32 }),
+            .atomicXor => return astgen.genAtomicBinaryBuiltin(scope, node, .xor, &.{ .u32, .i32 }),
+            .atomicExchange => return astgen.genAtomicBinaryBuiltin(scope, node, .exchange, &.{ .u32, .i32 }),
             .workgroupBarrier => return astgen.genSimpleBuiltin(.workgroup_barrier),
             .storageBarrier => return astgen.genSimpleBuiltin(.storage_barrier),
             else => {
@@ -3284,6 +3311,209 @@ fn genTextureStoreBuiltin(astgen: *AstGen, scope: *Scope, node: NodeIndex) !Inst
     } });
 }
 
+fn genAtomicLoad(
+    astgen: *AstGen,
+    scope: *Scope,
+    node: NodeIndex,
+    comptime int_limit: []const Inst.Int.Type,
+) !InstIndex {
+    const node_loc = astgen.tree.nodeLoc(node);
+    const node_lhs = astgen.tree.nodeLHS(node);
+    if (node_lhs == .none) {
+        return astgen.failArgCountMismatch(node_loc, 1, 0);
+    }
+
+    const arg_nodes = astgen.tree.spanToList(node_lhs);
+    if (arg_nodes.len != 1) {
+        return astgen.failArgCountMismatch(node_loc, 1, arg_nodes.len);
+    }
+
+    const arg = try astgen.genExpr(scope, arg_nodes[0]);
+    const arg_res = try astgen.resolve(arg);
+
+    const arg_inst = astgen.getInst(arg_res);
+    if (arg_inst != .ptr_type) {
+        try astgen.errors.add(node_loc, "Arg must be an Atomic Pointer", .{}, null);
+        return error.AnalysisFail;
+    }
+    if (arg_inst.ptr_type.access_mode != .read_write) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must have read_write access", .{}, null);
+        return error.AnalysisFail;
+    }
+    const device_scope: Inst.AtomicLoad.Scope = switch (arg_inst.ptr_type.addr_space) {
+        .storage => .device,
+        .workgroup => .workgroup,
+        else => {
+            try astgen.errors.add(node_loc, "Atomic Pointer must be in workgroup or storage address space", .{}, null);
+            return error.AnalysisFail;
+        },
+    };
+    const ptr_inst_index = arg_inst.ptr_type.elem_type;
+    const ptr_inst = astgen.getInst(ptr_inst_index);
+
+    if (ptr_inst != .atomic_type) {
+        try astgen.errors.add(node_loc, "Pointer must be atomic", .{}, null);
+        return error.AnalysisFail;
+    }
+    const atomic_inst_index = ptr_inst.atomic_type.elem_type;
+    const atomic_inst = astgen.getInst(atomic_inst_index);
+
+    if (atomic_inst != .int or indexOf(Inst.Int.Type, int_limit, atomic_inst.int.type) == null) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must be type u32 or i32", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    return astgen.addInst(.{
+        .atomic_load = .{
+            .result_type = atomic_inst_index,
+            .expr = arg,
+            .scope = device_scope,
+        },
+    });
+}
+
+fn genAtomicStore(
+    astgen: *AstGen,
+    scope: *Scope,
+    node: NodeIndex,
+    comptime int_limit: []const Inst.Int.Type,
+) !InstIndex {
+    const node_loc = astgen.tree.nodeLoc(node);
+    const node_lhs = astgen.tree.nodeLHS(node);
+    if (node_lhs == .none) {
+        return astgen.failArgCountMismatch(node_loc, 2, 0);
+    }
+
+    const arg_nodes = astgen.tree.spanToList(node_lhs);
+    if (arg_nodes.len != 2) {
+        return astgen.failArgCountMismatch(node_loc, 2, arg_nodes.len);
+    }
+
+    const arg1 = try astgen.genExpr(scope, arg_nodes[0]);
+    const arg2 = try astgen.genExpr(scope, arg_nodes[1]);
+    const arg1_res = try astgen.resolve(arg1);
+    const arg2_res = try astgen.resolve(arg2);
+
+    const arg1_inst = astgen.getInst(arg1_res);
+    if (arg1_inst != .ptr_type) {
+        try astgen.errors.add(node_loc, "Arg must be an Atomic Pointer", .{}, null);
+        return error.AnalysisFail;
+    }
+    if (arg1_inst.ptr_type.access_mode != .read_write) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must have read_write access", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    const device_scope: Inst.AtomicStore.Scope = switch (arg1_inst.ptr_type.addr_space) {
+        .storage => .device,
+        .workgroup => .workgroup,
+        else => {
+            try astgen.errors.add(node_loc, "Atomic Pointer must be in workgroup or storage address space", .{}, null);
+            return error.AnalysisFail;
+        },
+    };
+    const ptr_inst_index = arg1_inst.ptr_type.elem_type;
+    const ptr_inst = astgen.getInst(ptr_inst_index);
+
+    if (ptr_inst != .atomic_type) {
+        try astgen.errors.add(node_loc, "Pointer must be atomic", .{}, null);
+        return error.AnalysisFail;
+    }
+    const atomic_inst_index = ptr_inst.atomic_type.elem_type;
+    const atomic_inst = astgen.getInst(atomic_inst_index);
+
+    if (atomic_inst != .int or indexOf(Inst.Int.Type, int_limit, atomic_inst.int.type) == null) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must be type u32 or i32", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    if (!try astgen.coerce(arg2_res, atomic_inst_index)) {
+        try astgen.errors.add(node_loc, "type mismatch", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    return astgen.addInst(.{
+        .atomic_store = .{
+            .result_type = atomic_inst_index,
+            .scope = device_scope,
+            .lhs = arg1,
+            .rhs = arg2,
+        },
+    });
+}
+
+fn genAtomicBinaryBuiltin(
+    astgen: *AstGen,
+    scope: *Scope,
+    node: NodeIndex,
+    comptime op: Inst.AtomicBinaryIntrinsic.Op,
+    comptime int_limit: []const Inst.Int.Type,
+) !InstIndex {
+    const node_loc = astgen.tree.nodeLoc(node);
+    const node_lhs = astgen.tree.nodeLHS(node);
+    if (node_lhs == .none) {
+        return astgen.failArgCountMismatch(node_loc, 2, 0);
+    }
+
+    const arg_nodes = astgen.tree.spanToList(node_lhs);
+    if (arg_nodes.len != 2) {
+        return astgen.failArgCountMismatch(node_loc, 2, arg_nodes.len);
+    }
+
+    const arg1 = try astgen.genExpr(scope, arg_nodes[0]);
+    const arg2 = try astgen.genExpr(scope, arg_nodes[1]);
+    const arg1_res = try astgen.resolve(arg1);
+    const arg2_res = try astgen.resolve(arg2);
+
+    const arg1_inst = astgen.getInst(arg1_res);
+    if (arg1_inst != .ptr_type) {
+        try astgen.errors.add(node_loc, "Arg must be an Atomic Pointer", .{}, null);
+        return error.AnalysisFail;
+    }
+    if (arg1_inst.ptr_type.access_mode != .read_write) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must have read_write access", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    const device_scope: Inst.AtomicBinaryIntrinsic.Scope = switch (arg1_inst.ptr_type.addr_space) {
+        .storage => .device,
+        .workgroup => .workgroup,
+        else => {
+            try astgen.errors.add(node_loc, "Atomic Pointer must be in workgroup or storage address space", .{}, null);
+            return error.AnalysisFail;
+        },
+    };
+    const ptr_inst_index = arg1_inst.ptr_type.elem_type;
+    const ptr_inst = astgen.getInst(ptr_inst_index);
+
+    if (ptr_inst != .atomic_type) {
+        try astgen.errors.add(node_loc, "Pointer must be atomic", .{}, null);
+        return error.AnalysisFail;
+    }
+    const atomic_inst_index = ptr_inst.atomic_type.elem_type;
+    const atomic_inst = astgen.getInst(atomic_inst_index);
+
+    if (atomic_inst != .int or indexOf(Inst.Int.Type, int_limit, atomic_inst.int.type) == null) {
+        try astgen.errors.add(node_loc, "Atomic Pointer must be type u32 or i32", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    if (!try astgen.coerce(arg2_res, atomic_inst_index)) {
+        try astgen.errors.add(node_loc, "type mismatch", .{}, null);
+        return error.AnalysisFail;
+    }
+
+    return astgen.addInst(.{
+        .atomic_binary_intrinsic = .{
+            .op = op,
+            .result_type = atomic_inst_index,
+            .scope = device_scope,
+            .lhs = arg1,
+            .rhs = arg2,
+        },
+    });
+}
+
 fn genSimpleBuiltin(astgen: *AstGen, comptime op: Air.Inst.NilIntrinsic) !InstIndex {
     return astgen.addInst(.{ .nil_intrinsic = op });
 }
@@ -3961,6 +4191,7 @@ fn genPtrType(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex {
         .bool,
         .int,
         .float,
+        .atomic_type,
         .sampler_type,
         .comparison_sampler_type,
         .external_texture_type,
@@ -4304,6 +4535,9 @@ fn resolve(astgen: *AstGen, index: InstIndex) !InstIndex {
             .binary,
             .binary_intrinsic,
             .triple_intrinsic,
+            .atomic_load,
+            .atomic_store,
+            .atomic_binary_intrinsic,
             .texture_dimension,
             .texture_load,
             => |instruction| return instruction.result_type,
@@ -4479,7 +4713,7 @@ const BuiltinFn = enum {
     degrees,
     determinant, // unimplemented
     distance,
-    dot, // unimplemented
+    dot,
     exp,
     exp2,
     extractBits, // unimplemented
@@ -4501,7 +4735,7 @@ const BuiltinFn = enum {
     mix,
     modf, // unimplemented
     normalize,
-    pow, // unimplemented
+    pow,
     quantizeToF16,
     radians,
     reflect, // unimplemented
@@ -4541,17 +4775,17 @@ const BuiltinFn = enum {
     textureSampleGrad, // unimplemented
     textureSampleLevel, // unimplemented
     textureSampleBaseClampToEdge, // unimplemented
-    textureStore, // unimplemented
-    atomicLoad, // unimplemented
-    atomicStore, // unimplemented
-    atomicAdd, // unimplemented
-    atomicSub, // unimplemented
-    atomicMax, // unimplemented
-    atomicMin, // unimplemented
-    atomicAnd, // unimplemented
-    atomicOr, // unimplemented
-    atomicXor, // unimplemented
-    atomicExchange, // unimplemented
+    textureStore, // unimplemented on GLSL backend
+    atomicLoad,
+    atomicStore,
+    atomicAdd,
+    atomicSub,
+    atomicMax,
+    atomicMin,
+    atomicAnd,
+    atomicOr,
+    atomicXor,
+    atomicExchange,
     atomicCompareExchangeWeak, // unimplemented
     pack4x8unorm, // unimplemented
     pack2x16snorm, // unimplemented

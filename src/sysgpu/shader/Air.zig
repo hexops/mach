@@ -430,6 +430,10 @@ pub const Inst = union(enum) {
     binary_intrinsic: BinaryIntrinsic,
     triple_intrinsic: TripleIntrinsic,
 
+    atomic_load: AtomicLoad,
+    atomic_store: AtomicStore,
+    atomic_binary_intrinsic: AtomicBinaryIntrinsic,
+
     block: RefIndex,
     loop: InstIndex,
     continuing: InstIndex,
@@ -756,9 +760,9 @@ pub const Inst = union(enum) {
     };
 
     pub const Unary = struct {
+        op: Op,
         result_type: InstIndex,
         expr: InstIndex,
-        op: Op,
 
         pub const Op = enum {
             not,
@@ -770,13 +774,14 @@ pub const Inst = union(enum) {
 
     pub const NilIntrinsic = enum {
         storage_barrier,
+        texture_barrier,
         workgroup_barrier,
     };
 
     pub const UnaryIntrinsic = struct {
+        op: Op,
         result_type: InstIndex,
         expr: InstIndex,
-        op: Op,
 
         pub const Op = enum {
             all,
@@ -894,6 +899,53 @@ pub const Inst = union(enum) {
             smoothstep,
             clamp,
             mix,
+        };
+    };
+
+    pub const AtomicLoad = struct {
+        result_type: InstIndex,
+        scope: Scope,
+        expr: InstIndex,
+
+        pub const Scope = enum {
+            device,
+            workgroup,
+        };
+    };
+
+    pub const AtomicStore = struct {
+        result_type: InstIndex,
+        scope: Scope,
+        lhs: InstIndex,
+        rhs: InstIndex,
+
+        pub const Scope = enum {
+            device,
+            workgroup,
+        };
+    };
+
+    pub const AtomicBinaryIntrinsic = struct {
+        op: Op,
+        result_type: InstIndex,
+        scope: Scope,
+        lhs: InstIndex,
+        rhs: InstIndex,
+
+        pub const Op = enum {
+            add,
+            sub,
+            max,
+            min,
+            @"and",
+            @"or",
+            xor,
+            exchange,
+        };
+
+        pub const Scope = enum {
+            device,
+            workgroup,
         };
     };
 

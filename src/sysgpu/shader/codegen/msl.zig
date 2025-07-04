@@ -775,6 +775,7 @@ fn emitNilIntrinsic(msl: *Msl, op: Inst.NilIntrinsic) !void {
     try msl.writeAll(switch (op) {
         .storage_barrier => "threadgroup_barrier(mem_flags::mem_device)",
         .workgroup_barrier => "threadgroup_barrier(mem_flags::mem_threadgroup)",
+        else => std.debug.panic("TODO: implement Nil Intrinsic {s}", .{@tagName(op)}),
     });
 }
 

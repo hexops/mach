@@ -485,21 +485,61 @@ fn emitFn(spv: *SpirV, inst_idx: InstIndex) error{OutOfMemory}!IdRef {
             .interface = try interface.toOwnedSlice(),
             .workgroup_size = .{
                 .x = blk: {
-                    const int = spv.air.getInst(compute.x).int;
+                    const int = blk_int: switch (spv.air.getInst(compute.x)) {
+                        .int => |int| int,
+                        .var_ref => |var_ref| {
+                            switch (spv.air.getInst(var_ref)) {
+                                .@"const" => |@"const"| {
+                                    break :blk_int spv.air.getInst(@"const".init).int;
+                                },
+                                .@"var" => |@"var"| {
+                                    break :blk_int spv.air.getInst(@"var".init).int;
+                                },
+                                else => unreachable,
+                            }
+                        },
+                        else => unreachable,
+                    };
                     const value = spv.air.getValue(Inst.Int.Value, int.value.?);
                     break :blk @intCast(value.literal);
                 },
                 .y = blk: {
                     if (compute.y == .none) break :blk 1;
-
-                    const int = spv.air.getInst(compute.y).int;
+                    const int = blk_int: switch (spv.air.getInst(compute.y)) {
+                        .int => |int| int,
+                        .var_ref => |var_ref| {
+                            switch (spv.air.getInst(var_ref)) {
+                                .@"const" => |@"const"| {
+                                    break :blk_int spv.air.getInst(@"const".init).int;
+                                },
+                                .@"var" => |@"var"| {
+                                    break :blk_int spv.air.getInst(@"var".init).int;
+                                },
+                                else => unreachable,
+                            }
+                        },
+                        else => unreachable,
+                    };
                     const value = spv.air.getValue(Inst.Int.Value, int.value.?);
                     break :blk @intCast(value.literal);
                 },
                 .z = blk: {
-                    if (compute.y == .none) break :blk 1;
-
-                    const int = spv.air.getInst(compute.z).int;
+                    if (compute.z == .none) break :blk 1;
+                    const int = blk_int: switch (spv.air.getInst(compute.z)) {
+                        .int => |int| int,
+                        .var_ref => |var_ref| {
+                            switch (spv.air.getInst(var_ref)) {
+                                .@"const" => |@"const"| {
+                                    break :blk_int spv.air.getInst(@"const".init).int;
+                                },
+                                .@"var" => |@"var"| {
+                                    break :blk_int spv.air.getInst(@"var".init).int;
+                                },
+                                else => unreachable,
+                            }
+                        },
+                        else => unreachable,
+                    };
                     const value = spv.air.getValue(Inst.Int.Value, int.value.?);
                     break :blk @intCast(value.literal);
                 },
@@ -1026,6 +1066,8 @@ fn emitStatement(spv: *SpirV, section: *Section, inst_idx: InstIndex) error{OutO
         .block => |block| if (block != .none) try spv.emitBlock(section, block),
         .nil_intrinsic => |ni| try spv.emitNilIntrinsic(section, ni),
         .texture_store => |ts| try spv.emitTextureStore(section, ts),
+        .atomic_store => |bin| try spv.emitAtomicStore(section, bin),
+        .atomic_binary_intrinsic => |bin| _ = try spv.emitAtomicBinaryIntrinsic(section, bin),
         .discard => try spv.emitDiscard(section),
         else => std.debug.panic("TODO: implement Air tag {s}", .{@tagName(spv.air.getInst(inst_idx))}),
     }
@@ -1353,6 +1395,8 @@ fn emitExpr(spv: *SpirV, section: *Section, inst: InstIndex) error{OutOfMemory}!
         .unary_intrinsic => |un| spv.emitUnaryIntrinsic(section, un),
         .binary_intrinsic => |bin| spv.emitBinaryIntrinsic(section, bin),
         .triple_intrinsic => |bin| spv.emitTripleIntrinsic(section, bin),
+        .atomic_load => |bin| spv.emitAtomicLoad(section, bin),
+        .atomic_binary_intrinsic => |bin| spv.emitAtomicBinaryIntrinsic(section, bin),
         .texture_sample => |ts| spv.emitTextureSample(section, ts),
         .texture_dimension => |td| spv.emitTextureDimension(section, td),
         .texture_load => |tl| spv.emitTextureLoad(section, tl),
@@ -1818,17 +1862,53 @@ fn emitUnary(spv: *SpirV, section: *Section, unary: Inst.Unary) !IdRef {
 }
 
 fn emitNilIntrinsic(spv: *SpirV, section: *Section, intr: Inst.NilIntrinsic) !void {
+    const workgroup_scope = try spv.resolve(.{ .int = .{
+        .type = .u32,
+        .value = @intFromEnum(spec.Scope.Workgroup),
+    } });
     switch (intr) {
         .workgroup_barrier => {
-            const uint2 = try spv.resolve(.{ .int = .{ .type = .u32, .value = 2 } });
-            const uint264 = try spv.resolve(.{ .int = .{ .type = .u32, .value = 264 } });
+            const workgroup_semantics = try spv.resolve(.{ .int = .{
+                .type = .u32,
+                .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+                    .AcquireRelease = true,
+                    .WorkgroupMemory = true,
+                }))),
+            } });
             try section.emit(.OpControlBarrier, .{
-                .execution = uint2,
-                .memory = uint2,
-                .semantics = uint264,
+                .execution = workgroup_scope,
+                .memory = workgroup_scope,
+                .semantics = workgroup_semantics,
             });
         },
-        else => std.debug.panic("TODO: implement Nil Intrinsic {s}", .{@tagName(intr)}),
+        .storage_barrier => {
+            const uniform_semantics = try spv.resolve(.{ .int = .{
+                .type = .u32,
+                .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+                    .AcquireRelease = true,
+                    .UniformMemory = true,
+                }))),
+            } });
+            try section.emit(.OpControlBarrier, .{
+                .execution = workgroup_scope,
+                .memory = workgroup_scope,
+                .semantics = uniform_semantics,
+            });
+        },
+        .texture_barrier => {
+            const image_semantics = try spv.resolve(.{ .int = .{
+                .type = .u32,
+                .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+                    .AcquireRelease = true,
+                    .ImageMemory = true,
+                }))),
+            } });
+            try section.emit(.OpControlBarrier, .{
+                .execution = workgroup_scope,
+                .memory = workgroup_scope,
+                .semantics = image_semantics,
+            });
+        },
     }
 }
 
@@ -1853,10 +1933,25 @@ fn emitUnaryIntrinsic(spv: *SpirV, section: *Section, unary: Inst.UnaryIntrinsic
             return id;
         },
         .radians => 11,
+        .degrees => 12,
         .sin => 13,
         .cos => 14,
         .tan => 15,
+        .asin => 16,
+        .acos => 17,
+        .atan => 18,
+        .sinh => 19,
+        .cosh => 20,
+        .tanh => 21,
+        .asinh => 22,
+        .acosh => 23,
+        .atanh => 24,
+        .exp => 27,
+        .log => 28,
+        .exp2 => 29,
+        .log2 => 30,
         .sqrt => 31,
+        .inverse_sqrt => 32,
         .normalize => 69,
         .length => 66,
         .floor => 8,
@@ -2007,6 +2102,180 @@ fn emitTripleIntrinsic(spv: *SpirV, section: *Section, triple: Inst.TripleIntrin
         .id_ref_4 = &.{ a1, a2, a3 },
     });
 
+    return id;
+}
+
+fn emitAtomicLoad(spv: *SpirV, section: *Section, bin: Inst.AtomicLoad) !IdRef {
+    const id = spv.allocId();
+    const result_type = try spv.emitType(bin.result_type);
+    const expr = try spv.emitExpr(section, bin.expr);
+
+    const pointer = IdResult{ .id = expr.id };
+    const memory = try spv.resolve(.{ .int = .{ .type = .u32, .value = switch (bin.scope) {
+        .device => @intFromEnum(spec.Scope.Device),
+        .workgroup => @intFromEnum(spec.Scope.Workgroup),
+    } } });
+    const semantics = try spv.resolve(.{ .int = .{
+        .type = .u32,
+        .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+            .Acquire = true,
+            .CrossWorkgroupMemory = bin.scope == .device,
+            .WorkgroupMemory = bin.scope == .workgroup,
+        }))),
+    } });
+
+    try section.emit(.OpAtomicLoad, .{
+        .id_result_type = result_type,
+        .id_result = id,
+        .pointer = pointer,
+        .memory = memory,
+        .semantics = semantics,
+    });
+
+    return id;
+}
+
+fn emitAtomicStore(spv: *SpirV, section: *Section, bin: Inst.AtomicStore) !void {
+    const lhs = try spv.emitExpr(section, bin.lhs);
+    const rhs = try spv.emitExpr(section, bin.rhs);
+
+    const pointer = IdResult{ .id = lhs.id };
+    const memory = try spv.resolve(.{ .int = .{ .type = .u32, .value = switch (bin.scope) {
+        .device => @intFromEnum(spec.Scope.Device),
+        .workgroup => @intFromEnum(spec.Scope.Workgroup),
+    } } });
+    const semantics = try spv.resolve(.{ .int = .{
+        .type = .u32,
+        .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+            .Release = true,
+            .CrossWorkgroupMemory = bin.scope == .device,
+            .WorkgroupMemory = bin.scope == .workgroup,
+        }))),
+    } });
+    const value = IdResult{ .id = rhs.id };
+
+    try section.emit(.OpAtomicStore, .{
+        .pointer = pointer,
+        .memory = memory,
+        .semantics = semantics,
+        .value = value,
+    });
+}
+
+fn emitAtomicBinaryIntrinsic(spv: *SpirV, section: *Section, bin: Inst.AtomicBinaryIntrinsic) !IdRef {
+    const id = spv.allocId();
+    const result_type = try spv.emitType(bin.result_type);
+    const result_type_inst = spv.air.getInst(bin.result_type);
+    const lhs = try spv.emitExpr(section, bin.lhs);
+    const rhs = try spv.emitExpr(section, bin.rhs);
+
+    const pointer = IdResult{ .id = lhs.id };
+    const memory = try spv.resolve(.{ .int = .{ .type = .u32, .value = switch (bin.scope) {
+        .device => @intFromEnum(spec.Scope.Device),
+        .workgroup => @intFromEnum(spec.Scope.Workgroup),
+    } } });
+    const semantics = try spv.resolve(.{ .int = .{
+        .type = .u32,
+        .value = @intCast(@as(u32, @bitCast(spec.MemorySemantics{
+            .AcquireRelease = true,
+            .CrossWorkgroupMemory = bin.scope == .device,
+            .WorkgroupMemory = bin.scope == .workgroup,
+        }))),
+    } });
+    const value = IdResult{ .id = rhs.id };
+
+    switch (bin.op) {
+        .add => try section.emit(.OpAtomicIAdd, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+        .sub => try section.emit(.OpAtomicISub, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+        .max => {
+            if (result_type_inst.int.type == .u32) {
+                try section.emit(.OpAtomicUMax, .{
+                    .id_result_type = result_type,
+                    .id_result = id,
+                    .pointer = pointer,
+                    .memory = memory,
+                    .semantics = semantics,
+                    .value = value,
+                });
+            } else {
+                try section.emit(.OpAtomicSMax, .{
+                    .id_result_type = result_type,
+                    .id_result = id,
+                    .pointer = pointer,
+                    .memory = memory,
+                    .semantics = semantics,
+                    .value = value,
+                });
+            }
+        },
+        .min => {
+            if (result_type_inst.int.type == .u32) {
+                try section.emit(.OpAtomicUMin, .{
+                    .id_result_type = result_type,
+                    .id_result = id,
+                    .pointer = pointer,
+                    .memory = memory,
+                    .semantics = semantics,
+                    .value = value,
+                });
+            } else {
+                try section.emit(.OpAtomicSMin, .{
+                    .id_result_type = result_type,
+                    .id_result = id,
+                    .pointer = pointer,
+                    .memory = memory,
+                    .semantics = semantics,
+                    .value = value,
+                });
+            }
+        },
+        .@"and" => try section.emit(.OpAtomicAnd, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+        .@"or" => try section.emit(.OpAtomicOr, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+        .xor => try section.emit(.OpAtomicXor, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+        .exchange => try section.emit(.OpAtomicExchange, .{
+            .id_result_type = result_type,
+            .id_result = id,
+            .pointer = pointer,
+            .memory = memory,
+            .semantics = semantics,
+            .value = value,
+        }),
+    }
     return id;
 }
 

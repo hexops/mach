@@ -817,6 +817,7 @@ fn emitNilIntrinsic(hlsl: *Hlsl, op: Inst.NilIntrinsic) !void {
     try hlsl.writeAll(switch (op) {
         .storage_barrier => "DeviceMemoryBarrierWithGroupSync()",
         .workgroup_barrier => "GroupMemoryBarrierWithGroupSync()",
+        else => std.debug.panic("TODO: implement Nil Intrinsic {s}", .{@tagName(op)}),
     });
 }
 
