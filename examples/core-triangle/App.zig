@@ -14,6 +14,8 @@ pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .tick, .deinit };
 
+pub const window_title = "core_triangle [ {d}fps ] [ Input {d}hz ]";
+
 pub const main = mach.schedule(.{
     .{ mach.Core, .init },
     .{ App, .init },
@@ -23,6 +25,7 @@ pub const main = mach.schedule(.{
 window: mach.ObjectID,
 title_timer: mach.time.Timer,
 pipeline: *gpu.RenderPipeline,
+frames: usize = 0,
 
 pub fn init(
     core: *mach.Core,
@@ -33,7 +36,11 @@ pub fn init(
     core.on_exit = app_mod.id.deinit;
 
     const window = try core.windows.new(.{
-        .title = "core-triangle",
+        .title = try std.fmt.allocPrintZ(
+            core.allocator,
+            window_title,
+            .{ 0, 0 },
+        ),
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -81,10 +88,7 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
     app.pipeline = window.device.createRenderPipeline(&pipeline_descriptor);
 }
 
-// TODO(object): window-title
-// try updateWindowTitle(core);
-
-pub fn tick(app: *App, core: *mach.Core) void {
+pub fn tick(app: *App, core: *mach.Core) !void {
     while (core.nextEvent()) |event| {
         switch (event) {
             .window_open => |ev| {
@@ -134,28 +138,27 @@ pub fn tick(app: *App, core: *mach.Core) void {
     defer command.release();
     window.queue.submit(&[_]*gpu.CommandBuffer{command});
 
-    // update the window title every second
-    // if (app.title_timer.read() >= 1.0) {
-    //     app.title_timer.reset();
-    //     // TODO(object): window-title
-    //     // try updateWindowTitle(core);
-    // }
+    mach.sysgpu.Impl.deviceTick(window.device);
+
+    window.swap_chain.present();
+
+    app.frames += 1;
+
+    //update the window title every second
+    if (app.title_timer.read() >= 1.0) {
+        app.title_timer.reset();
+
+        core.allocator.free(window.title);
+        core.windows.set(app.window, .title, try std.fmt.allocPrintZ(
+            core.allocator,
+            window_title,
+            .{ app.frames, core.frame.rate },
+        ));
+
+        app.frames = 0;
+    }
 }
 
 pub fn deinit(app: *App) void {
     app.pipeline.release();
 }
-
-// TODO(object): window-title
-// fn updateWindowTitle(core: *mach.Core) !void {
-//     try core.printTitle(
-//         core.main_window,
-//         "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
-//         .{
-//             // TODO(Core)
-//             core.frameRate(),
-//             core.inputRate(),
-//         },
-//     );
-//     core.schedule(.update);
-// }

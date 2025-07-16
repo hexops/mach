@@ -324,6 +324,10 @@ pub fn tick(
     command.release();
     render_pass.release();
 
+    mach.sysgpu.Impl.deviceTick(window.device);
+
+    window.swap_chain.present();
+
     app.frame_count += 1;
     app.time += delta_time;
 

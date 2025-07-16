@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) !void {
     build_options.addOption(SysgpuBackend, "sysgpu_backend", sysgpu_backend);
 
     var examples = [_]Example{
-        .{ .name = "core-custom-entrypoint", .deps = &.{} },
+        //.{ .name = "core-custom-entrypoint", .deps = &.{} },
         .{ .name = "core-triangle", .deps = &.{} },
         .{ .name = "core-transparent-window", .deps = &.{} },
         .{ .name = "custom-renderer", .deps = &.{} },
