@@ -7,6 +7,12 @@ pub const mach_module = .app;
 
 pub const mach_systems = .{ .main, .init, .deinit, .tick };
 
+// define Modules
+pub const Modules = mach.Modules(.{
+    mach.Core,
+    @import("App.zig"),
+});
+
 window: mach.ObjectID,
 title_timer: mach.time.Timer,
 pipeline: *gpu.RenderPipeline,
