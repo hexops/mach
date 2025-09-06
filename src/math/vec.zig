@@ -162,24 +162,23 @@ pub fn Vec(comptime Scalar: type, comptime length: usize) type {
             return .{ .v = a.v * Self.splat(s).v };
         }
 
-        /// Element-wise a < b
-        pub inline fn less(a: *const Self, b: T) bool {
-            return a.v < b.v;
+        pub inline fn less(a: *const Self, b: *const Self) bool {
+            return @reduce(.And, a.v < b.v);
         }
 
         /// Element-wise a <= b
-        pub inline fn lessEq(a: *const Self, b: T) bool {
-            return a.v <= b.v;
+        pub inline fn lessEq(a: *const Self, b: *const Self) bool {
+            return @reduce(.And, a.v <= b.v);
         }
 
         /// Element-wise a > b
-        pub inline fn greater(a: *const Self, b: T) bool {
-            return a.v > b.v;
+        pub inline fn greater(a: *const Self, b: *const Self) bool {
+            return @reduce(.And, a.v > b.v);
         }
 
         /// Element-wise a >= b
-        pub inline fn greaterEq(a: *const Self, b: T) bool {
-            return a.v >= b.v;
+        pub inline fn greaterEq(a: *const Self, b: *const Self) bool {
+            return @reduce(.And, a.v >= b.v);
         }
 
         /// Returns a vector with all components set to the `scalar` value:
