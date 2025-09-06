@@ -155,12 +155,12 @@ pub fn Ray3(comptime Scalar: type) type {
             // considered a hit.
             // Since Ray.Hit is represented by a Vec4, t is the last
             // element of that vector
-            var hit: Hit = Vec4P.init(
+            var hit: Hit = Vec4P.init(.{
                 undefined,
                 undefined,
                 undefined,
                 math.inf(f32),
-            );
+            });
 
             if (backface_culling) {
                 if ((t < 0.0) or (t > hit.v[3] * det))
