@@ -1356,6 +1356,7 @@ fn emitExpr(spv: *SpirV, section: *Section, inst: InstIndex) error{OutOfMemory}!
         .texture_sample => |ts| spv.emitTextureSample(section, ts),
         .texture_dimension => |td| spv.emitTextureDimension(section, td),
         .texture_load => |tl| spv.emitTextureLoad(section, tl),
+        .select => |sel| spv.emitSelect(section, sel),
         else => std.debug.panic("TODO: implement Air tag {s}", .{@tagName(spv.air.getInst(inst))}),
     };
 }
@@ -2457,6 +2458,25 @@ fn emitArray(spv: *SpirV, section: *Section, inst: Inst.Array) !IdRef {
         .id_result = id,
         .constituents = constituents.items,
     });
+    return id;
+}
+
+fn emitSelect(spv: *SpirV, section: *Section, inst: Inst.BuiltinSelect) !IdRef {
+    const cond_id = try spv.emitExpr(section, inst.cond);
+    const true_id = try spv.emitExpr(section, inst.true);
+    const false_id = try spv.emitExpr(section, inst.false);
+
+    const result_type_id = try spv.emitType(inst.type);
+
+    const id = spv.allocId();
+    try section.emit(.OpSelect, .{
+        .id_result_type = result_type_id,
+        .id_result = id,
+        .condition = cond_id,
+        .object_1 = false_id,
+        .object_2 = true_id,
+    });
+
     return id;
 }
 

@@ -708,6 +708,7 @@ fn emitExpr(hlsl: *Hlsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         .texture_dimension => |inst| try hlsl.emitTextureDimension(inst),
         .texture_load => |inst| try hlsl.emitTextureLoad(inst),
         .texture_store => |inst| try hlsl.emitTextureStore(inst),
+        .select => |inst| try hlsl.emitSelect(inst),
         //else => |inst| std.debug.panic("TODO: implement Air tag {s}", .{@tagName(inst)}),
         else => |inst| std.debug.panic("Expr: {}", .{inst}), // TODO
     }
@@ -1155,6 +1156,17 @@ fn emitTextureStore(hlsl: *Hlsl, inst: Inst.TextureStore) !void {
     try hlsl.writeAll("]");
     try hlsl.writeAll(" = ");
     try hlsl.emitExpr(inst.value);
+}
+
+fn emitSelect(hlsl: *Hlsl, inst: Inst.BuiltinSelect) !void {
+    // WGSL select(f, t, cond) maps to HLSL (cond ? t : f)
+    try hlsl.writeAll("(");
+    try hlsl.emitExpr(inst.cond);
+    try hlsl.writeAll(" ? ");
+    try hlsl.emitExpr(inst.false);
+    try hlsl.writeAll(" : ");
+    try hlsl.emitExpr(inst.true);
+    try hlsl.writeAll(")");
 }
 
 fn enterScope(hlsl: *Hlsl) void {

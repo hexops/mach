@@ -652,7 +652,7 @@ fn emitDiscard(msl: *Msl) !void {
 fn emitExpr(msl: *Msl, inst_idx: InstIndex) error{ OutOfMemory, ConstExpr }!void {
     switch (msl.air.getInst(inst_idx)) {
         .var_ref => |inst| try msl.emitVarRef(inst),
-        //.bool => |inst| msl.emitBool(inst),
+        .bool => |inst| try msl.emitBool(inst),
         .int => |inst| try msl.emitInt(inst),
         .float => |inst| try msl.emitFloat(inst),
         .vector => |inst| try msl.emitVector(inst),
@@ -675,6 +675,7 @@ fn emitExpr(msl: *Msl, inst_idx: InstIndex) error{ OutOfMemory, ConstExpr }!void
         .texture_dimension => |inst| try msl.emitTextureDimension(inst),
         .texture_load => |inst| try msl.emitTextureLoad(inst),
         .texture_store => |inst| try msl.emitTextureStore(inst),
+        .select => |inst| try msl.emitSelect(inst),
         //else => |inst| std.debug.panic("TODO: implement Air tag {s}", .{@tagName(inst)}),
         else => |inst| try msl.print("Expr: {}", .{inst}), // TODO
     }
@@ -1090,6 +1091,23 @@ fn emitTextureStore(msl: *Msl, inst: Inst.TextureStore) !void {
     try msl.emitExpr(inst.coords);
     try msl.writeAll(")");
     try msl.writeAll(")");
+}
+
+fn emitSelect(msl: *Msl, inst: Inst.BuiltinSelect) !void {
+    try msl.writeAll("select(");
+    try msl.emitExpr(inst.true);
+    try msl.writeAll(", ");
+    try msl.emitExpr(inst.false);
+    try msl.writeAll(", ");
+    try msl.emitExpr(inst.cond);
+    try msl.writeAll(")");
+}
+
+fn emitBool(msl: *Msl, inst: Inst.Bool) !void {
+    switch (inst.value.?) {
+        .literal => |lit| try msl.writeAll(if (lit) "true" else "false"),
+        .cast => @panic("TODO: implement bool cast for MSL"),
+    }
 }
 
 fn enterScope(msl: *Msl) void {
