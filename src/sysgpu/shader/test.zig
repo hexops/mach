@@ -261,6 +261,15 @@ test "vertexWriteGBuffers" {
     // try expectCodegen(vertexWriteGBuffers, "triangle.glsl", .glsl, false);
 }
 
+test "select" {
+    const src = @embedFile("test/select.wgsl");
+    
+    try expectCodegen(src, "select.spv", .spirv, false);
+    try expectCodegen(src, "select.hlsl", .hlsl, false);
+    try expectCodegen(src, "select.msl", .msl, false);
+    //try expectCodegen(src, "select.glsl", .glsl, false); // I guess no glsl based on the other tests
+}
+
 fn expectCodegen(
     source: [:0]const u8,
     comptime file_name: []const u8,
