@@ -16,11 +16,6 @@
             .hash = "1220adfccce3dbc4e4fa8650fdaec110a676f6b8a1462ed6ef422815207f8288e9d2",
             .lazy = true,
         },
-        .font_assets = .{
-            .url = "https://github.com/hexops/font-assets/archive/b2336a29b1ae633d47452a2041b258e9538ef5f0.tar.gz",
-            .hash = "1220521ff5b01885da9b3cba75b607b315f60ae351594ee9e4a270b164374889fea0",
-            .lazy = true,
-        },
         .mach_objc = .{
             .url = "https://pkg.machengine.org/mach-objc/79b6f80c32b14948554958afe72dace261b14afc.tar.gz",
             .hash = "12203675829014e69be2ea7c126ecf25d403009d336b7ca5f6e7c4ccede826c8e597",
