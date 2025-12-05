@@ -1,6 +1,7 @@
 .{
     .name = "mach",
     .version = "0.4.0",
+    .mach_zig_version = "2024.11.0-mach",
     .paths = .{
         "src",
         "build.zig",
@@ -17,8 +18,9 @@
             .lazy = true,
         },
         .mach_objc = .{
-            .url = "https://pkg.machengine.org/mach-objc/79b6f80c32b14948554958afe72dace261b14afc.tar.gz",
-            .hash = "12203675829014e69be2ea7c126ecf25d403009d336b7ca5f6e7c4ccede826c8e597",
+            //.path = "../mach-objc-dev",
+            .url = "https://github.com/foxnne/mach-objc/archive/59b75ebc1253a2517a08940086e66e574e63f2e1.tar.gz",
+            .hash = "1220097d6c23dc1f4ec7c46a8f94171b4a09f954ee09156951db81edb20405a7ebf8",
             .lazy = true,
         },
         .xcode_frameworks = .{

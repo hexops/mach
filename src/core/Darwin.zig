@@ -27,6 +27,7 @@ pub const Native = struct {
 
 pub const Context = struct {
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 };
 
@@ -63,7 +64,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     // TODO: support UIKit.
 }
 
-pub fn tick(core: *Core) !void {
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const core_window = core.windows.getValue(window_id);
@@ -124,19 +125,21 @@ pub fn tick(core: *Core) !void {
                 }
             }
         } else {
-            try initWindow(core, window_id);
+            try initWindow(core, core_mod, window_id);
         }
     }
 }
 
 fn initWindow(
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 ) !void {
     var core_window = core.windows.getValue(window_id);
 
     const context = try core.allocator.create(Context);
-    context.* = .{ .core = core, .window_id = window_id };
+    context.* = .{ .core = core, .core_mod = core_mod, .window_id = window_id };
+
     // If the application is not headless, we need to make the application a genuine UI application
     // by setting the activation policy, this moves the process to foreground
     // TODO: Only call this on the first window creation
@@ -213,15 +216,25 @@ fn initWindow(
 
         native_window.setReleasedWhenClosed(false);
 
+        // Create our custom NSView, and set whether or not it creates a background thread
+        // for rendering based on whether or not we have an on_tick function ID.
+        // Then set the layer to our metal layer.
         var view = objc.mach.View.allocInit();
-
-        // initWithFrame is overridden in our MACHView, which creates a tracking area for mouse tracking
-        view = view.initWithFrame(rect);
+        view = view.initWithFrame_withRenderLoop(rect, core_window.on_tick != null);
         view.setLayer(@ptrCast(layer));
+        defer native_window.setContentView(@ptrCast(view));
 
         // TODO(core): free this allocation
-
+        // Set all of our view blocks for event callbacks
         {
+            var render = objc.foundation.stackBlockLiteral(
+                ViewCallbacks.render,
+                context,
+                null,
+                null,
+            );
+            view.setBlock_render(render.asBlock().copy());
+
             var keyDown = objc.foundation.stackBlockLiteral(
                 ViewCallbacks.keyDown,
                 context,
@@ -294,9 +307,9 @@ fn initWindow(
             );
             view.setBlock_scrollWheel(scrollWheel.asBlock().copy());
         }
-        native_window.setContentView(@ptrCast(view));
+
+        // Set other native window settings
         native_window.center();
-        native_window.setIsVisible(true);
         native_window.makeKeyAndOrderFront(null);
 
         if (core_window.decoration_color) |decoration_color| {
@@ -314,6 +327,7 @@ fn initWindow(
         defer string.release();
         native_window.setTitle(string.initWithUTF8String(core_window.title));
 
+        // Set our delegate for the window, which provides resize and should close callbacks
         const delegate = objc.mach.WindowDelegate.allocInit();
         defer native_window.setDelegate(@ptrCast(delegate));
         {
@@ -392,6 +406,20 @@ const WindowDelegateCallbacks = struct {
 };
 
 const ViewCallbacks = struct {
+    pub fn render(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) void {
+        const core: *Core = block.context.core;
+        const core_mod = block.context.core_mod;
+        const window_id = block.context.window_id;
+
+        var window = core.windows.getValue(window_id);
+        defer core.windows.setValueRaw(window_id, window);
+
+        if (window.on_tick) |function_id| {
+            window.frame.tick();
+            core_mod.run(function_id);
+        }
+    }
+
     pub fn mouseMoved(block: *objc.foundation.BlockLiteral(*Context), event: *objc.app_kit.Event) callconv(.C) void {
         const core: *Core = block.context.core;
         const window_id = block.context.window_id;

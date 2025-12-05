@@ -443,8 +443,9 @@ pub const SwapChain = struct {
         layer.setPixelFormat(conv.metalPixelFormat(desc.format));
         layer.setFramebufferOnly(!(desc.usage.storage_binding or desc.usage.render_attachment));
         layer.setDrawableSize(size);
-        layer.setMaximumDrawableCount(if (desc.present_mode == .mailbox) 3 else 2);
-        layer.setDisplaySyncEnabled(desc.present_mode != .immediate);
+        layer.setMaximumDrawableCount(2);
+        //layer.setDisplaySyncEnabled(desc.present_mode != .immediate);
+        layer.setDisplaySyncEnabled(true);
 
         const swapchain = try allocator.create(SwapChain);
         swapchain.* = .{ .device = device, .surface = surface };
@@ -483,14 +484,8 @@ pub const SwapChain = struct {
             const command_buffer: *mtl.CommandBuffer = queue.command_queue.commandBuffer() orelse {
                 return error.NewCommandBufferFailed;
             };
-
-            if (swapchain.surface.layer.displaySyncEnabled()) {
-                command_buffer.commit();
-                drawable.present();
-            } else {
-                command_buffer.presentDrawable(@ptrCast(drawable));
-                command_buffer.commit();
-            }
+            command_buffer.presentDrawable(@ptrCast(drawable));
+            command_buffer.commit();
         }
     }
 };

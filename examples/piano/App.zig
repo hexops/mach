@@ -208,6 +208,10 @@ pub fn tick(
     var command = encoder.finish(&.{ .label = label });
     defer command.release();
     window.queue.submit(&[_]*gpu.CommandBuffer{command});
+
+    mach.sysgpu.Impl.deviceTick(window.device);
+
+    window.swap_chain.present();
 }
 
 fn fillTone(app: *App, audio: *mach.Audio, frequency: f32) ![]align(mach.Audio.alignment) const f32 {
