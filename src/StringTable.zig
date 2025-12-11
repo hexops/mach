@@ -19,7 +19,7 @@ pub const Index = u32;
 
 /// Returns the index of a string key, if it exists
 /// complexity: hashmap lookup
-pub fn index(table: *StringTable, key: []const u8) ?Index {
+pub fn index(table: *const StringTable, key: []const u8) ?Index {
     const slice_context: SliceAdapter = .{ .string_bytes = &table.string_bytes };
     const found_entry = table.string_table.getEntryAdapted(key, slice_context);
     if (found_entry) |e| return e.key_ptr.*;
@@ -28,21 +28,27 @@ pub fn index(table: *StringTable, key: []const u8) ?Index {
 
 /// Returns the index of a string key, inserting if not exists
 /// complexity: hashmap lookup / update
-pub fn indexOrPut(table: *StringTable, allocator: std.mem.Allocator, key: []const u8) !Index {
+///
+/// Assumes `key` does not contain any zero bytes
+pub fn indexOrPut(table: *StringTable, allocator: std.mem.Allocator, key: []const u8) error{OutOfMemory}!Index {
     const slice_context: SliceAdapter = .{ .string_bytes = &table.string_bytes };
     const index_context: IndexContext = .{ .string_bytes = &table.string_bytes };
     const entry = try table.string_table.getOrPutContextAdapted(allocator, key, slice_context, index_context);
     if (!entry.found_existing) {
-        entry.key_ptr.* = @intCast(table.string_bytes.items.len);
-        try table.string_bytes.appendSlice(allocator, key);
-        try table.string_bytes.append(allocator, '\x00');
+        errdefer table.string_table.removeByPtr(entry.key_ptr);
+
+        entry.key_ptr.* = std.math.cast(Index, table.string_bytes.items.len) orelse return error.OutOfMemory;
+        try table.string_bytes.ensureUnusedCapacity(allocator, key.len + 1);
+
+        table.string_bytes.appendSliceAssumeCapacity(key);
+        table.string_bytes.appendAssumeCapacity('\x00');
     }
     return entry.key_ptr.*;
 }
 
 /// Returns a null-terminated string given the index
-/// complexity: O(1)
-pub fn string(table: *StringTable, idx: Index) [:0]const u8 {
+/// complexity: O(n)
+pub fn string(table: *const StringTable, idx: Index) [:0]const u8 {
     return std.mem.span(@as([*:0]const u8, @ptrCast(table.string_bytes.items.ptr)) + idx);
 }
 
