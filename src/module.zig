@@ -18,13 +18,6 @@ pub const ObjectID = u64;
 
 const ObjectTypeID = u16;
 
-const PackedObjectTypeID = packed struct(u16) {
-    // 2^10 (1024) modules in an application
-    module_name_id: u10,
-    // 2^6 (64) lists of objects per module
-    object_name_id: u6,
-};
-
 pub const ObjectsOptions = struct {
     /// If set to true, Mach will track when fields are set using the setField/setAll
     /// methods using a bitset with one bit per field to indicate 'the field was set'.
@@ -606,6 +599,10 @@ pub fn Modules(module_lists: anytype) type {
 
         module_names: StringTable = .{},
         object_names: StringTable = .{},
+        name_ids: std.MultiArrayList(struct {
+            module_name_id: u32,
+            object_name_id: u32,
+        }) = .{},
         graph: Graph,
 
         /// Enum describing all declarations for a given comptime-known module.
@@ -649,19 +646,21 @@ pub fn Modules(module_lists: anytype) type {
                 const Mod2 = @TypeOf(@field(m.mods, field.name));
                 var mod: Mod2 = undefined;
                 const module_name_id = try m.module_names.indexOrPut(allocator, @tagName(Mod2.mach_module));
-                inline for (@typeInfo(@TypeOf(mod)).@"struct".fields) |mod_field| {
+                const mod_fields = @typeInfo(@TypeOf(mod)).@"struct".fields;
+                try m.name_ids.ensureUnusedCapacity(allocator, mod_fields.len);
+                inline for (mod_fields) |mod_field| {
                     if (@typeInfo(mod_field.type) == .@"struct" and @hasDecl(mod_field.type, "IsMachObjects")) {
                         const object_name_id = try m.object_names.indexOrPut(allocator, mod_field.name);
 
-                        // TODO: use packed struct(TypeID) here. Same thing, just get the type from central location
-                        const object_type_id: u16 = @bitCast(PackedObjectTypeID{
-                            .module_name_id = @intCast(module_name_id),
-                            .object_name_id = @intCast(object_name_id),
+                        const object_type_id = m.name_ids.addOneAssumeCapacity();
+                        m.name_ids.set(object_type_id, .{
+                            .module_name_id = module_name_id,
+                            .object_name_id = object_name_id,
                         });
 
                         @field(mod, mod_field.name).internal = .{
                             .allocator = allocator,
-                            .type_id = object_type_id,
+                            .type_id = @intCast(object_type_id),
                             .graph = &m.graph,
                         };
                     }
@@ -672,6 +671,7 @@ pub fn Modules(module_lists: anytype) type {
 
         pub fn deinit(m: *@This(), allocator: std.mem.Allocator) void {
             m.graph.deinit(allocator);
+            m.name_ids.deinit(allocator);
             // TODO: remainder of deinit
         }
 
@@ -935,4 +935,86 @@ fn ModulesByName(comptime modules: anytype) type {
             .decls = &[_]std.builtin.Type.Declaration{},
         },
     });
+}
+
+test "Long field name" {
+    const test_module = struct {
+        pub const mach_module = .test_module;
+        really_really_really_really_really_really_really_long_field_name: Objects(.{}, struct {}),
+        another_field: Objects(.{}, struct {}),
+    };
+
+    //TODO: swap to testing allocator once remainder of deinit implemented
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = aa.allocator();
+
+    var modules = Modules(.{test_module}){
+        .mods = undefined,
+        .graph = undefined,
+    };
+    try modules.init(allocator);
+    modules.deinit(allocator);
+    aa.deinit();
+}
+
+test "Many fields, same module" {
+    const test_module = struct {
+        pub const mach_module = .test_module;
+        field0: Objects(.{}, struct {}),
+        field1: Objects(.{}, struct {}),
+        field2: Objects(.{}, struct {}),
+        field3: Objects(.{}, struct {}),
+        field4: Objects(.{}, struct {}),
+        field5: Objects(.{}, struct {}),
+        field6: Objects(.{}, struct {}),
+        field7: Objects(.{}, struct {}),
+        field8: Objects(.{}, struct {}),
+        field9: Objects(.{}, struct {}),
+    };
+
+    //TODO: swap to testing allocator once remainder of deinit implemented
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = aa.allocator();
+
+    var modules = Modules(.{test_module}){
+        .mods = undefined,
+        .graph = undefined,
+    };
+    try modules.init(allocator);
+    modules.deinit(allocator);
+    aa.deinit();
+}
+
+test "Many fields, Many modules" {
+    const test_module0 = struct {
+        pub const mach_module = .test_module0;
+        field0: Objects(.{}, struct {}),
+        field1: Objects(.{}, struct {}),
+        field2: Objects(.{}, struct {}),
+        field3: Objects(.{}, struct {}),
+    };
+    const test_module1 = struct {
+        pub const mach_module = .test_module1;
+        field4: Objects(.{}, struct {}),
+        field5: Objects(.{}, struct {}),
+        field6: Objects(.{}, struct {}),
+        field7: Objects(.{}, struct {}),
+    };
+    const test_module2 = struct {
+        pub const mach_module = .test_module2;
+        field8: Objects(.{}, struct {}),
+        field9: Objects(.{}, struct {}),
+    };
+
+    //TODO: swap to testing allocator once remainder of deinit implemented
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = aa.allocator();
+
+    var modules = Modules(.{ test_module0, test_module1, test_module2 }){
+        .mods = undefined,
+        .graph = undefined,
+    };
+    try modules.init(allocator);
+    modules.deinit(allocator);
+    aa.deinit();
 }
