@@ -10,6 +10,7 @@ pub const modules = .{ Sprite, Text };
 
 // Fonts
 pub const Font = @import("font/main.zig").Font;
+pub const default_font = @import("font/main.zig").default_font;
 pub const TextRun = @import("font/main.zig").TextRun;
 pub const Glyph = @import("font/main.zig").Glyph;
 pub const px_per_pt = @import("font/main.zig").px_per_pt;

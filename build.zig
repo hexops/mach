@@ -136,8 +136,7 @@ pub fn build(b: *std.Build) !void {
                 module.addImport("mach-opus", dep.module("mach-opus"));
             }
         }
-        if (b.lazyDependency("font_assets", .{})) |dep| module.addImport("font-assets", dep.module("font-assets"));
-
+        
         if (want_examples) {
             for (examples) |example| b.getInstallStep().dependOn(example.install_step);
         }

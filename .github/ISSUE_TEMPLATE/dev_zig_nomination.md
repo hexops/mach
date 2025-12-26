@@ -57,7 +57,6 @@ These projects have zero `build.zig.zon` dependencies, we update them first - an
 * [ ] [flac](https://github.com/hexops/flac)
 * [ ] [ogg](https://github.com/hexops/ogg)
 * [ ] [mach-example-assets](https://github.com/hexops/mach-example-assets)
-* [ ] [font-assets](https://github.com/hexops/font-assets)
 
 ## Second-order projects
 
@@ -81,7 +80,6 @@ These projects have dependencies on other projects. We update them in the exact 
 * [ ] [mach-freetype](https://github.com/hexops/mach-freetype), which depends on:
   * freetype
   * harfbuzz
-  * font-assets
 * [ ] [mach-flac](https://github.com/hexops/mach-flac), which depends on:
   * flac
   * mach-sysaudio
@@ -95,7 +93,6 @@ These projects have dependencies on other projects. We update them in the exact 
   * .zigversion
   * build.zig version check
   * mach-freetype
-  * font-assets
   * mach-objc
   * mach-example-assets
   * spirv-cross

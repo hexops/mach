@@ -500,7 +500,7 @@ fn updatePipelineBuffers(
             // TODO(text): keep fonts around for reuse later
             // const font_name = text_style.get(style, .font_name).?;
             // _ = font_name; // TODO(text): actually use font name
-            const font_bytes = @import("font-assets").fira_sans_regular_ttf;
+            const font_bytes = gfx.default_font;
             var font = if (text.font_once) |f| f else blk: {
                 text.font_once = try gfx.Font.initBytes(font_bytes);
                 break :blk text.font_once.?;

@@ -79,12 +79,15 @@ pub const RenderedGlyph = struct {
     height: u32,
 };
 
+/// The default font used by Mach. currently Fira Sans Regular, but may change in the future.
+pub const default_font = @embedFile("firasans/FiraSans-Regular.ttf");
+
 test {
     std.testing.refAllDeclsRecursive(@This());
 
     // Load a font
     const allocator = std.testing.allocator;
-    const font_bytes = @import("font-assets").fira_sans_regular_ttf;
+    const font_bytes = default_font;
     var font = try Font.initBytes(font_bytes);
     defer font.deinit(allocator);
 
