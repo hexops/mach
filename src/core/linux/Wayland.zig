@@ -177,6 +177,7 @@ pub fn initWindow(
     wl = &core_window.native.?.wayland;
 
     c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
+    c.xdg_toplevel_set_app_id(wl.toplevel, @ptrCast(core_window.app_id));
 
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
