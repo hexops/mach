@@ -176,6 +176,8 @@ pub fn initWindow(
     core_window = core.windows.getValue(window_id);
     wl = &core_window.native.?.wayland;
 
+    c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
+
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
 
@@ -187,8 +189,6 @@ pub fn initWindow(
 
         if (result != -1 and wl.configured) break;
     }
-
-    c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
 
     const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
         wl.interfaces.zxdg_decoration_manager_v1,
