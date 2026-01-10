@@ -173,9 +173,6 @@ pub fn initWindow(
         return error.ListenerHasAlreadyBeenSet;
     }
 
-    // Wait for events to get pushed
-    _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
-
     core_window = core.windows.getValue(window_id);
     wl = &core_window.native.?.wayland;
 
@@ -203,10 +200,16 @@ pub fn initWindow(
     // Commit changes to surface
     c.wl_surface_commit(wl.surface);
 
-    _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
+    // _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
+    // // Wait for events to get pushed
+    // _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
 
     core.windows.setValue(window_id, core_window);
     try core.initWindow(window_id);
+    _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
+
+    core_window = core.windows.getValue(window_id);
+    core.windows.setValue(window_id, core_window);
 }
 
 pub fn tick(window_id: mach.ObjectID) !void {
@@ -805,15 +808,40 @@ const xdg_surface_listener = struct {
         var core_window = core_ptr.windows.getValue(window_id);
         const wl = &core_window.native.?.wayland;
 
-        if (wl.configured) {
-            c.wl_surface_commit(wl.surface);
-        } else {
+        if (!wl.configured) {
+            std.log.debug("not configure\n", .{});
             wl.configured = true;
             core_ptr.windows.setValue(window_id, core_window);
-            core_window = core_ptr.windows.getValue(window_id);
+            // core_window = core_ptr.windows.getValue(window_id);
+            return;
         }
 
         setContentAreaOpaque(wl, Core.Size{ .width = core_window.width, .height = core_window.height });
+
+        std.log.debug("configure\n", .{});
+        if (core_window.framebuffer_width != core_window.width or core_window.framebuffer_height != core_window.height) {
+            std.log.debug("recreating\n", .{});
+            core_window.framebuffer_width = core_window.width;
+            core_window.framebuffer_height = core_window.height;
+
+            core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+            core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+
+            core_window.swap_chain.release();
+            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
+            core_ptr.windows.setValueRaw(window_id, core_window);
+
+            core_ptr.pushEvent(.{
+                .window_resize = .{
+                    .window_id = window_id,
+                    .size = .{
+                        .width = core_window.width,
+                        .height = core_window.height,
+                    },
+                },
+            });
+        }
+        c.wl_surface_commit(wl.surface);
     }
 
     const listener = c.xdg_surface_listener{ .configure = @ptrCast(&xdgSurfaceHandleConfigure) };
