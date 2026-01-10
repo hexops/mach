@@ -810,7 +810,6 @@ const xdg_surface_listener = struct {
         const wl = &core_window.native.?.wayland;
 
         if (!wl.configured) {
-            std.log.debug("not configure\n", .{});
             wl.configured = true;
             core_ptr.windows.setValue(window_id, core_window);
             // core_window = core_ptr.windows.getValue(window_id);
@@ -819,9 +818,7 @@ const xdg_surface_listener = struct {
 
         setContentAreaOpaque(wl, Core.Size{ .width = core_window.width, .height = core_window.height });
 
-        std.log.debug("configure\n", .{});
         if (core_window.framebuffer_width != core_window.width or core_window.framebuffer_height != core_window.height) {
-            std.log.debug("recreating\n", .{});
             core_window.framebuffer_width = core_window.width;
             core_window.framebuffer_height = core_window.height;
 
