@@ -54,6 +54,7 @@ pub inline fn dynLibOpen(libName: []const u8) !std.DynLib {
 test {
     // TODO: refactor code so we can use this here:
     // std.testing.refAllDeclsRecursive(@This());
+    _ = Modules;
     _ = Core;
     _ = gpu;
     _ = sysaudio;
