@@ -24,6 +24,9 @@ windows: mach.Objects(
         // TODO: allocation/free strategy
         title: [:0]const u8 = "Mach Window",
 
+        // XDG application ID of the window
+        app_id: [:0]const u8 = "",
+
         /// Texture format of the framebuffer (read-only)
         framebuffer_format: gpu.Texture.Format = .bgra8_unorm,
 
