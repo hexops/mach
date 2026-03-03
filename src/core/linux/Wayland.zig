@@ -1043,8 +1043,8 @@ const libdecor_listener = struct {
         const state = libdecor.?.libdecor_state_new(width, height);
         defer libdecor.?.libdecor_state_free(state);
 
-        c.wl_surface_commit(wl.surface);
         libdecor.?.libdecor_frame_commit(wl.libdecor_frame, state, configuration);
+        c.wl_surface_commit(wl.surface);
 
         if (changed_size) {
             //does not work :(
