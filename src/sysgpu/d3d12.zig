@@ -1533,6 +1533,15 @@ pub const SwapChain = struct {
         try queue.signal();
         swapchain.fence_values[swapchain.buffer_index] = queue.fence_value;
     }
+
+    pub fn isStale(sc: *SwapChain) bool {
+        _ = sc;
+        return false;
+    }
+
+    pub fn setStale(sc: *SwapChain) void {
+        _ = sc;
+    }
 };
 
 pub const Resource = struct {

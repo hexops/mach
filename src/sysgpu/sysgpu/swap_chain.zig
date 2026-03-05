@@ -15,12 +15,20 @@ pub const SwapChain = opaque {
         present_mode: PresentMode,
     };
 
+    pub inline fn destroy(swap_chain: *SwapChain) void {
+        Impl.swapChainDestroy(swap_chain);
+    }
+
     pub inline fn getCurrentTexture(swap_chain: *SwapChain) ?*Texture {
         return Impl.swapChainGetCurrentTexture(swap_chain);
     }
 
     pub inline fn getCurrentTextureView(swap_chain: *SwapChain) ?*TextureView {
         return Impl.swapChainGetCurrentTextureView(swap_chain);
+    }
+
+    pub inline fn isStale(swap_chain: *SwapChain) bool {
+        return Impl.swapChainIsStale(swap_chain);
     }
 
     pub inline fn present(swap_chain: *SwapChain) void {
@@ -33,5 +41,9 @@ pub const SwapChain = opaque {
 
     pub inline fn release(swap_chain: *SwapChain) void {
         Impl.swapChainRelease(swap_chain);
+    }
+
+    pub inline fn setStale(swap_chain: *SwapChain) void {
+        Impl.swapChainSetStale(swap_chain);
     }
 };

@@ -977,6 +977,7 @@ pub const SwapChain = struct {
     texture_index: u32 = 0,
     current_texture_view: ?*TextureView = null,
     format: sysgpu.Texture.Format,
+    stale: bool = false,
 
     pub fn init(device: *Device, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
         const vk_device = device.vk_device;
@@ -1083,8 +1084,7 @@ pub const SwapChain = struct {
     pub fn deinit(sc: *SwapChain) void {
         const vk_device = sc.device.vk_device;
 
-        sc.device.waitAll() catch {};
-
+        vkd.deviceWaitIdle(vk_device) catch {};
         for (sc.texture_views) |view| view.manager.release();
         for (sc.textures) |texture| texture.manager.release();
         vkd.destroySemaphore(vk_device, sc.wait_semaphore, null);
@@ -1096,7 +1096,7 @@ pub const SwapChain = struct {
         allocator.destroy(sc);
     }
 
-    pub fn getCurrentTextureView(sc: *SwapChain) !*TextureView {
+    pub fn getCurrentTextureView(sc: *SwapChain) !?*TextureView {
         const vk_device = sc.device.vk_device;
 
         if (sc.current_texture_view) |view| {
@@ -1104,13 +1104,19 @@ pub const SwapChain = struct {
             return view;
         }
 
-        const result = try vkd.acquireNextImageKHR(
+        try vkd.deviceWaitIdle(sc.device.vk_device);
+        const result = vkd.acquireNextImageKHR(
             vk_device,
             sc.vk_swapchain,
             std.math.maxInt(u64),
             if (use_semaphore_wait) sc.wait_semaphore else .null_handle,
             if (!use_semaphore_wait) sc.fence else .null_handle,
-        );
+        ) catch |err| if (err == error.OutOfDateKHR) null else return err;
+
+        if (result == null) {
+            sc.setStale();
+            return null;
+        }
 
         // Wait on the CPU so that GPU does not stall later during present.
         // This should be similar to using DXGI Waitable Object.
@@ -1119,7 +1125,7 @@ pub const SwapChain = struct {
             try vkd.resetFences(vk_device, 1, &[_]vk.Fence{sc.fence});
         }
 
-        sc.texture_index = result.image_index;
+        sc.texture_index = result.?.image_index;
         var view = sc.texture_views[sc.texture_index];
         view.manager.reference();
         sc.current_texture_view = view;
@@ -1135,15 +1141,32 @@ pub const SwapChain = struct {
         try queue.signal_semaphores.append(allocator, semaphore);
         try queue.flush();
 
-        _ = try vkd.queuePresentKHR(vk_queue, &.{
+        vkd.deviceWaitIdle(sc.device.vk_device) catch @panic("api error");
+        _ = vkd.queuePresentKHR(vk_queue, &.{
             .wait_semaphore_count = 1,
             .p_wait_semaphores = &[_]vk.Semaphore{semaphore},
             .swapchain_count = 1,
             .p_swapchains = &[_]vk.SwapchainKHR{sc.vk_swapchain},
             .p_image_indices = &[_]u32{sc.texture_index},
-        });
+        }) catch |err| {
+            if (err == error.OutOfDateKHR) {
+                sc.setStale();
+                sc.current_texture_view = null;
+                return;
+            } else {
+                return err;
+            }
+        };
 
         sc.current_texture_view = null;
+    }
+
+    pub fn isStale(sc: *SwapChain) bool {
+        return sc.*.stale;
+    }
+
+    pub fn setStale(sc: *SwapChain) void {
+        sc.*.stale = true;
     }
 };
 

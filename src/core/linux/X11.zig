@@ -266,20 +266,20 @@ pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: boo
                 @ptrCast(atoms.slice()),
                 @intCast(atoms.len),
             );
-            x11.setFullscreen(false);
-            x11.setDecorated(border);
-            x11.setFloating(false);
+            setFullscreen(x11, false);
+            setDecorated(x11, border);
+            setFloating(x11, false);
             _ = libx11.?.XMapWindow(x11.display, x11.window);
             _ = libx11.?.XFlush(x11.display);
         },
         .fullscreen => {
-            x11.setFullscreen(true);
+            setFullscreen(x11, true);
             _ = libx11.?.XFlush(x11.display);
         },
         .fullscreen_borderless => {
-            x11.setDecorated(false);
-            x11.setFloating(true);
-            x11.setFullscreen(false);
+            setDecorated(x11, false);
+            setFloating(x11, true);
+            setFullscreen(x11, false);
             _ = libx11.?.XResizeWindow(
                 x11.display,
                 x11.window,
@@ -294,7 +294,7 @@ pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: boo
 fn setFullscreen(x11: *const Native, enabled: bool) void {
     const wm_state = libx11.?.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
     const wm_fullscreen = libx11.?.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
-    x11.sendEventToWM(wm_state, &.{ @intFromBool(enabled), @intCast(wm_fullscreen), 0, 1 });
+    sendEventToWM(x11, wm_state, &.{ @intFromBool(enabled), @intCast(wm_fullscreen), 0, 1 });
     // Force composition OFF to reduce overhead
     const compositing_disable_on: c_long = @intFromBool(enabled);
     const bypass_compositor = libx11.?.XInternAtom(x11.display, "_NET_WM_BYPASS_COMPOSITOR", c.False);
@@ -318,7 +318,7 @@ fn setFloating(x11: *const Native, enabled: bool) void {
     const net_wm_state_remove = 0;
     const net_wm_state_add = 1;
     const action: c_long = if (enabled) net_wm_state_add else net_wm_state_remove;
-    x11.sendEventToWM(wm_state, &.{ action, @intCast(wm_above), 0, 1 });
+    sendEventToWM(x11, wm_state, &.{ action, @intCast(wm_above), 0, 1 });
 }
 
 fn sendEventToWM(x11: *const Native, message_type: c.Atom, data: []const c_long) void {
@@ -702,9 +702,6 @@ fn processEvent(window_id: mach.ObjectID, event: *c.XEvent) void {
             {
                 core_window.width = @intCast(event.xconfigure.width);
                 core_window.height = @intCast(event.xconfigure.height);
-
-                // FIX: What is the Mach Object System way of doing this?
-                // core_ptr.swap_chain_update.set();
 
                 core_ptr.pushEvent(.{
                     .window_resize = .{
