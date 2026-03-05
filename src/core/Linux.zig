@@ -72,14 +72,32 @@ pub fn tick(core: *Core) !void {
             if (core.windows.updated(window_id, .title)) {
                 setTitle(&native, core_window.title);
             }
+            if (core.windows.updated(window_id, .display_mode) or core.windows.updated(window_id, .decorated)) {
+                setDisplayMode(&native, core_window.display_mode, core_window.decorated);
+                setBorder(&native, core_window.decorated);
+            }
             // check for display server events
             switch (native) {
                 .x11 => try X11.tick(window_id),
                 .wayland => try Wayland.tick(window_id),
             }
+            renewSwapChain(core, window_id);
         } else {
             try initWindow(core, window_id);
         }
+    }
+}
+
+inline fn renewSwapChain(core: *Core, window_id: mach.ObjectID) void {
+    var core_window = core.windows.getValue(window_id);
+    if (core_window.swap_chain.isStale()) {
+        core_window.framebuffer_width = core_window.width;
+        core_window.framebuffer_height = core_window.height;
+        core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+        core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+
+        core_window.swap_chain = core_window.swap_chain.recreate(core_window.surface, &core_window.swap_chain_descriptor);
+        core.windows.setValueRaw(window_id, core_window);
     }
 }
 
@@ -178,16 +196,14 @@ fn setTitle(native: *const Native, title: [:0]const u8) void {
     }
 }
 
-pub fn setDisplayMode(linux: *Linux, display_mode: DisplayMode) void {
-    // const old_display_mode = linux.display_mode;
-    linux.display_mode = display_mode;
-    switch (linux.backend) {
-        .wayland => linux.backend.wayland.setDisplayMode(display_mode),
-        .x11 => linux.backend.x11.setDisplayMode(linux, display_mode),
+fn setDisplayMode(native: *const Native, display_mode: DisplayMode, decorated: bool) void {
+    switch (native.*) {
+        .wayland => Wayland.setDisplayMode(&native.wayland, display_mode),
+        .x11 => X11.setDisplayMode(&native.x11, display_mode, decorated),
     }
 }
 
-pub fn setBorder(_: *Linux, _: bool) void {
+fn setBorder(_: *const Native, _: bool) void {
     return;
 }
 

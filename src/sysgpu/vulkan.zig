@@ -702,6 +702,10 @@ pub const Device = struct {
         return &device.queue.?;
     }
 
+    pub fn recreateSwapChain(swap_chain: *SwapChain, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
+        return SwapChain.recreate(swap_chain, surface, desc);
+    }
+
     pub fn tick(device: *Device) !void {
         if (device.queue) |*queue| try queue.flush();
         device.processQueuedOperations();
@@ -977,6 +981,8 @@ pub const SwapChain = struct {
     texture_index: u32 = 0,
     current_texture_view: ?*TextureView = null,
     format: sysgpu.Texture.Format,
+    extent: vk.Extent2D,
+    stale: bool = false,
 
     pub fn init(device: *Device, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
         const vk_device = device.vk_device;
@@ -1075,7 +1081,114 @@ pub const SwapChain = struct {
             .textures = textures,
             .texture_views = texture_views,
             .format = desc.format,
+            .extent = extent,
         };
+
+        return sc;
+    }
+
+    pub fn recreate(old_swap_chain: *SwapChain, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
+        const device = old_swap_chain.device;
+        const vk_device = device.vk_device;
+        vkd.deviceWaitIdle(vk_device) catch {};
+
+        for (old_swap_chain.texture_views) |view| view.manager.release();
+        for (old_swap_chain.textures) |texture| texture.manager.release();
+
+        const sc = try allocator.create(SwapChain);
+
+        const capabilities = try vki.getPhysicalDeviceSurfaceCapabilitiesKHR(
+            device.adapter.physical_device,
+            surface.vk_surface,
+        );
+
+        // TODO: query surface formats
+        // TODO: query surface present modes
+
+        const composite_alpha = blk: {
+            const composite_alpha_flags = [_]vk.CompositeAlphaFlagsKHR{
+                .{ .opaque_bit_khr = true },
+                .{ .pre_multiplied_bit_khr = true },
+                .{ .post_multiplied_bit_khr = true },
+                .{ .inherit_bit_khr = true },
+            };
+            for (composite_alpha_flags) |flag| {
+                if (@as(vk.Flags, @bitCast(flag)) & @as(vk.Flags, @bitCast(capabilities.supported_composite_alpha)) != 0) {
+                    break :blk flag;
+                }
+            }
+            break :blk vk.CompositeAlphaFlagsKHR{};
+        };
+        const image_count = @max(capabilities.min_image_count + 1, capabilities.max_image_count);
+        const format = conv.vulkanFormat(device, desc.format);
+        const extent = vk.Extent2D{
+            .width = std.math.clamp(
+                desc.width,
+                capabilities.min_image_extent.width,
+                capabilities.max_image_extent.width,
+            ),
+            .height = std.math.clamp(
+                desc.height,
+                capabilities.min_image_extent.height,
+                capabilities.max_image_extent.height,
+            ),
+        };
+        const image_usage = conv.vulkanImageUsageFlags(desc.usage, desc.format);
+        const present_mode = conv.vulkanPresentMode(desc.present_mode);
+
+        const vk_swapchain = try vkd.createSwapchainKHR(vk_device, &.{
+            .surface = surface.vk_surface,
+            .min_image_count = image_count,
+            .image_format = format,
+            .image_color_space = .srgb_nonlinear_khr,
+            .image_extent = extent,
+            .image_array_layers = 1,
+            .image_usage = image_usage,
+            .image_sharing_mode = .exclusive,
+            .pre_transform = .{ .identity_bit_khr = true },
+            .composite_alpha = composite_alpha,
+            .present_mode = present_mode,
+            .clipped = vk.FALSE,
+            .old_swapchain = old_swap_chain.vk_swapchain,
+        }, null);
+
+        var images_len: u32 = 0;
+        _ = try vkd.getSwapchainImagesKHR(vk_device, vk_swapchain, &images_len, null);
+        const images = try allocator.alloc(vk.Image, images_len);
+        defer allocator.free(images);
+        _ = try vkd.getSwapchainImagesKHR(vk_device, vk_swapchain, &images_len, images.ptr);
+
+        std.debug.assert(allocator.resize(old_swap_chain.textures, images_len));
+        const textures = old_swap_chain.textures;
+        errdefer allocator.free(textures);
+
+        std.debug.assert(allocator.resize(old_swap_chain.texture_views, images_len));
+        const texture_views = old_swap_chain.texture_views;
+        errdefer allocator.free(texture_views);
+
+        for (0..images_len) |i| {
+            const texture = try Texture.initForSwapChain(device, desc, images[i], sc);
+            textures[i] = texture;
+            texture_views[i] = try texture.createView(&.{
+                .format = desc.format,
+                .dimension = .dimension_2d,
+            });
+        }
+
+        sc.* = .{
+            .device = device,
+            .vk_swapchain = vk_swapchain,
+            .fence = old_swap_chain.fence,
+            .wait_semaphore = old_swap_chain.wait_semaphore,
+            .signal_semaphore = old_swap_chain.signal_semaphore,
+            .textures = textures,
+            .texture_views = texture_views,
+            .format = desc.format,
+            .extent = extent,
+        };
+
+        vkd.destroySwapchainKHR(vk_device, old_swap_chain.vk_swapchain, null);
+        allocator.destroy(old_swap_chain);
 
         return sc;
     }
@@ -1083,8 +1196,7 @@ pub const SwapChain = struct {
     pub fn deinit(sc: *SwapChain) void {
         const vk_device = sc.device.vk_device;
 
-        sc.device.waitAll() catch {};
-
+        vkd.deviceWaitIdle(vk_device) catch {};
         for (sc.texture_views) |view| view.manager.release();
         for (sc.textures) |texture| texture.manager.release();
         vkd.destroySemaphore(vk_device, sc.wait_semaphore, null);
@@ -1096,7 +1208,7 @@ pub const SwapChain = struct {
         allocator.destroy(sc);
     }
 
-    pub fn getCurrentTextureView(sc: *SwapChain) !*TextureView {
+    pub fn getCurrentTextureView(sc: *SwapChain) !?*TextureView {
         const vk_device = sc.device.vk_device;
 
         if (sc.current_texture_view) |view| {
@@ -1104,13 +1216,18 @@ pub const SwapChain = struct {
             return view;
         }
 
-        const result = try vkd.acquireNextImageKHR(
+        const result = vkd.acquireNextImageKHR(
             vk_device,
             sc.vk_swapchain,
             std.math.maxInt(u64),
             if (use_semaphore_wait) sc.wait_semaphore else .null_handle,
             if (!use_semaphore_wait) sc.fence else .null_handle,
-        );
+        ) catch |err| if (err == error.OutOfDateKHR) null else return err;
+
+        if (result == null) {
+            sc.setStale();
+            return null;
+        }
 
         // Wait on the CPU so that GPU does not stall later during present.
         // This should be similar to using DXGI Waitable Object.
@@ -1119,7 +1236,7 @@ pub const SwapChain = struct {
             try vkd.resetFences(vk_device, 1, &[_]vk.Fence{sc.fence});
         }
 
-        sc.texture_index = result.image_index;
+        sc.texture_index = result.?.image_index;
         var view = sc.texture_views[sc.texture_index];
         view.manager.reference();
         sc.current_texture_view = view;
@@ -1128,6 +1245,8 @@ pub const SwapChain = struct {
     }
 
     pub fn present(sc: *SwapChain) !void {
+        if (sc.current_texture_view == null) return;
+
         const queue = try sc.device.getQueue();
         const vk_queue = queue.vk_queue;
 
@@ -1135,15 +1254,34 @@ pub const SwapChain = struct {
         try queue.signal_semaphores.append(allocator, semaphore);
         try queue.flush();
 
-        _ = try vkd.queuePresentKHR(vk_queue, &.{
+        _ = vkd.queuePresentKHR(vk_queue, &.{
             .wait_semaphore_count = 1,
             .p_wait_semaphores = &[_]vk.Semaphore{semaphore},
             .swapchain_count = 1,
             .p_swapchains = &[_]vk.SwapchainKHR{sc.vk_swapchain},
             .p_image_indices = &[_]u32{sc.texture_index},
-        });
+        }) catch |err| {
+            if (err == error.OutOfDateKHR) {
+                sc.setStale();
+                sc.current_texture_view = null;
+                return;
+            } else {
+                return err;
+            }
+        };
 
         sc.current_texture_view = null;
+    }
+
+    pub fn isStale(sc: *SwapChain) bool {
+        return sc.*.stale;
+    }
+
+    pub fn setStale(sc: *SwapChain) void {
+        sc.*.stale = true;
+        const queue = try sc.device.getQueue();
+        queue.command_encoder = null;
+        queue.command_buffers.clearRetainingCapacity();
     }
 };
 
@@ -3194,7 +3332,11 @@ pub const RenderPassEncoder = struct {
                     });
                 }
 
-                extent = view.extent;
+                if (view.texture.swapchain) |sc| {
+                    extent = sc.extent;
+                } else {
+                    extent = view.extent;
+                }
             }
         }
 
@@ -3225,7 +3367,11 @@ pub const RenderPassEncoder = struct {
                 });
             }
 
-            extent = view.extent;
+            if (view.texture.swapchain) |sc| {
+                extent = sc.extent;
+            } else {
+                extent = view.extent;
+            }
         }
 
         const render_pass = try device.createRenderPass(rp_key);
