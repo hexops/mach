@@ -275,6 +275,7 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "swapChainPresent", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainReference", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainRelease", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
+    assertDecl(T, "swapChainDestroy", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
 
     // sysgpu.Texture
     assertDecl(T, "textureCreateView", fn (texture: *sysgpu.Texture, descriptor: ?*const sysgpu.TextureView.Descriptor) callconv(.Inline) *sysgpu.TextureView);
@@ -1269,6 +1270,11 @@ pub fn Export(comptime T: type) type {
         // SYSGPU_EXPORT void sysgpuSurfaceRelease(WGPUSurface surface);
         export fn sysgpuSurfaceRelease(surface: *sysgpu.Surface) void {
             T.surfaceRelease(surface);
+        }
+
+        // SYSGPU_EXPORT WGPUSwapChain sysgpuSwapChainDestroy(WGPUSwapChain const * swapchain);
+        export fn sysgpuSwapChainDestroy(swap_chain: *sysgpu.SwapChain) void {
+            return T.swapChainDestroy(swap_chain);
         }
 
         // SYSGPU_EXPORT WGPUTexture sysgpuSwapChainGetCurrentTexture(WGPUSwapChain swapChain);
@@ -2581,12 +2587,22 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
+    pub inline fn swapChainDestroy(swap_chain: *sysgpu.SwapChain) void {
+        _ = swap_chain;
+        unreachable;
+    }
+
     pub inline fn swapChainGetCurrentTexture(swap_chain: *sysgpu.SwapChain) ?*sysgpu.Texture {
         _ = swap_chain;
         unreachable;
     }
 
     pub inline fn swapChainGetCurrentTextureView(swap_chain: *sysgpu.SwapChain) ?*sysgpu.TextureView {
+        _ = swap_chain;
+        unreachable;
+    }
+
+    pub inline fn swapChainIsStale(swap_chain: *sysgpu.SwapChain) bool {
         _ = swap_chain;
         unreachable;
     }
@@ -2602,6 +2618,11 @@ pub const StubInterface = Interface(struct {
     }
 
     pub inline fn swapChainRelease(swap_chain: *sysgpu.SwapChain) void {
+        _ = swap_chain;
+        unreachable;
+    }
+
+    pub inline fn swapChainSetStale(swap_chain: *sysgpu.SwapChain) void {
         _ = swap_chain;
         unreachable;
     }

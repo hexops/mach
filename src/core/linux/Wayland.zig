@@ -240,7 +240,7 @@ pub fn setTitle(wl: *const Native, title: [:0]const u8) void {
     c.xdg_toplevel_set_title(wl.toplevel, title);
 }
 
-pub fn setDisplayMode(wl: *Wayland, display_mode: DisplayMode) void {
+pub fn setDisplayMode(wl: *const Native, display_mode: DisplayMode) void {
     _ = wl;
     _ = display_mode;
 }

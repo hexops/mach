@@ -56,7 +56,7 @@ pub fn init(
     const uniform_buffer = device.createBuffer(&.{
         .label = label ++ " uniform buffer",
         .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(UniformBufferObject) * uniform_offset * num_bind_groups,
+        .size = ((@sizeOf(UniformBufferObject) / uniform_offset) + 1) * uniform_offset * num_bind_groups,
         .mapped_at_creation = .false,
     });
 
@@ -122,8 +122,9 @@ pub fn renderFrame(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
-    defer back_buffer_view.release();
+    const back_buffer_view = window.swap_chain.getCurrentTextureView();
+    if (back_buffer_view == null) return;
+    defer back_buffer_view.?.release();
 
     // Create a command encoder
     const label = @tagName(mach_module) ++ ".tick";
@@ -146,7 +147,7 @@ pub fn renderFrame(
     // Begin render pass
     const sky_blue_background = gpu.Color{ .r = 0.776, .g = 0.988, .b = 1, .a = 1 };
     const color_attachments = [_]gpu.RenderPassColorAttachment{.{
-        .view = back_buffer_view,
+        .view = back_buffer_view.?,
         .clear_value = sky_blue_background,
         .load_op = .clear,
         .store_op = .store,
