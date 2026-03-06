@@ -1,5 +1,6 @@
 const std = @import("std");
 
+
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -142,24 +143,10 @@ pub fn Vec3(comptime Scalar: type) type {
         /// Vector * Quat multiplication
         /// https://github.com/greggman/wgpu-matrix/blob/main/src/vec3-impl.ts#L718
         pub inline fn mulQuat(v: *const VecN, q: *const quat.Quat(Scalar)) VecN {
-            const qx = q.v.x();
-            const qy = q.v.y();
-            const qz = q.v.z();
-            const w2 = q.v.w() * 2;
-
-            const vx = v.x();
-            const vy = v.y();
-            const vz = v.z();
-
-            const uv_x = qy * vz - qz * vy;
-            const uv_y = qz * vx - qx * vz;
-            const uv_z = qx * vy - qy * vx;
-
-            return math.vec3(
-                vx + uv_x * w2 + (qy * uv_z - qz * uv_y) * 2,
-                vy + uv_y * w2 + (qz * uv_x - qx * uv_z) * 2,
-                vz + uv_z * w2 + (qz * uv_y - qy * uv_x) * 2,
-            );
+            const q_xyz = q.v.swizzle(.x, .y, .z);
+            const uv = q_xyz.cross(v);
+            const uuv = q.xyz(&uv);
+            return v.add(&uv.mulScalar(q.v.w()).add(&uuv).mulScalar(2));
         }
 
         pub const add = Shared.add;
