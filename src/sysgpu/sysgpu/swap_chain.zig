@@ -1,5 +1,6 @@
 const ChainedStruct = @import("main.zig").ChainedStruct;
 const PresentMode = @import("main.zig").PresentMode;
+const Surface = @import("surface.zig").Surface;
 const Texture = @import("texture.zig").Texture;
 const TextureView = @import("texture_view.zig").TextureView;
 const Impl = @import("interface.zig").Impl;
@@ -15,10 +16,6 @@ pub const SwapChain = opaque {
         present_mode: PresentMode,
     };
 
-    pub inline fn destroy(swap_chain: *SwapChain) void {
-        Impl.swapChainDestroy(swap_chain);
-    }
-
     pub inline fn getCurrentTexture(swap_chain: *SwapChain) ?*Texture {
         return Impl.swapChainGetCurrentTexture(swap_chain);
     }
@@ -33,6 +30,10 @@ pub const SwapChain = opaque {
 
     pub inline fn present(swap_chain: *SwapChain) void {
         Impl.swapChainPresent(swap_chain);
+    }
+
+    pub inline fn recreate(swap_chain: *SwapChain, surface: ?*Surface, descriptor: *const SwapChain.Descriptor) *SwapChain {
+        return Impl.swapChainRecreate(swap_chain, surface, descriptor);
     }
 
     pub inline fn reference(swap_chain: *SwapChain) void {

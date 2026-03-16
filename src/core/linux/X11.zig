@@ -702,6 +702,7 @@ fn processEvent(window_id: mach.ObjectID, event: *c.XEvent) void {
             {
                 core_window.width = @intCast(event.xconfigure.width);
                 core_window.height = @intCast(event.xconfigure.height);
+                defer core_ptr.windows.setValueRaw(window_id, core_window);
 
                 core_ptr.pushEvent(.{
                     .window_resize = .{
@@ -712,7 +713,6 @@ fn processEvent(window_id: mach.ObjectID, event: *c.XEvent) void {
                         .window_id = window_id,
                     },
                 });
-                core_ptr.windows.setValue(window_id, core_window);
             }
         },
         c.FocusIn => {

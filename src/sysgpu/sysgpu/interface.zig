@@ -273,9 +273,9 @@ pub fn Interface(comptime T: type) type {
     assertDecl(T, "swapChainGetCurrentTexture", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) ?*sysgpu.Texture);
     assertDecl(T, "swapChainGetCurrentTextureView", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) ?*sysgpu.TextureView);
     assertDecl(T, "swapChainPresent", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
+    assertDecl(T, "swapChainRecreate", fn (swap_chain: *sysgpu.SwapChain, surface: ?*sysgpu.Surface, descriptor: *const sysgpu.SwapChain.Descriptor) callconv(.Inline) *sysgpu.SwapChain);
     assertDecl(T, "swapChainReference", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
     assertDecl(T, "swapChainRelease", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
-    assertDecl(T, "swapChainDestroy", fn (swap_chain: *sysgpu.SwapChain) callconv(.Inline) void);
 
     // sysgpu.Texture
     assertDecl(T, "textureCreateView", fn (texture: *sysgpu.Texture, descriptor: ?*const sysgpu.TextureView.Descriptor) callconv(.Inline) *sysgpu.TextureView);
@@ -1272,11 +1272,6 @@ pub fn Export(comptime T: type) type {
             T.surfaceRelease(surface);
         }
 
-        // SYSGPU_EXPORT WGPUSwapChain sysgpuSwapChainDestroy(WGPUSwapChain const * swapchain);
-        export fn sysgpuSwapChainDestroy(swap_chain: *sysgpu.SwapChain) void {
-            return T.swapChainDestroy(swap_chain);
-        }
-
         // SYSGPU_EXPORT WGPUTexture sysgpuSwapChainGetCurrentTexture(WGPUSwapChain swapChain);
         export fn sysgpuSwapChainGetCurrentTexture(swap_chain: *sysgpu.SwapChain) ?*sysgpu.Texture {
             return T.swapChainGetCurrentTexture(swap_chain);
@@ -1290,6 +1285,11 @@ pub fn Export(comptime T: type) type {
         // SYSGPU_EXPORT void sysgpuSwapChainPresent(WGPUSwapChain swapChain);
         export fn sysgpuSwapChainPresent(swap_chain: *sysgpu.SwapChain) void {
             T.swapChainPresent(swap_chain);
+        }
+
+        // SYSGPU_EXPORT WGPUSwapChain sysgpuDeviceRecreateSwapChain(WGPUDevice device, WGPUSurface surface /* nullable */, WGPUSwapChainDescriptor const * descriptor);
+        export fn sysgpuSwapChainRecreate(swap_chain: *sysgpu.SwapChain, surface: ?*sysgpu.Surface, descriptor: *const sysgpu.SwapChain.Descriptor) *sysgpu.SwapChain {
+            return T.swapChainRecreate(surface, descriptor, swap_chain);
         }
 
         // SYSGPU_EXPORT void sysgpuSwapChainReference(WGPUSwapChain swapChain);
@@ -2587,11 +2587,6 @@ pub const StubInterface = Interface(struct {
         unreachable;
     }
 
-    pub inline fn swapChainDestroy(swap_chain: *sysgpu.SwapChain) void {
-        _ = swap_chain;
-        unreachable;
-    }
-
     pub inline fn swapChainGetCurrentTexture(swap_chain: *sysgpu.SwapChain) ?*sysgpu.Texture {
         _ = swap_chain;
         unreachable;
@@ -2609,6 +2604,13 @@ pub const StubInterface = Interface(struct {
 
     pub inline fn swapChainPresent(swap_chain: *sysgpu.SwapChain) void {
         _ = swap_chain;
+        unreachable;
+    }
+
+    pub inline fn swapChainRecreate(swap_chain: *sysgpu.SwapChain, surface: ?*sysgpu.Surface, descriptor: *const sysgpu.SwapChain.Descriptor) *sysgpu.SwapChain {
+        _ = swap_chain;
+        _ = surface;
+        _ = descriptor;
         unreachable;
     }
 

@@ -81,9 +81,23 @@ pub fn tick(core: *Core) !void {
                 .x11 => try X11.tick(window_id),
                 .wayland => try Wayland.tick(window_id),
             }
+            renewSwapChain(core, window_id);
         } else {
             try initWindow(core, window_id);
         }
+    }
+}
+
+inline fn renewSwapChain(core: *Core, window_id: mach.ObjectID) void {
+    var core_window = core.windows.getValue(window_id);
+    if (core_window.swap_chain.isStale()) {
+        core_window.framebuffer_width = core_window.width;
+        core_window.framebuffer_height = core_window.height;
+        core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
+        core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
+
+        core_window.swap_chain = core_window.swap_chain.recreate(core_window.surface, &core_window.swap_chain_descriptor);
+        core.windows.setValueRaw(window_id, core_window);
     }
 }
 
