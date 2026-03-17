@@ -269,6 +269,10 @@ pub const Device = struct {
         return Texture.init(device, desc);
     }
 
+    pub fn destroySwapChain(swapchain: *const sysgpu.SwapChain.Descriptor) void {
+        return SwapChain.deinit(swapchain);
+    }
+
     pub fn getQueue(device: *Device) !*Queue {
         if (device.queue == null) {
             device.queue = try Queue.init(device);
@@ -492,6 +496,15 @@ pub const SwapChain = struct {
                 command_buffer.commit();
             }
         }
+    }
+
+    pub fn isStale(sc: *SwapChain) bool {
+        _ = sc;
+        return false;
+    }
+
+    pub fn setStale(sc: *SwapChain) void {
+        _ = sc;
     }
 };
 

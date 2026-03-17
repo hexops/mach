@@ -121,40 +121,42 @@ pub fn tick(app: *App, core: *mach.Core) void {
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
-    defer back_buffer_view.release();
+    const back_buffer_view = window.swap_chain.getCurrentTextureView();
+    if (back_buffer_view) |bb_view| {
+        defer bb_view.release();
 
-    // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
+        // Create a command encoder
+        const label = @tagName(mach_module) ++ ".tick";
 
-    const encoder = window.device.createCommandEncoder(&.{ .label = label });
-    defer encoder.release();
+        const encoder = window.device.createCommandEncoder(&.{ .label = label });
+        defer encoder.release();
 
-    // Begin render pass
-    const transparent_background = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
-    const color_attachments = [_]gpu.RenderPassColorAttachment{.{
-        .view = back_buffer_view,
-        .clear_value = transparent_background,
-        .load_op = .clear,
-        .store_op = .store,
-    }};
-    const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
-        .label = label,
-        .color_attachments = &color_attachments,
-    }));
-    defer render_pass.release();
+        // Begin render pass
+        const transparent_background = gpu.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 };
+        const color_attachments = [_]gpu.RenderPassColorAttachment{.{
+            .view = bb_view,
+            .clear_value = transparent_background,
+            .load_op = .clear,
+            .store_op = .store,
+        }};
+        const render_pass = encoder.beginRenderPass(&gpu.RenderPassDescriptor.init(.{
+            .label = label,
+            .color_attachments = &color_attachments,
+        }));
+        defer render_pass.release();
 
-    // Draw
-    render_pass.setPipeline(app.pipeline);
-    render_pass.draw(3, 1, 0, 0);
+        // Draw
+        render_pass.setPipeline(app.pipeline);
+        render_pass.draw(3, 1, 0, 0);
 
-    // Finish render pass
-    render_pass.end();
+        // Finish render pass
+        render_pass.end();
 
-    // Submit our commands to the queue
-    var command = encoder.finish(&.{ .label = label });
-    defer command.release();
-    window.queue.submit(&[_]*gpu.CommandBuffer{command});
+        // Submit our commands to the queue
+        var command = encoder.finish(&.{ .label = label });
+        defer command.release();
+        window.queue.submit(&[_]*gpu.CommandBuffer{command});
+    }
 
     if (app.title_timer.read() >= 1.0) {
         app.title_timer.reset();

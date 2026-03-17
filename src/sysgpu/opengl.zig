@@ -636,6 +636,15 @@ pub const SwapChain = struct {
         if (c.SwapBuffers(swapchain.hdc) == c.FALSE)
             return error.SwapBuffersFailed;
     }
+
+    pub fn isStale(sc: *SwapChain) bool {
+        _ = sc;
+        return false;
+    }
+
+    pub fn setStale(sc: *SwapChain) void {
+        _ = sc;
+    }
 };
 
 pub const Buffer = struct {

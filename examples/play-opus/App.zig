@@ -159,7 +159,7 @@ pub fn tick(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder

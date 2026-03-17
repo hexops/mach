@@ -56,7 +56,7 @@ pub fn init(
     const uniform_buffer = device.createBuffer(&.{
         .label = label ++ " uniform buffer",
         .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(UniformBufferObject) * uniform_offset * num_bind_groups,
+        .size = ((@sizeOf(UniformBufferObject) / uniform_offset) + 1) * uniform_offset * num_bind_groups,
         .mapped_at_creation = .false,
     });
 
@@ -122,7 +122,7 @@ pub fn renderFrame(
 
     // Grab the back buffer of the swapchain
     // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
