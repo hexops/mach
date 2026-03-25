@@ -1,7 +1,7 @@
 <a href="https://machengine.org">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://machengine.org/assets/media/mach/logo_dark.svg">
-        <img alt="mach-opus" src="https://machengine.org/assets/media/mach/logo_light.svg" height="150px">
+        <img alt="mach-opus" src="https://machengine.org/assets/media/mach/logo_light.svg" height="100px">
     </picture>
 </a>
 
@@ -13,10 +13,14 @@ Zig game engine & graphics toolkit for building high-performance, truly cross-pl
 
 ## Learn more
 
-[machengine.org](https://machengine.org)
+See [machengine.org](https://machengine.org) for docs, tutorials, etc.
+
+## Development
+
+Development occurs on [code.hexops.com](https://code.hexops.com/hexops/mach) - our GitHub [mirror](https://github.com/hexops/mach) is purely for visibility.
 
 ## Join the community
 
 Join the [Mach community on Discord](https://discord.gg/XNG3NZgCqp) to discuss this project, ask questions, get help, etc.
 
-**We're here to make games and have fun, so please help keep the community focused on that.** Do not escalate or engage in heated topics. LGBTQ+ people's existence is not political. Everyone is very welcome here. 💛
+**We're here to make games in Zig and have fun, so please help us keep the community focused on that.** Everyone is welcome here, LGBTQ+ and otherwise. 💛
