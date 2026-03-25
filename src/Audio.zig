@@ -4,7 +4,7 @@ const mach = @import("main.zig");
 const sysaudio = mach.sysaudio;
 const testing = mach.testing;
 
-pub const Opus = @import("mach-opus");
+pub const Opus = @import("Opus.zig");
 
 const Audio = @This();
 

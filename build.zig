@@ -131,12 +131,14 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
                 .enable_freetype = true,
             })) |dep| module.linkLibrary(dep.artifact("harfbuzz"));
-            if (b.lazyDependency("mach_opus", .{
+            if (b.lazyDependency("opusfile", .{
                 .target = target,
                 .optimize = .ReleaseFast,
-            })) |dep| {
-                module.addImport("mach-opus", dep.module("mach-opus"));
-            }
+            })) |dep| module.linkLibrary(dep.artifact("opusfile"));
+            if (b.lazyDependency("opusenc", .{
+                .target = target,
+                .optimize = .ReleaseFast,
+            })) |dep| module.linkLibrary(dep.artifact("opusenc"));
         }
         
         if (want_examples) {
