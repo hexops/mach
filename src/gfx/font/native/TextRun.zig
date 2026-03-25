@@ -1,5 +1,7 @@
 const std = @import("std");
-const harfbuzz = @import("mach-harfbuzz");
+const c = @cImport({
+    @cInclude("harfbuzz/hb.h");
+});
 const math = @import("../../../main.zig").math;
 const vec2 = math.vec2;
 const Vec2 = math.Vec2;
@@ -11,19 +13,19 @@ font_size_px: f32 = 16.0,
 px_density: u8 = 1,
 
 // Internal / private fields.
-buffer: harfbuzz.Buffer,
+buffer: *c.hb_buffer_t,
 index: usize = 0,
-infos: []harfbuzz.GlyphInfo = undefined,
-positions: []harfbuzz.GlyphPosition = undefined,
+infos: []c.hb_glyph_info_t = undefined,
+positions: []c.hb_glyph_position_t = undefined,
 
 pub fn init() anyerror!TextRun {
     return TextRun{
-        .buffer = harfbuzz.Buffer.init() orelse return error.OutOfMemory,
+        .buffer = c.hb_buffer_create() orelse return error.OutOfMemory,
     };
 }
 
 pub fn addText(s: *const TextRun, utf8_text: []const u8) void {
-    s.buffer.addUTF8(utf8_text, 0, null);
+    c.hb_buffer_add_utf8(s.buffer, utf8_text.ptr, @intCast(utf8_text.len), 0, @intCast(utf8_text.len));
 }
 
 pub fn next(s: *TextRun) ?Glyph {
@@ -43,6 +45,5 @@ pub fn next(s: *TextRun) ?Glyph {
 }
 
 pub fn deinit(s: *const TextRun) void {
-    s.buffer.deinit();
-    return;
+    c.hb_buffer_destroy(s.buffer);
 }

@@ -1,6 +1,9 @@
 const std = @import("std");
 const mach = @import("mach");
-const freetype = @import("freetype");
+const c = @cImport({
+    @cInclude("ft2build.h");
+    @cInclude("freetype/freetype.h");
+});
 const assets = @import("assets");
 
 const gpu = mach.gpu;
@@ -45,8 +48,8 @@ player_id: mach.ObjectID = undefined,
 pipeline_id: mach.ObjectID = undefined,
 texture_atlas: mach.gfx.Atlas = undefined,
 texture: *gpu.Texture = undefined,
-ft: freetype.Library = undefined,
-face: freetype.Face = undefined,
+ft: c.FT_Library = null,
+face: c.FT_Face = null,
 regions: RegionMap = .{},
 
 pub const main = mach.schedule(.{
@@ -83,8 +86,8 @@ pub fn init(
 pub fn deinit(app: *App) void {
     app.texture_atlas.deinit(app.allocator);
     app.texture.release();
-    app.face.deinit();
-    app.ft.deinit();
+    _ = c.FT_Done_Face(app.face);
+    _ = c.FT_Done_FreeType(app.ft);
     app.regions.deinit(app.allocator);
 }
 
@@ -118,8 +121,9 @@ fn setupPipeline(
         .rgba,
     );
 
-    app.ft = try freetype.Library.init();
-    app.face = try app.ft.createFaceMemory(assets.roboto_medium_ttf, 0);
+    if (c.FT_Init_FreeType(&app.ft) != 0) return error.FreetypeInitFailed;
+    if (c.FT_New_Memory_Face(app.ft, assets.roboto_medium_ttf.ptr, @intCast(assets.roboto_medium_ttf.len), 0, &app.face) != 0)
+        return error.FreetypeError;
     try prepareGlyphs(window.queue, app);
 
     // Create a sprite rendering pipeline
@@ -145,27 +149,29 @@ fn prepareGlyphs(queue: *gpu.Queue, app: *App) !void {
     const codepoints: []const u21 = &[_]u21{ '?', '!', 'a', 'b', '#', '@', '%', '$', '&', '^', '*', '+', '=', '<', '>', '/', ':', ';', 'Q', '~' };
     for (codepoints) |codepoint| {
         const font_size = 48 * 1;
-        try app.face.setCharSize(font_size * 64, 0, 50, 0);
-        try app.face.loadChar(codepoint, .{ .render = true });
-        const glyph = app.face.glyph();
-        const metrics = glyph.metrics();
+        if (c.FT_Set_Char_Size(app.face, font_size * 64, 0, 50, 0) != 0) return error.FreetypeError;
+        if (c.FT_Load_Char(app.face, codepoint, c.FT_LOAD_RENDER) != 0) return error.FreetypeError;
+        const glyph = app.face.*.glyph;
+        const metrics = glyph.*.metrics;
 
-        const glyph_bitmap = glyph.bitmap();
-        const glyph_width = glyph_bitmap.width();
-        const glyph_height = glyph_bitmap.rows();
+        const glyph_bitmap = glyph.*.bitmap;
+        const glyph_width = glyph_bitmap.width;
+        const glyph_height = glyph_bitmap.rows;
 
         // Add 1 pixel padding to texture to avoid bleeding over other textures
         const margin = 1;
         const glyph_data = try app.allocator.alloc([4]u8, (glyph_width + (margin * 2)) * (glyph_height + (margin * 2)));
         defer app.allocator.free(glyph_data);
-        const glyph_buffer = glyph_bitmap.buffer().?;
+        const glyph_buffer: [*]const u8 = glyph_bitmap.buffer;
+        const glyph_buffer_len = glyph_bitmap.pitch * @as(c_int, @intCast(glyph_height));
+        const glyph_buffer_slice = glyph_buffer[0..@intCast(glyph_buffer_len)];
         for (glyph_data, 0..) |*data, i| {
             const x = i % (glyph_width + (margin * 2));
             const y = i / (glyph_width + (margin * 2));
             if (x < margin or x > (glyph_width + margin) or y < margin or y > (glyph_height + margin)) {
                 data.* = [4]u8{ 0, 0, 0, 0 };
             } else {
-                const alpha = glyph_buffer[((y - margin) * glyph_width + (x - margin)) % glyph_buffer.len];
+                const alpha = glyph_buffer_slice[((y - margin) * glyph_width + (x - margin)) % glyph_buffer_slice.len];
                 data.* = [4]u8{ 0, 0, 0, alpha };
             }
         }

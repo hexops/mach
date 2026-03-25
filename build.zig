@@ -122,13 +122,15 @@ pub fn build(b: *std.Build) !void {
         if (target.result.os.tag == .linux) module.link_libc = true;
 
         if (target.result.cpu.arch != .wasm32) {
-            if (b.lazyDependency("mach_freetype", .{
+            if (b.lazyDependency("freetype", .{
                 .target = target,
                 .optimize = optimize,
-            })) |dep| {
-                module.addImport("mach-freetype", dep.module("mach-freetype"));
-                module.addImport("mach-harfbuzz", dep.module("mach-harfbuzz"));
-            }
+            })) |dep| module.linkLibrary(dep.artifact("freetype"));
+            if (b.lazyDependency("harfbuzz", .{
+                .target = target,
+                .optimize = optimize,
+                .enable_freetype = true,
+            })) |dep| module.linkLibrary(dep.artifact("harfbuzz"));
             if (b.lazyDependency("mach_opus", .{
                 .target = target,
                 .optimize = .ReleaseFast,
@@ -444,10 +446,10 @@ fn buildExamples(
                     })) |dep| app_mod.addImport("assets", dep.module("mach-example-assets"));
                 },
                 .freetype => {
-                    if (b.lazyDependency("mach_freetype", .{
+                    if (b.lazyDependency("freetype", .{
                         .target = target,
                         .optimize = optimize,
-                    })) |dep| app_mod.addImport("freetype", dep.module("mach-freetype"));
+                    })) |dep| app_mod.linkLibrary(dep.artifact("freetype"));
                 },
                 .zigimg => {
                     if (b.lazyDependency("zigimg", .{
