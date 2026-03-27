@@ -1,10 +1,5 @@
 const std = @import("std");
-const c = @cImport({
-    @cInclude("ft2build.h");
-    @cInclude("freetype/freetype.h");
-    @cInclude("harfbuzz/hb.h");
-    @cInclude("harfbuzz/hb-ft.h");
-});
+const c = @import("ft.zig").c;
 const TextRun = @import("TextRun.zig");
 const px_per_pt = @import("../main.zig").px_per_pt;
 const RenderedGlyph = @import("../main.zig").RenderedGlyph;
@@ -112,7 +107,7 @@ pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: Ren
         if (x < margin or x > (width + margin) or y < margin or y > (height + margin)) {
             data.* = RGBA32{ .r = 0, .g = 0, .b = 0, .a = 0 };
         } else {
-            const alpha = buffer.?[((y - margin) * width + (x - margin)) % (glyph_bitmap.pitch * height)];
+            const alpha = buffer.?[((y - margin) * width + (x - margin)) % (@as(c_uint, @intCast(glyph_bitmap.pitch)) * height)];
             data.* = RGBA32{ .r = 0, .g = 0, .b = 0, .a = alpha };
         }
     }

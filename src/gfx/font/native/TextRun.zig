@@ -1,7 +1,5 @@
 const std = @import("std");
-const c = @cImport({
-    @cInclude("harfbuzz/hb.h");
-});
+const c = @import("ft.zig").c;
 const math = @import("../../../main.zig").math;
 const vec2 = math.vec2;
 const Vec2 = math.Vec2;

@@ -228,6 +228,17 @@ pub fn build(b: *std.Build) !void {
         if (want_sysgpu) linkSysgpu(b, unit_tests.root_module);
         if (want_core) linkCore(b, unit_tests.root_module);
         if (want_sysaudio) linkSysaudio(b, unit_tests.root_module);
+        if (want_mach) {
+            if (b.lazyDependency("freetype", .{
+                .target = target,
+                .optimize = optimize,
+            })) |dep| unit_tests.root_module.linkLibrary(dep.artifact("freetype"));
+            if (b.lazyDependency("harfbuzz", .{
+                .target = target,
+                .optimize = optimize,
+                .enable_freetype = true,
+            })) |dep| unit_tests.root_module.linkLibrary(dep.artifact("harfbuzz"));
+        }
 
         // Documentation
         const docs_obj = b.addObject(.{
