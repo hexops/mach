@@ -42,9 +42,14 @@
             .hash = "1220c30350b7b45f4623aeaf1c5b2c9ceda5d626de2ff5a3f2f54e4a68a80358426b",
             .lazy = true,
         },
-        .vulkan_zig_generated = .{
-            .url = "https://pkg.hexops.org/pkg/hexops/vulkan-zig-generated/4134f910302a71731d8d32c91cfc1bc914e6d26b.tar.gz",
-            .hash = "12208333c8b3551908b66b8a421e7127bdf0c1806063836576283860eff99c99c521",
+        .vulkan_zig = .{
+            .url = "https://pkg.hexops.org/pkg/thirdparty/vulkan-zig/06dae6c9201863837a92064e2e7814aa71064067.tar.gz",
+            .hash = "1220edeb3fc7dfc40e6fde705a108edce0a3cc76d165a7c9919d1fb037eccec43372",
+            .lazy = true,
+        },
+        .vulkan_headers = .{
+            .url = "https://pkg.hexops.org/pkg/thirdparty/vulkan-headers/19935fe710d147d48b2dd5f5071392346347450b.tar.gz",
+            .hash = "1220a7e73d72a0d56bc2a65f9d8999a7c019e42260a0744c408d1cded111bc205e10",
             .lazy = true,
         },
         .linux_audio_headers = .{

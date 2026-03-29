@@ -180,7 +180,18 @@ pub fn build(b: *std.Build) !void {
     }
     if (want_sysgpu) {
         linkSysgpu(b, module);
-        if (b.lazyDependency("vulkan_zig_generated", .{})) |dep| module.addImport("vulkan", dep.module("vulkan-zig-generated"));
+        if (b.lazyDependency("vulkan_headers", .{})) |vulkan_headers| {
+            if (b.lazyDependency("vulkan_zig", .{})) |vulkan_zig| {
+                const registry = vulkan_headers.path("registry/vk.xml");
+                const vk_gen = vulkan_zig.artifact("vulkan-zig-generator");
+                const vk_generate_cmd = b.addRunArtifact(vk_gen);
+                vk_generate_cmd.addFileArg(registry);
+                const vulkan_mod = b.addModule("vulkan", .{
+                    .root_source_file = vk_generate_cmd.addOutputFileArg("vk.zig"),
+                });
+                module.addImport("vulkan", vulkan_mod);
+            }
+        }
         if (target.result.isDarwin()) {
             if (b.lazyDependency("mach_objc", .{
                 .target = target,
