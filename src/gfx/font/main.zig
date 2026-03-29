@@ -11,7 +11,7 @@ pub const TextRun = TextRunInterface(if (@import("builtin").cpu.arch == .wasm32)
 
 fn FontInterface(comptime T: type) type {
     assertDecl(T, "initBytes", fn (font_bytes: []const u8) anyerror!T);
-    assertDecl(T, "shape", fn (f: *const T, r: *TextRun) anyerror!void);
+    assertDecl(T, "shape", fn (f: *T, r: *TextRun) anyerror!void);
     assertDecl(T, "render", fn (f: *T, allocator: std.mem.Allocator, glyph_index: u32, opt: RenderOptions) anyerror!RenderedGlyph);
     assertDecl(T, "deinit", fn (*T, allocator: std.mem.Allocator) void);
     return T;
@@ -21,7 +21,7 @@ fn TextRunInterface(comptime T: type) type {
     assertField(T, "font_size_px", f32);
     assertField(T, "px_density", u8);
     assertDecl(T, "init", fn () anyerror!T);
-    assertDecl(T, "addText", fn (s: *const T, []const u8) void);
+    assertDecl(T, "addText", fn (s: *T, []const u8) void);
     assertDecl(T, "next", fn (s: *T) ?Glyph);
     assertDecl(T, "deinit", fn (s: *const T) void);
     return T;

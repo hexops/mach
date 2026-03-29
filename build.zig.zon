@@ -17,9 +17,10 @@
             .hash = "12204cba3a237cd2c4ab983f5a28d9b54e7a9912d8c7c6e38e23140b0171d6e1ebf8",
             .lazy = true,
         },
-        .harfbuzz = .{
-            .url = "https://pkg.hexops.org/pkg/hexops/harfbuzz/c514da98afcf5d9ad6854a7f09192f9ecfaeb061.tar.gz",
-            .hash = "1220203218ac17e497f3399e08115e73cb9505f1b9f07738eb0c5cc38ca443dec953",
+
+        .@"kb-text-shape" = .{
+            .url = "https://pkg.hexops.org/pkg/hexops/kb-text-shape/89affbcf1b82a3846d43d112e2943db438a3896a.tar.gz",
+            .hash = "122046928448999745c1d175432205ac99e4cee6e32e0babf0e004340205ab5ba187",
             .lazy = true,
         },
         .mach_objc = .{

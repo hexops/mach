@@ -126,11 +126,10 @@ pub fn build(b: *std.Build) !void {
                 .target = target,
                 .optimize = optimize,
             })) |dep| module.linkLibrary(dep.artifact("freetype"));
-            if (b.lazyDependency("harfbuzz", .{
+            if (b.lazyDependency("kb-text-shape", .{
                 .target = target,
                 .optimize = optimize,
-                .enable_freetype = true,
-            })) |dep| module.linkLibrary(dep.artifact("harfbuzz"));
+            })) |dep| module.linkLibrary(dep.artifact("kb-text-shape"));
             if (b.lazyDependency("opusfile", .{
                 .target = target,
                 .optimize = .ReleaseFast,
@@ -140,7 +139,7 @@ pub fn build(b: *std.Build) !void {
                 .optimize = .ReleaseFast,
             })) |dep| module.linkLibrary(dep.artifact("opusenc"));
         }
-        
+
         if (want_examples) {
             for (examples) |example| b.getInstallStep().dependOn(example.install_step);
         }
@@ -244,11 +243,10 @@ pub fn build(b: *std.Build) !void {
                 .target = target,
                 .optimize = optimize,
             })) |dep| unit_tests.root_module.linkLibrary(dep.artifact("freetype"));
-            if (b.lazyDependency("harfbuzz", .{
+            if (b.lazyDependency("kb-text-shape", .{
                 .target = target,
                 .optimize = optimize,
-                .enable_freetype = true,
-            })) |dep| unit_tests.root_module.linkLibrary(dep.artifact("harfbuzz"));
+            })) |dep| unit_tests.root_module.linkLibrary(dep.artifact("kb-text-shape"));
         }
 
         // Documentation

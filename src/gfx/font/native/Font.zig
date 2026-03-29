@@ -1,5 +1,6 @@
 const std = @import("std");
-const c = @import("ft.zig").c;
+const ft = @import("ft.zig").c;
+const kb = @import("ft.zig").kb;
 const TextRun = @import("TextRun.zig");
 const px_per_pt = @import("../main.zig").px_per_pt;
 const RenderedGlyph = @import("../main.zig").RenderedGlyph;
@@ -10,75 +11,64 @@ const Font = @This();
 
 var freetype_ready_mu: std.Thread.Mutex = .{};
 var freetype_ready: bool = false;
-var ft_library: c.FT_Library = null;
+var ft_library: ft.FT_Library = null;
 
-face: c.FT_Face,
+face: ft.FT_Face,
+font_bytes: []const u8,
 bitmap: std.ArrayListUnmanaged(RGBA32) = .{},
 
 pub fn initFreetype() !void {
     freetype_ready_mu.lock();
     defer freetype_ready_mu.unlock();
     if (!freetype_ready) {
-        if (c.FT_Init_FreeType(&ft_library) != 0) return error.FreetypeInitFailed;
+        if (ft.FT_Init_FreeType(&ft_library) != 0) return error.FreetypeInitFailed;
         freetype_ready = true;
     }
 }
 
+/// font_bytes must remain valid until .deinit() is called.
 pub fn initBytes(font_bytes: []const u8) anyerror!Font {
     try initFreetype();
-    var face: c.FT_Face = null;
-    if (c.FT_New_Memory_Face(ft_library, font_bytes.ptr, @intCast(font_bytes.len), 0, &face) != 0)
+    var face: ft.FT_Face = null;
+    if (ft.FT_New_Memory_Face(ft_library, font_bytes.ptr, @intCast(font_bytes.len), 0, &face) != 0)
         return error.FreetypeError;
-    return .{ .face = face };
+    return .{ .face = face, .font_bytes = font_bytes };
 }
 
-pub fn shape(f: *const Font, r: *TextRun) anyerror!void {
-    // Guess text segment properties.
-    c.hb_buffer_guess_segment_properties(r.buffer);
-    // TODO: Optionally override specific text segment properties?
-    // hb_buffer_set_direction(r.buffer, ...);
-    // hb_buffer_set_script(r.buffer, ...);
-    // hb_buffer_set_language(r.buffer, hb_language_from_string("en", -1));
+pub fn shape(f: *Font, r: *TextRun) anyerror!void {
+    const kb_font = kb.kbts_ShapePushFontFromMemory(
+        r.context,
+        @constCast(f.font_bytes.ptr),
+        @intCast(f.font_bytes.len),
+        0,
+    ) orelse return error.RenderError;
 
+    // Get font metrics to know UnitsPerEm for scaling.
+    var info: kb.kbts_font_info2_1 = std.mem.zeroes(kb.kbts_font_info2_1);
+    info.Base.Size = @sizeOf(kb.kbts_font_info2_1);
+    kb.kbts_GetFontInfo2(kb_font, @ptrCast(&info));
+    if (info.UnitsPerEm == 0) return error.InvalidFont;
+    r.units_per_em = @floatFromInt(info.UnitsPerEm);
+
+    // Set FreeType face size for glyph rendering (still needed for rasterization).
     const font_size_pt = r.font_size_px / px_per_pt;
     const font_size_pt_frac: i32 = @intFromFloat(font_size_pt * 64.0);
-    if (c.FT_Set_Char_Size(f.face, font_size_pt_frac, font_size_pt_frac, 0, 0) != 0)
+    if (ft.FT_Set_Char_Size(f.face, font_size_pt_frac, font_size_pt_frac, 0, 0) != 0)
         return error.RenderError;
 
-    const hb_face = c.hb_ft_face_create_referenced(f.face) orelse return error.RenderError;
-    const hb_font = c.hb_font_create(hb_face) orelse return error.RenderError;
-    defer c.hb_font_destroy(hb_font);
+    // Store FreeType face for bearing lookups during glyph iteration.
+    r.ft_face = f.face;
 
-    c.hb_font_set_scale(hb_font, font_size_pt_frac, font_size_pt_frac);
-    c.hb_font_set_ptem(hb_font, font_size_pt);
-
-    // TODO: optionally pass shaping features?
-    c.hb_shape(hb_font, r.buffer, null, 0);
-
-    r.index = 0;
-    var info_count: u32 = 0;
-    const infos_ptr = c.hb_buffer_get_glyph_infos(r.buffer, &info_count);
-    r.infos = if (infos_ptr) |p| p[0..info_count] else return error.OutOfMemory;
-
-    var pos_count: u32 = 0;
-    const pos_ptr = c.hb_buffer_get_glyph_positions(r.buffer, &pos_count);
-    r.positions = if (pos_ptr) |p| p[0..pos_count] else return error.OutOfMemory;
-
-    for (r.positions, r.infos) |*pos, info| {
-        const glyph_index = info.codepoint;
-        if (c.FT_Load_Glyph(f.face, glyph_index, c.FT_LOAD_DEFAULT) != 0)
-            return error.RenderError;
-        const glyph = f.face.*.glyph;
-        const metrics = glyph.*.metrics;
-        pos.*.x_offset += @intCast(metrics.horiBearingX);
-        pos.*.y_offset += @intCast(metrics.horiBearingY);
-        // TODO: use vertBearingX / vertBearingY for vertical layouts
-    }
+    // Perform the full shaping pass: begin → add text → end.
+    // TODO(font): allow configuration of direction/language by user
+    kb.kbts_ShapeBegin(r.context, kb.KBTS_DIRECTION_DONT_KNOW, kb.KBTS_LANGUAGE_DONT_KNOW);
+    kb.kbts_ShapeUtf8(r.context, r.utf8_text.ptr, @intCast(r.utf8_text.len), kb.KBTS_USER_ID_GENERATION_MODE_CODEPOINT_INDEX);
+    kb.kbts_ShapeEnd(r.context);
 }
 
 pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: RenderOptions) anyerror!RenderedGlyph {
     _ = opt;
-    if (c.FT_Load_Glyph(f.face, glyph_index, c.FT_LOAD_RENDER) != 0)
+    if (ft.FT_Load_Glyph(f.face, glyph_index, ft.FT_LOAD_RENDER) != 0)
         return error.RenderError;
 
     const glyph = f.face.*.glyph;
@@ -120,6 +110,6 @@ pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: Ren
 }
 
 pub fn deinit(f: *Font, allocator: std.mem.Allocator) void {
-    _ = c.FT_Done_Face(f.face);
+    _ = ft.FT_Done_Face(f.face);
     f.bitmap.deinit(allocator);
 }
