@@ -13,8 +13,8 @@
     },
     .dependencies = .{
         .freetype = .{
-            .url = "https://pkg.hexops.org/pkg/hexops/freetype/972cd37bccecae2cc9f54cf0b562263a13209d02.tar.gz",
-            .hash = "12204cba3a237cd2c4ab983f5a28d9b54e7a9912d8c7c6e38e23140b0171d6e1ebf8",
+            .url = "https://pkg.hexops.org/pkg/hexops/freetype/30070f3b6551769851db5e78e4e33253a1294238.tar.gz",
+            .hash = "12205ac47a5b0a481ea1811d29229e36a3a69f1dc6e7ae8f5f1b9d0a461344ab492d",
             .lazy = true,
         },
 
