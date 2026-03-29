@@ -65,7 +65,7 @@
 
         // Dependencies used by examples only
         .zigimg = .{
-            .url = "https://pkg.hexops.org/pkg/thirdparty/zigimg/archive/48bfe6d413a5b3723a7bcf36f1fabbba30efef68.tar.gz",
+            .url = "https://pkg.hexops.org/pkg/thirdparty/zigimg/48bfe6d413a5b3723a7bcf36f1fabbba30efef68.tar.gz",
             .hash = "12201b874ac217853e59f55477b96cb7a66d43a5930ed9b4f0cfc7113efc8f5a6449",
             .lazy = true,
         },
