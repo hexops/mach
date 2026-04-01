@@ -1261,9 +1261,21 @@ pub const Impl = sysgpu.Interface(struct {
         return @ptrCast(texture_view);
     }
 
+    pub inline fn swapChainIsStale(swap_chain_raw: *sysgpu.SwapChain) bool {
+        const swap_chain: *impl.SwapChain = @ptrCast(@alignCast(swap_chain_raw));
+        return swap_chain.isStale();
+    }
+
     pub inline fn swapChainPresent(swap_chain_raw: *sysgpu.SwapChain) void {
         const swap_chain: *impl.SwapChain = @ptrCast(@alignCast(swap_chain_raw));
         swap_chain.present() catch @panic("api error");
+    }
+
+    pub inline fn swapChainRecreate(swap_chain_raw: *sysgpu.SwapChain, surface_raw: ?*sysgpu.Surface, descriptor: *const sysgpu.SwapChain.Descriptor) *sysgpu.SwapChain {
+        const swap_chain: *impl.SwapChain = @ptrCast(@alignCast(swap_chain_raw));
+        const surface: *impl.Surface = @ptrCast(@alignCast(surface_raw.?));
+        const new_swap_chain = swap_chain.recreate(surface, descriptor) catch @panic("api error");
+        return @ptrCast(new_swap_chain);
     }
 
     pub inline fn swapChainReference(swap_chain_raw: *sysgpu.SwapChain) void {
@@ -1274,6 +1286,11 @@ pub const Impl = sysgpu.Interface(struct {
     pub inline fn swapChainRelease(swap_chain_raw: *sysgpu.SwapChain) void {
         const swap_chain: *impl.SwapChain = @ptrCast(@alignCast(swap_chain_raw));
         swap_chain.manager.release();
+    }
+
+    pub inline fn swapChainSetStale(swap_chain_raw: *sysgpu.SwapChain) void {
+        const swap_chain: *impl.SwapChain = @ptrCast(@alignCast(swap_chain_raw));
+        return swap_chain.setStale();
     }
 
     pub inline fn textureCreateView(texture_raw: *sysgpu.Texture, descriptor: ?*const sysgpu.TextureView.Descriptor) *sysgpu.TextureView {

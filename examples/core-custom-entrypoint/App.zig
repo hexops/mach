@@ -162,7 +162,6 @@ pub fn render(core: *mach.Core, app: *App) !void {
 //         core.main_window,
 //         "core-custom-entrypoint [ {d}fps ] [ Input {d}hz ]",
 //         .{
-//             // TODO(Core)
 //             core.frameRate(),
 //             core.inputRate(),
 //         },

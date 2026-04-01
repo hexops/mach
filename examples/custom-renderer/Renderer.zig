@@ -56,7 +56,7 @@ pub fn init(
     const uniform_buffer = device.createBuffer(&.{
         .label = label ++ " uniform buffer",
         .usage = .{ .copy_dst = true, .uniform = true },
-        .size = @sizeOf(UniformBufferObject) * uniform_offset * num_bind_groups,
+        .size = ((@sizeOf(UniformBufferObject) / uniform_offset) + 1) * uniform_offset * num_bind_groups,
         .mapped_at_creation = .false,
     });
 
