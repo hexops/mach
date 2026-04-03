@@ -176,6 +176,7 @@ pub fn tick(sprite: *Sprite, core: *mach.Core) !void {
         _ = sprite.pipelines.updated(pipeline_id, .window);
         _ = sprite.pipelines.updated(pipeline_id, .render_pass);
         _ = sprite.pipelines.updated(pipeline_id, .view_projection);
+        _ = sprite.pipelines.updated(pipeline_id, .num_sprites);
 
         // If any other fields of the pipeline have been updated, a pipeline rebuild is required.
         if (sprite.pipelines.anyUpdated(pipeline_id)) {
