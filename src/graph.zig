@@ -230,7 +230,15 @@ pub const Graph = struct {
                 const parent = graph.getNode(data.parent_id) orelse return;
                 const new_child = graph.getNode(data.child_id) orelse return;
 
-                if (!parent.hasChild(new_child.id)) parent.addChild(new_child);
+                if (!parent.hasChild(new_child.id)) {
+                    // Remove from old parent first, same as set_parent
+                    if (new_child.parent) |old_parent| {
+                        if (old_parent == parent) return;
+                        old_parent.removeChild(new_child.id);
+                        graph.cleanupIsolatedNode(old_parent);
+                    }
+                    parent.addChild(new_child);
+                }
             },
 
             .remove_child => |data| {
