@@ -379,7 +379,7 @@ inline fn requestAdapterCallback(
 // devices. Users will need to re-upload all assets to the GPU in this event.
 fn deviceLostCallback(reason: gpu.Device.LostReason, msg: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void {
     _ = userdata;
-    _ = reason;
+    if (reason == .destroyed) return;
     log.err("mach: device lost: {s}", .{msg});
     @panic("mach: device lost");
 }
