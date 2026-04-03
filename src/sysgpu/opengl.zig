@@ -449,9 +449,29 @@ pub const Device = struct {
         return ShaderModule.initAir(device, air);
     }
 
-    pub fn createShaderModuleSpirv(device: *Device, code: []const u8) !*ShaderModule {
+    pub fn createShaderModuleSpirv(device: *Device, code: [*]const u32, code_size: u32) !*ShaderModule {
+        _ = code;
+        _ = code_size;
+        _ = device;
+        return error.Unsupported;
+    }
+
+    pub fn createShaderModuleHLSL(device: *Device, code: []const u8) !*ShaderModule {
         _ = code;
         _ = device;
+        return error.Unsupported;
+    }
+
+    pub fn createShaderModuleMSL(
+        device: *Device,
+        label: [*:0]const u8,
+        code: []const u8,
+        workgroup_size: sysgpu.ShaderModule.WorkgroupSize,
+    ) !*ShaderModule {
+        _ = label;
+        _ = code;
+        _ = device;
+        _ = workgroup_size;
         return error.Unsupported;
     }
 
@@ -1842,7 +1862,7 @@ pub const CommandBuffer = struct {
                             );
                         }
 
-                        gl.drawBuffers(draw_buffers.len, &draw_buffers.buffer);
+                        gl.drawBuffers(@intCast(draw_buffers.len), &draw_buffers.buffer);
                         if (gl.checkFramebufferStatus(c.GL_FRAMEBUFFER) != c.GL_FRAMEBUFFER_COMPLETE)
                             return error.CheckFramebufferStatusFailed;
                     } else {
