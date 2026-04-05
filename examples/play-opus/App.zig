@@ -22,7 +22,14 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .tick, .deinit, .audioStateChange };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .tick,
+    .render,
+    .deinit,
+    .audioStateChange,
+};
 
 pub const main = mach.schedule(.{
     .{ mach.Core, .init },
@@ -56,6 +63,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "play-opus",
+        .on_render = app_mod.id.render,
     });
 
     // Configure the audio module to call our App.audioStateChange function when a sound buffer
@@ -154,16 +162,21 @@ pub fn tick(
             else => {},
         }
     }
+}
 
+pub fn render(
+    core: *mach.Core,
+    app: *App,
+) !void {
+    const label = @tagName(mach_module) ++ ".render";
     var window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
     const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 

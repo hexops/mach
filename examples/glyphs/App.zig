@@ -28,20 +28,26 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .deinit, .tick };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .deinit,
+    .tick,
+    .render,
+};
 
 const RegionMap = std.AutoArrayHashMapUnmanaged(u21, mach.gfx.Atlas.Region);
 
 allocator: std.mem.Allocator,
 window: mach.ObjectID,
-timer: mach.time.Timer,
+tick_timer: mach.time.Timer,
 spawn_timer: mach.time.Timer,
 fps_timer: mach.time.Timer,
 rand: std.Random.DefaultPrng,
 
 frame_count: usize = 0,
 sprites: usize = 0,
-time: f32 = 0,
+anim_time: f32 = 0,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = true,
 player_id: mach.ObjectID = undefined,
@@ -68,6 +74,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "glyphs",
+        .on_render = app_mod.id.render,
     });
 
     // TODO(allocator): find a better way to get an allocator here
@@ -76,7 +83,7 @@ pub fn init(
     app.* = .{
         .allocator = allocator,
         .window = window,
-        .timer = try mach.time.Timer.start(),
+        .tick_timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
         .fps_timer = try mach.time.Timer.start(),
         .rand = std.Random.DefaultPrng.init(1337),
@@ -200,9 +207,9 @@ pub fn tick(
     core: *mach.Core,
     app: *App,
     sprite: *gfx.Sprite,
-    sprite_mod: mach.Mod(gfx.Sprite),
 ) !void {
     const label = @tagName(mach_module) ++ ".tick";
+    _ = label;
 
     var direction = app.direction;
     var spawning = app.spawning;
@@ -260,8 +267,8 @@ pub fn tick(
         }
     }
 
-    // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.timer.lap();
+    // Multiply by delta_time to ensure that movement is the same speed regardless of tick rate.
+    const delta_time = app.tick_timer.lap();
 
     const window = core.windows.getValue(app.window);
 
@@ -284,8 +291,8 @@ pub fn tick(
         var transform = Mat4x4.ident;
         transform = transform.mul(&Mat4x4.scale(Vec3.splat(1.0 + (0.2 * delta_time))));
         transform = transform.mul(&Mat4x4.translate(location));
-        transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.time));
-        transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(app.time / 2.0), 0.2))));
+        transform = transform.mul(&Mat4x4.rotateZ(2 * math.pi * app.anim_time));
+        transform = transform.mul(&Mat4x4.scale(Vec3.splat(@max(math.cos(app.anim_time / 2.0), 0.2))));
         s.transform = transform;
         sprite.objects.setValue(sprite_id, s);
     }
@@ -297,9 +304,21 @@ pub fn tick(
     player_pos.v[1] += direction.y() * speed * delta_time;
     player.transform = Mat4x4.translate(player_pos);
 
+    app.anim_time += delta_time;
+}
+
+pub fn render(
+    core: *mach.Core,
+    app: *App,
+    sprite: *gfx.Sprite,
+    sprite_mod: mach.Mod(gfx.Sprite),
+) !void {
+    const label = @tagName(mach_module) ++ ".render";
+    const window = core.windows.getValue(app.window);
+
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
@@ -331,7 +350,6 @@ pub fn tick(
     render_pass.release();
 
     app.frame_count += 1;
-    app.time += delta_time;
 
     // TODO(object): window-title
     // // Every second, update the window title with the FPS

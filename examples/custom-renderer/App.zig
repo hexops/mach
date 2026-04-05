@@ -18,10 +18,16 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .deinit, .tick };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .deinit,
+    .tick,
+    .render,
+};
 
 // Global state for our app module.
-timer: mach.time.Timer,
+tick_timer: mach.time.Timer,
 player: mach.ObjectID,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
@@ -48,6 +54,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "custom renderer",
+        .on_render = app_mod.id.render,
     });
     renderer.window = window;
 
@@ -58,7 +65,7 @@ pub fn init(
     });
 
     app.* = .{
-        .timer = try mach.time.Timer.start(),
+        .tick_timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
         .player = player,
     };
@@ -130,8 +137,8 @@ pub fn tick(
         }
     }
 
-    // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.timer.lap();
+    // Multiply by delta_time to ensure that movement is the same speed regardless of tick rate.
+    const delta_time = app.tick_timer.lap();
 
     // Calculate the player position, by moving in the direction the player wants to go
     // by the speed amount.
@@ -181,6 +188,10 @@ pub fn tick(
         // Try to move towards the center of the world if we don't need to avoid something else
         child.position = new_position.lerp(&vec3(0, 0, 0), move_speed / avoidance_div);
     }
+}
 
+pub fn render(
+    renderer_mod: mach.Mod(Renderer),
+) !void {
     renderer_mod.call(.renderFrame);
 }

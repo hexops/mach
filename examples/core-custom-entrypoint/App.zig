@@ -11,7 +11,13 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .deinit, .tick };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .deinit,
+    .tick,
+    .render,
+};
 
 window: mach.ObjectID,
 title_timer: mach.time.Timer,
@@ -35,7 +41,10 @@ pub fn init(
     core.on_tick = app_mod.id.tick;
     core.on_exit = app_mod.id.deinit;
 
-    const window = try core.windows.new(.{ .title = "core-custom-entrypoint" });
+    const window = try core.windows.new(.{
+        .title = "core-custom-entrypoint",
+        .on_render = app_mod.id.render,
+    });
 
     // Store our render pipeline in our module's state, so we can access it later on.
     app.* = .{
@@ -87,6 +96,8 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
 }
 
 pub fn tick(core: *mach.Core, app: *App) !void {
+    const label = @tagName(mach_module) ++ ".tick";
+    _ = label;
     while (core.nextEvent()) |event| {
         switch (event) {
             .window_open => |ev| {
@@ -96,16 +107,18 @@ pub fn tick(core: *mach.Core, app: *App) !void {
             else => {},
         }
     }
+}
 
+pub fn render(core: *mach.Core, app: *App) !void {
+    const label = @tagName(mach_module) ++ ".render";
     const window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
     const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 

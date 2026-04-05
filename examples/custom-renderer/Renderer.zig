@@ -121,12 +121,12 @@ pub fn renderFrame(
     const window = core.windows.getValue(renderer.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
+    const label = @tagName(mach_module) ++ ".renderFrame";
     const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 

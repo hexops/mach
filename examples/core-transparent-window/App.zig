@@ -12,7 +12,13 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .tick, .deinit };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .tick,
+    .render,
+    .deinit,
+};
 
 pub const main = mach.schedule(.{
     .{ mach.Core, .init },
@@ -37,6 +43,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "core-transparent-window",
+        .on_render = app_mod.id.render,
         .vsync_mode = .double,
         .transparent = true,
     });
@@ -90,6 +97,8 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
 // try updateWindowTitle(core);
 
 pub fn tick(app: *App, core: *mach.Core) void {
+    const label = @tagName(mach_module) ++ ".tick";
+    _ = label;
     while (core.nextEvent()) |event| {
         switch (event) {
             .window_open => |ev| {
@@ -117,16 +126,39 @@ pub fn tick(app: *App, core: *mach.Core) void {
         }
     }
 
+    if (app.color_time >= 4.0 or app.color_time <= 0.0) {
+        app.color_time = @trunc(app.color_time);
+        app.flip = !app.flip;
+    }
+
+    if (!app.flip) {
+        app.color_time -= app.color_timer.lap();
+    } else {
+        app.color_time += app.color_timer.lap();
+    }
+
+    const red = mach.math.lerp(0.1, 0.6, mach.math.clamp(app.color_time, 0.0, 1.0));
+    const blue = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 1.0, 0.0, 1.0));
+    const green = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 2.0, 0.0, 1.0));
+    const alpha = mach.math.lerp(0.3, 1.0, app.color_time / 4.0);
+
+    core.windows.set(
+        app.window,
+        .decoration_color,
+        .{ .r = red, .g = green, .b = blue, .a = alpha },
+    );
+}
+
+pub fn render(app: *App, core: *mach.Core) void {
+    const label = @tagName(mach_module) ++ ".render";
     var window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
-
     const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
@@ -162,28 +194,6 @@ pub fn tick(app: *App, core: *mach.Core) void {
 
         core.windows.set(app.window, .title, std.fmt.allocPrintZ(core.allocator, "core-transparent-window [ {d}fps ] [ Input {d}hz ]", .{ core.frame.rate, core.input.rate }) catch unreachable);
     }
-
-    if (app.color_time >= 4.0 or app.color_time <= 0.0) {
-        app.color_time = @trunc(app.color_time);
-        app.flip = !app.flip;
-    }
-
-    if (!app.flip) {
-        app.color_time -= app.color_timer.lap();
-    } else {
-        app.color_time += app.color_timer.lap();
-    }
-
-    const red = mach.math.lerp(0.1, 0.6, mach.math.clamp(app.color_time, 0.0, 1.0));
-    const blue = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 1.0, 0.0, 1.0));
-    const green = mach.math.lerp(0.2, 0.6, mach.math.clamp(app.color_time - 2.0, 0.0, 1.0));
-    const alpha = mach.math.lerp(0.3, 1.0, app.color_time / 4.0);
-
-    core.windows.set(
-        app.window,
-        .decoration_color,
-        .{ .r = red, .g = green, .b = blue, .a = alpha },
-    );
 }
 
 pub fn deinit(app: *App) void {

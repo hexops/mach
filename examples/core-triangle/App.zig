@@ -12,7 +12,13 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .tick, .deinit };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .tick,
+    .render,
+    .deinit,
+};
 
 pub const main = mach.schedule(.{
     .{ mach.Core, .init },
@@ -34,6 +40,7 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "core-triangle",
+        .on_render = app_mod.id.render,
     });
 
     // Store our render pipeline in our module's state, so we can access it later on.
@@ -85,6 +92,8 @@ fn setupPipeline(core: *mach.Core, app: *App, window_id: mach.ObjectID) !void {
 // try updateWindowTitle(core);
 
 pub fn tick(app: *App, core: *mach.Core) void {
+    const label = @tagName(mach_module) ++ ".tick";
+    _ = label;
     while (core.nextEvent()) |event| {
         switch (event) {
             .window_open => |ev| {
@@ -94,17 +103,18 @@ pub fn tick(app: *App, core: *mach.Core) void {
             else => {},
         }
     }
+}
 
+pub fn render(app: *App, core: *mach.Core) void {
+    const label = @tagName(mach_module) ++ ".render";
     const window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
-    const label = @tagName(mach_module) ++ ".tick";
-
     const encoder = window.device.createCommandEncoder(&.{ .label = label });
     defer encoder.release();
 
