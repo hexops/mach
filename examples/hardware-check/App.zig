@@ -25,7 +25,15 @@ pub const Modules = mach.Modules(.{
 
 pub const mach_module = .app;
 
-pub const mach_systems = .{ .main, .init, .tick, .deinit, .deinit2, .audioStateChange };
+pub const mach_systems = .{
+    .main,
+    .init,
+    .tick,
+    .render,
+    .deinit,
+    .deinit2,
+    .audioStateChange,
+};
 
 pub const main = mach.schedule(.{
     .{ mach.Core, .init },
@@ -42,7 +50,7 @@ pub const deinit = mach.schedule(.{
 
 allocator: std.mem.Allocator,
 window: mach.ObjectID,
-timer: mach.time.Timer,
+tick_timer: mach.time.Timer,
 spawn_timer: mach.time.Timer,
 fps_timer: mach.time.Timer,
 rand: std.Random.DefaultPrng,
@@ -51,7 +59,6 @@ frame_count: usize = 0,
 fps: usize = 0,
 score: usize = 0,
 num_sprites_spawned: usize = 0,
-time: f32 = 0,
 direction: Vec2 = vec2(0, 0),
 spawning: bool = false,
 gotta_go_fast: bool = false,
@@ -78,6 +85,8 @@ pub fn init(
 
     const window = try core.windows.new(.{
         .title = "hardware check",
+        .on_render = app_mod.id.render,
+        .vsync_mode = .double,
     });
 
     // TODO(allocator): find a better way to get an allocator here
@@ -86,7 +95,7 @@ pub fn init(
     app.* = .{
         .allocator = allocator,
         .window = window,
-        .timer = try mach.time.Timer.start(),
+        .tick_timer = try mach.time.Timer.start(),
         .spawn_timer = try mach.time.Timer.start(),
         .fps_timer = try mach.time.Timer.start(),
         .rand = std.Random.DefaultPrng.init(1337),
@@ -204,12 +213,11 @@ pub fn tick(
     core: *mach.Core,
     app: *App,
     sprite: *gfx.Sprite,
-    sprite_mod: mach.Mod(gfx.Sprite),
     text: *gfx.Text,
-    text_mod: mach.Mod(gfx.Text),
     audio: *mach.Audio,
 ) !void {
     const label = @tagName(mach_module) ++ ".tick";
+    _ = label;
     const window = core.windows.getValue(app.window);
 
     while (core.nextEvent()) |event| {
@@ -265,8 +273,8 @@ pub fn tick(
         app.num_sprites_spawned += 1;
     }
 
-    // Multiply by delta_time to ensure that movement is the same speed regardless of the frame rate.
-    const delta_time = app.timer.lap();
+    // Multiply by delta_time to ensure that movement is the same speed regardless of tick rate.
+    const delta_time = app.tick_timer.lap();
 
     // Move sprites to the right, and make them smaller the further they travel
     var pipeline_children = try sprite.pipelines.getChildren(app.sprite_pipeline_id);
@@ -301,10 +309,22 @@ pub fn tick(
             sprite.objects.set(sprite_id, .transform, transform);
         }
     }
+}
+
+pub fn render(
+    core: *mach.Core,
+    app: *App,
+    sprite: *gfx.Sprite,
+    sprite_mod: mach.Mod(gfx.Sprite),
+    text: *gfx.Text,
+    text_mod: mach.Mod(gfx.Text),
+) !void {
+    const label = @tagName(mach_module) ++ ".render";
+    const window = core.windows.getValue(app.window);
 
     // Grab the back buffer of the swapchain
-    // TODO(Core)
-    const back_buffer_view = window.swap_chain.getCurrentTextureView().?;
+    // TODO(core): this wouldn't exist in browser
+    const back_buffer_view = window.swap_chain.getCurrentTextureView() orelse return;
     defer back_buffer_view.release();
 
     // Create a command encoder
@@ -340,7 +360,6 @@ pub fn tick(
     render_pass.release();
 
     app.frame_count += 1;
-    app.time += delta_time;
 
     // Every second, update the window title with the FPS
     if (app.fps_timer.read() >= 1.0) {

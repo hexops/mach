@@ -25,8 +25,75 @@ pub const Native = struct {
     view: *objc.mach.View = undefined,
 };
 
+var global_render_loop: ?*RenderLoop = null;
+
+pub const RenderLoop = struct {
+    display_link: *objc.core_video.CVDisplayLinkRef = undefined,
+    display_source: objc.system.dispatch_source_t = undefined,
+    core: *Core = undefined,
+    core_mod: mach.Mod(Core) = undefined,
+
+    pub fn start(self: *RenderLoop) error{CVDisplayLinkFailed}!void {
+        self.display_source = objc.system.dispatch_source_create(
+            @ptrCast(&objc.system._dispatch_source_type_data_add),
+            0,
+            0,
+            &objc.system._dispatch_main_q,
+        );
+        objc.system.dispatch_set_context(@ptrCast(self.display_source), @ptrCast(self));
+        objc.system.dispatch_source_set_event_handler_f(self.display_source, &onDisplaySourceEvent);
+        objc.system.dispatch_resume(@ptrCast(self.display_source));
+
+        if (objc.core_video.createWithActiveCGDisplays(&self.display_link) != 0)
+            return error.CVDisplayLinkFailed;
+        if (objc.core_video.setOutputCallback(self.display_link, &displayLinkCallback, @ptrCast(self.display_source)) != 0)
+            return error.CVDisplayLinkFailed;
+        if (objc.core_video.displayLinkStart(self.display_link) != 0)
+            return error.CVDisplayLinkFailed;
+    }
+
+    pub fn stop(self: *RenderLoop) void {
+        _ = objc.core_video.displayLinkStop(self.display_link);
+        objc.core_video.displayLinkRelease(self.display_link);
+        objc.system.dispatch_source_cancel(self.display_source);
+    }
+
+    fn onDisplaySourceEvent(ctx: ?*anyopaque) callconv(.C) void {
+        const self: *RenderLoop = @ptrCast(@alignCast(ctx));
+
+        // Render all windows with vsync enabled, sequentially
+        var windows = self.core.windows.slice();
+        while (windows.next()) |window_id| {
+            const core_window = self.core.windows.getValue(window_id);
+            if (core_window.native == null) continue;
+            if (core_window.vsync_mode == .none) continue;
+
+            const on_render = core_window.on_render orelse @panic("on_render must be set on all windows");
+            self.core_mod.run(on_render);
+
+            mach.sysgpu.Impl.deviceTick(core_window.device);
+            core_window.swap_chain.present();
+        }
+        self.core.frame.tick();
+    }
+
+    fn displayLinkCallback(
+        _: *objc.core_video.CVDisplayLinkRef,
+        _: *const objc.core_video.CVTimeStamp,
+        _: *const objc.core_video.CVTimeStamp,
+        _: u64,
+        _: *u64,
+        ctx: ?*anyopaque,
+    ) callconv(.C) objc.core_video.CVReturn {
+        const source: objc.system.dispatch_source_t = @ptrCast(@alignCast(ctx));
+        objc.system.dispatch_source_merge_data(source, 1);
+        return 0; // kCVReturnSuccess
+    }
+};
+
 pub const Context = struct {
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 };
 
@@ -45,6 +112,8 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
             } else {
                 // We copied the block when we called `setRunBlock()`, so we release it here when the looping will end.
                 block.release();
+                // NSApp.run() never returns, so exit the process here.
+                std.process.exit(0);
             }
         }
     };
@@ -63,7 +132,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     // TODO: support UIKit.
 }
 
-pub fn tick(core: *Core) !void {
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const core_window = core.windows.getValue(window_id);
@@ -123,20 +192,34 @@ pub fn tick(core: *Core) !void {
                     else => std.log.warn("Unsupported cursor", .{}),
                 }
             }
+
+            if (core.windows.updated(window_id, .vsync_mode)) {
+                try ensureRenderLoop(core, core_mod);
+            }
+
+            // For vsync == .none, present every tick (unthrottled)
+            if (core_window.vsync_mode == .none) {
+                const on_render = core_window.on_render orelse @panic("on_render must be set on all windows");
+                core_mod.run(on_render);
+                mach.sysgpu.Impl.deviceTick(core_window.device);
+                core_window.swap_chain.present();
+                core.frame.tick();
+            }
         } else {
-            try initWindow(core, window_id);
+            try initWindow(core, core_mod, window_id);
         }
     }
 }
 
 fn initWindow(
     core: *Core,
+    core_mod: mach.Mod(Core),
     window_id: mach.ObjectID,
 ) !void {
     var core_window = core.windows.getValue(window_id);
 
     const context = try core.allocator.create(Context);
-    context.* = .{ .core = core, .window_id = window_id };
+    context.* = .{ .core = core, .core_mod = core_mod, .window_id = window_id };
     // If the application is not headless, we need to make the application a genuine UI application
     // by setting the activation policy, this moves the process to foreground
     // TODO: Only call this on the first window creation
@@ -334,12 +417,41 @@ fn initWindow(
             delegate.setBlock_windowShouldClose(windowShouldClose.asBlock().copy());
         }
 
+        if (core_window.on_render == null) @panic("on_render must be set on all windows");
+
         // Set core_window.native, which we use to check if a window is initialized
         // Then call core.initWindow to finish initializing the window
         core_window.native = .{ .window = native_window, .view = view };
         core.windows.setValueRaw(window_id, core_window);
         try core.initWindow(window_id);
+
+        // Start or update the global render loop if needed
+        try ensureRenderLoop(core, core_mod);
     } else std.debug.panic("mach: window failed to initialize", .{});
+}
+
+/// Starts, stops, or restarts the global render loop based on whether any window needs vsync.
+fn ensureRenderLoop(core: *Core, core_mod: mach.Mod(Core)) !void {
+    // Check if any window needs vsync
+    var needs_vsync = false;
+    var windows = core.windows.slice();
+    while (windows.next()) |window_id| {
+        const cw = core.windows.getValue(window_id);
+        if (cw.native != null and cw.vsync_mode != .none) {
+            needs_vsync = true;
+            break;
+        }
+    }
+
+    if (needs_vsync and global_render_loop == null) {
+        const rl = try core.allocator.create(RenderLoop);
+        rl.* = .{ .core = core, .core_mod = core_mod };
+        try rl.start();
+        global_render_loop = rl;
+    } else if (!needs_vsync and global_render_loop != null) {
+        global_render_loop.?.stop();
+        global_render_loop = null;
+    }
 }
 
 const WindowDelegateCallbacks = struct {
@@ -383,7 +495,14 @@ const WindowDelegateCallbacks = struct {
 
     pub fn windowShouldClose(block: *objc.foundation.BlockLiteral(*Context)) callconv(.C) bool {
         const core: *Core = block.context.core;
-        core.pushEvent(.{ .close = .{ .window_id = block.context.window_id } });
+        const window_id = block.context.window_id;
+
+        if (global_render_loop) |render_loop| {
+            render_loop.stop();
+            global_render_loop = null;
+        }
+
+        core.pushEvent(.{ .close = .{ .window_id = window_id } });
 
         // TODO: This should just attempt to close the window, not the entire program, unless
         // this is the only window.
