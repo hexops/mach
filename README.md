@@ -17,7 +17,7 @@ See [machengine.org](https://machengine.org) for docs, tutorials, etc.
 
 ## Development
 
-Development occurs on [code.hexops.com](https://code.hexops.com/hexops/mach) - our GitHub [mirror](https://github.com/hexops/mach) is purely for visibility.
+Development occurs on [code.hexops.org](https://code.hexops.org/hexops/mach) - our GitHub [mirror](https://github.com/hexops/mach) is purely for visibility.
 
 ## Join the community
 
