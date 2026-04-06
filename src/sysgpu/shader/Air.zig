@@ -360,7 +360,7 @@ pub fn resolveConstExpr(air: Air, inst_idx: InstIndex) ?ConstExpr {
             return lhs;
         },
         .var_ref => |var_ref| return air.resolveConstExpr(var_ref),
-        .@"const" => |@"const"| return air.resolveConstExpr(@"const".init).?,
+        .@"const" => |@"const"| return air.resolveConstExpr(@"const".init) orelse return null,
         inline .index_access, .field_access, .swizzle_access => |access| return air.resolveConstExpr(access.base),
         else => return null,
     }

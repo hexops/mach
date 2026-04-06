@@ -363,6 +363,10 @@ fn emitFn(spv: *SpirV, inst_idx: InstIndex) error{OutOfMemory}!IdRef {
     var params_type = std.ArrayList(IdRef).init(spv.allocator);
     defer params_type.deinit();
 
+    const ParamSpill = struct { var_id: IdRef, ptr_type_id: IdRef, param_id: IdRef };
+    var param_spills = std.ArrayList(ParamSpill).init(spv.allocator);
+    defer param_spills.deinit();
+
     if (inst.params != .none) {
         const param_list = spv.air.refToList(inst.params);
 
@@ -423,10 +427,18 @@ fn emitFn(spv: *SpirV, inst_idx: InstIndex) error{OutOfMemory}!IdRef {
                     .id_result = param_id,
                 });
                 try params_type.append(param_type_id);
+
+                // Spill parameter to local variable so it can be used with OpAccessChain
+                const ptr_type_id = try spv.resolve(.{ .ptr_type = .{
+                    .storage_class = .Function,
+                    .elem_type = param_type_id,
+                } });
+                const var_id = spv.allocId();
+                try param_spills.append(.{ .var_id = var_id, .ptr_type_id = ptr_type_id, .param_id = param_id });
                 try spv.decl_map.put(spv.allocator, param_inst_idx, .{
-                    .id = param_id,
+                    .id = var_id,
                     .type_id = param_type_id,
-                    .is_ptr = false,
+                    .is_ptr = true,
                     .storage_class = .Function,
                     .faked_struct = false,
                 });
@@ -454,8 +466,25 @@ fn emitFn(spv: *SpirV, inst_idx: InstIndex) error{OutOfMemory}!IdRef {
     const body = spv.air.getInst(inst.block).block;
     try section.emit(.OpLabel, .{ .id_result = body_id });
 
+    // Emit OpVariable for spilled function parameters (must be first in block)
+    for (param_spills.items) |spill| {
+        try section.emit(.OpVariable, .{
+            .id_result_type = spill.ptr_type_id,
+            .id_result = spill.var_id,
+            .storage_class = .Function,
+        });
+    }
+
     if (body != .none) {
         try spv.emitFnVars(&section, body);
+    }
+
+    // Store parameter values into their spilled local variables
+    for (param_spills.items) |spill| {
+        try section.emit(.OpStore, .{
+            .pointer = spill.var_id,
+            .object = spill.param_id,
+        });
     }
 
     if (body != .none) {
@@ -1860,6 +1889,7 @@ fn emitUnaryIntrinsic(spv: *SpirV, section: *Section, unary: Inst.UnaryIntrinsic
         .normalize => 69,
         .length => 66,
         .floor => 8,
+        .fract => 10,
         .abs => switch (result_type_inst) {
             .float => 4,
             .int => 5,
