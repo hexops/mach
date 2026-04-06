@@ -400,9 +400,14 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
         "MACH_GPU_BACKEND",
     ) catch |err| switch (err) {
         error.EnvironmentVariableNotFound => {
-            if (builtin.target.isDarwin()) return .metal;
-            if (builtin.target.os.tag == .windows) return .d3d12;
-            return .vulkan;
+            return switch (build_options.sysgpu_backend) {
+                .default => if (builtin.target.isDarwin()) .metal else if (builtin.target.os.tag == .windows) .d3d12 else .vulkan,
+                .d3d12 => .d3d12,
+                .metal => .metal,
+                .vulkan => .vulkan,
+                .opengl => .opengl,
+                .webgpu => .null,
+            };
         },
         else => return err,
     };

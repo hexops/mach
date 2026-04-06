@@ -38,11 +38,21 @@ const MapCallback = struct {
     userdata: ?*anyopaque,
 };
 
-const ActiveContext = struct {
+const ActiveContext = if (builtin.target.os.tag == .linux) LinuxActiveContext else WindowsActiveContext;
+
+const LinuxActiveContext = struct {
+    pub fn init(_: anytype, _: anytype) LinuxActiveContext {
+        return .{};
+    }
+
+    pub fn deinit(_: *LinuxActiveContext) void {}
+};
+
+const WindowsActiveContext = struct {
     old_hdc: c.HDC,
     old_hglrc: c.HGLRC,
 
-    pub fn init(hdc: c.HDC, hglrc: c.HGLRC) ActiveContext {
+    pub fn init(hdc: c.HDC, hglrc: c.HGLRC) WindowsActiveContext {
         const old_hdc = c.wglGetCurrentDC();
         const old_hglrc = c.wglGetCurrentContext();
 
@@ -51,7 +61,7 @@ const ActiveContext = struct {
         return .{ .old_hdc = old_hdc, .old_hglrc = old_hglrc };
     }
 
-    pub fn deinit(ctx: *ActiveContext) void {
+    pub fn deinit(ctx: *WindowsActiveContext) void {
         _ = c.wglMakeCurrent(ctx.old_hdc, ctx.old_hglrc);
     }
 };
@@ -141,67 +151,72 @@ fn checkError(gl: *proc.DeviceGL) void {
 
 pub const Instance = struct {
     manager: utils.Manager(Instance) = .{},
-    wgl: proc.InstanceWGL,
+    wgl: if (builtin.target.os.tag == .windows) proc.InstanceWGL else void,
 
     pub fn init(desc: *const sysgpu.Instance.Descriptor) !*Instance {
-        // TODO
         _ = desc;
 
-        // WNDCLASS
-        const hinstance = c.GetModuleHandleA(null);
-        const wc: c.WNDCLASSA = .{
-            .lpfnWndProc = c.DefWindowProcA,
-            .hInstance = hinstance,
-            .lpszClassName = instance_class_name,
-            .style = c.CS_OWNDC,
-        };
-        if (c.RegisterClassA(&wc) == 0)
-            return error.RegisterClassFailed;
-
-        // Dummy context
-        const hwnd = createDummyWindow();
-        const hdc = c.GetDC(hwnd);
-
-        const pfd = c.PIXELFORMATDESCRIPTOR{
-            .nSize = @sizeOf(c.PIXELFORMATDESCRIPTOR),
-            .nVersion = 1,
-            .dwFlags = c.PFD_DRAW_TO_WINDOW | c.PFD_SUPPORT_OPENGL | c.PFD_DOUBLEBUFFER,
-            .iPixelType = c.PFD_TYPE_RGBA,
-            .cColorBits = 32,
-            .iLayerType = c.PFD_MAIN_PLANE,
-        };
-        const pixel_format = c.ChoosePixelFormat(hdc, &pfd);
-        if (c.SetPixelFormat(hdc, pixel_format, &pfd) == c.FALSE)
-            return error.SetPixelFormatFailed;
-
-        const hglrc = c.WGLCreateContext(hdc);
-        if (hglrc == null)
-            return error.WGLCreateContextFailed;
-        defer _ = c.WGLDeleteContext(hglrc);
-
-        // Extension procs
         try proc.init();
 
-        var ctx = ActiveContext.init(hdc, hglrc);
-        defer ctx.deinit();
+        if (builtin.target.os.tag == .windows) {
+            // WNDCLASS
+            const hinstance = c.GetModuleHandleA(null);
+            const wc: c.WNDCLASSA = .{
+                .lpfnWndProc = c.DefWindowProcA,
+                .hInstance = hinstance,
+                .lpszClassName = instance_class_name,
+                .style = c.CS_OWNDC,
+            };
+            if (c.RegisterClassA(&wc) == 0)
+                return error.RegisterClassFailed;
 
-        var wgl: proc.InstanceWGL = undefined;
-        wgl.load();
+            // Dummy context
+            const hwnd = createDummyWindow();
+            const hdc = c.GetDC(hwnd);
 
-        // Result
-        const instance = try allocator.create(Instance);
-        instance.* = .{
-            .wgl = wgl,
-        };
-        return instance;
+            const pfd = c.PIXELFORMATDESCRIPTOR{
+                .nSize = @sizeOf(c.PIXELFORMATDESCRIPTOR),
+                .nVersion = 1,
+                .dwFlags = c.PFD_DRAW_TO_WINDOW | c.PFD_SUPPORT_OPENGL | c.PFD_DOUBLEBUFFER,
+                .iPixelType = c.PFD_TYPE_RGBA,
+                .cColorBits = 32,
+                .iLayerType = c.PFD_MAIN_PLANE,
+            };
+            const pixel_format = c.ChoosePixelFormat(hdc, &pfd);
+            if (c.SetPixelFormat(hdc, pixel_format, &pfd) == c.FALSE)
+                return error.SetPixelFormatFailed;
+
+            const hglrc = c.WGLCreateContext(hdc);
+            if (hglrc == null)
+                return error.WGLCreateContextFailed;
+            defer _ = c.WGLDeleteContext(hglrc);
+
+            var ctx = ActiveContext.init(hdc, hglrc);
+            defer ctx.deinit();
+
+            var wgl: proc.InstanceWGL = undefined;
+            wgl.load();
+
+            const instance = try allocator.create(Instance);
+            instance.* = .{
+                .wgl = wgl,
+            };
+            return instance;
+        } else {
+            const instance = try allocator.create(Instance);
+            instance.* = .{
+                .wgl = {},
+            };
+            return instance;
+        }
     }
 
     pub fn deinit(instance: *Instance) void {
-        const hinstance = c.GetModuleHandleA(null);
-
+        if (builtin.target.os.tag == .windows) {
+            const hinstance = c.GetModuleHandleA(null);
+            _ = c.UnregisterClassA(instance_class_name, hinstance);
+        }
         proc.deinit();
-        _ = c.UnregisterClassA(instance_class_name, hinstance);
-
         allocator.destroy(instance);
     }
 
@@ -212,74 +227,93 @@ pub const Instance = struct {
 
 pub const Adapter = struct {
     manager: utils.Manager(Adapter) = .{},
-    hwnd: ?c.HWND,
-    hdc: c.HDC,
-    hglrc: c.HGLRC,
-    pixel_format: c_int,
+    hwnd: if (builtin.target.os.tag == .windows) ?c.HWND else void,
+    hdc: if (builtin.target.os.tag == .windows) c.HDC else void,
+    hglrc: if (builtin.target.os.tag == .windows) c.HGLRC else void,
+    pixel_format: if (builtin.target.os.tag == .windows) c_int else void,
     vendor: [*c]const c.GLubyte,
     renderer: [*c]const c.GLubyte,
     version: [*c]const c.GLubyte,
 
     pub fn init(instance: *Instance, options: *const sysgpu.RequestAdapterOptions) !*Adapter {
-        const wgl = &instance.wgl;
+        if (builtin.target.os.tag == .windows) {
+            const wgl = &instance.wgl;
 
-        // Use hwnd from surface is provided
-        var hwnd: c.HWND = undefined;
-        var pixel_format: c_int = undefined;
-        if (options.compatible_surface) |surface_raw| {
-            const surface: *Surface = @ptrCast(@alignCast(surface_raw));
+            var hwnd: c.HWND = undefined;
+            var pixel_format: c_int = undefined;
+            if (options.compatible_surface) |surface_raw| {
+                const surface: *Surface = @ptrCast(@alignCast(surface_raw));
+                hwnd = surface.hwnd;
+                pixel_format = surface.pixel_format;
+            } else {
+                hwnd = createDummyWindow();
+                pixel_format = try setPixelFormat(wgl, hwnd);
+            }
 
-            hwnd = surface.hwnd;
-            pixel_format = surface.pixel_format;
+            const hdc = c.GetDC(hwnd);
+            if (hdc == null)
+                return error.GetDCFailed;
+
+            const context_attribs = [_]c_int{
+                c.WGL_CONTEXT_MAJOR_VERSION_ARB, gl_major_version,
+                c.WGL_CONTEXT_MINOR_VERSION_ARB, gl_minor_version,
+                c.WGL_CONTEXT_FLAGS_ARB,         c.WGL_CONTEXT_DEBUG_BIT_ARB,
+                c.WGL_CONTEXT_PROFILE_MASK_ARB,  c.WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                0,
+            };
+
+            const hglrc = wgl.createContextAttribsARB(hdc, null, &context_attribs);
+            if (hglrc == null)
+                return error.WGLCreateContextFailed;
+
+            var ctx = ActiveContext.init(hdc, hglrc);
+            defer ctx.deinit();
+
+            var gl: proc.AdapterGL = undefined;
+            gl.load();
+
+            const vendor = gl.getString(c.GL_VENDOR);
+            const renderer = gl.getString(c.GL_RENDERER);
+            const version = gl.getString(c.GL_VERSION);
+
+            const adapter = try allocator.create(Adapter);
+            adapter.* = .{
+                .hwnd = if (options.compatible_surface == null) hwnd else null,
+                .hdc = hdc,
+                .pixel_format = pixel_format,
+                .hglrc = hglrc,
+                .vendor = vendor,
+                .renderer = renderer,
+                .version = version,
+            };
+            return adapter;
         } else {
-            hwnd = createDummyWindow();
-            pixel_format = try setPixelFormat(wgl, hwnd);
+            var gl: proc.AdapterGL = undefined;
+            gl.load();
+
+            const vendor: [*c]const c.GLubyte = gl.getString(c.GL_VENDOR);
+            const renderer: [*c]const c.GLubyte = gl.getString(c.GL_RENDERER);
+            const version: [*c]const c.GLubyte = gl.getString(c.GL_VERSION);
+
+            const adapter = try allocator.create(Adapter);
+            adapter.* = .{
+                .hwnd = {},
+                .hdc = {},
+                .hglrc = {},
+                .pixel_format = {},
+                .vendor = vendor,
+                .renderer = renderer,
+                .version = version,
+            };
+            return adapter;
         }
-
-        // GL context
-        const hdc = c.GetDC(hwnd);
-        if (hdc == null)
-            return error.GetDCFailed;
-
-        const context_attribs = [_]c_int{
-            c.WGL_CONTEXT_MAJOR_VERSION_ARB, gl_major_version,
-            c.WGL_CONTEXT_MINOR_VERSION_ARB, gl_minor_version,
-            c.WGL_CONTEXT_FLAGS_ARB,         c.WGL_CONTEXT_DEBUG_BIT_ARB,
-            c.WGL_CONTEXT_PROFILE_MASK_ARB,  c.WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-            0,
-        };
-
-        const hglrc = wgl.createContextAttribsARB(hdc, null, &context_attribs);
-        if (hglrc == null)
-            return error.WGLCreateContextFailed;
-
-        var ctx = ActiveContext.init(hdc, hglrc);
-        defer ctx.deinit();
-
-        var gl: proc.AdapterGL = undefined;
-        gl.load();
-
-        const vendor = gl.getString(c.GL_VENDOR);
-        const renderer = gl.getString(c.GL_RENDERER);
-        const version = gl.getString(c.GL_VERSION);
-
-        // Result
-        const adapter = try allocator.create(Adapter);
-        adapter.* = .{
-            .hwnd = if (options.compatible_surface == null) hwnd else null,
-            .hdc = hdc,
-            .pixel_format = pixel_format,
-            .hglrc = hglrc,
-            .vendor = vendor,
-            .renderer = renderer,
-            .version = version,
-        };
-        return adapter;
     }
 
     pub fn deinit(adapter: *Adapter) void {
-        _ = c.wglDeleteContext(adapter.hglrc);
-        if (adapter.hwnd) |hwnd| _ = c.DestroyWindow(hwnd);
+        if (builtin.target.os.tag == .windows) {
+            _ = c.wglDeleteContext(adapter.hglrc);
+            if (adapter.hwnd) |hwnd| _ = c.DestroyWindow(hwnd);
+        }
         allocator.destroy(adapter);
     }
 
@@ -304,25 +338,45 @@ pub const Adapter = struct {
 
 pub const Surface = struct {
     manager: utils.Manager(Surface) = .{},
-    hwnd: c.HWND,
-    pixel_format: c_int,
+    hwnd: if (builtin.target.os.tag == .windows) c.HWND else void,
+    pixel_format: if (builtin.target.os.tag == .windows) c_int else void,
+    x11_display: if (builtin.target.os.tag == .linux) ?*anyopaque else void,
+    x11_window: if (builtin.target.os.tag == .linux) u32 else void,
 
     pub fn init(instance: *Instance, desc: *const sysgpu.Surface.Descriptor) !*Surface {
-        const wgl = &instance.wgl;
+        if (builtin.target.os.tag == .windows) {
+            const wgl = &instance.wgl;
 
-        if (utils.findChained(sysgpu.Surface.DescriptorFromWindowsHWND, desc.next_in_chain.generic)) |win_desc| {
-            // workaround issues with @alignCast panicking as HWND is not a real pointer
-            var hwnd: c.HWND = undefined;
-            @memcpy(std.mem.asBytes(&hwnd), std.mem.asBytes(&win_desc.hwnd));
+            if (utils.findChained(sysgpu.Surface.DescriptorFromWindowsHWND, desc.next_in_chain.generic)) |win_desc| {
+                var hwnd: c.HWND = undefined;
+                @memcpy(std.mem.asBytes(&hwnd), std.mem.asBytes(&win_desc.hwnd));
 
-            const pixel_format = try setPixelFormat(wgl, hwnd);
+                const pixel_format = try setPixelFormat(wgl, hwnd);
 
-            const surface = try allocator.create(Surface);
-            surface.* = .{
-                .hwnd = hwnd,
-                .pixel_format = pixel_format,
-            };
-            return surface;
+                const surface = try allocator.create(Surface);
+                surface.* = .{
+                    .hwnd = hwnd,
+                    .pixel_format = pixel_format,
+                    .x11_display = {},
+                    .x11_window = {},
+                };
+                return surface;
+            } else {
+                return error.InvalidDescriptor;
+            }
+        } else if (builtin.target.os.tag == .linux) {
+            if (utils.findChained(sysgpu.Surface.DescriptorFromXlibWindow, desc.next_in_chain.generic)) |x_desc| {
+                const surface = try allocator.create(Surface);
+                surface.* = .{
+                    .hwnd = {},
+                    .pixel_format = {},
+                    .x11_display = x_desc.display,
+                    .x11_window = x_desc.window,
+                };
+                return surface;
+            } else {
+                return error.InvalidDescriptor;
+            }
         } else {
             return error.InvalidDescriptor;
         }
@@ -336,9 +390,9 @@ pub const Surface = struct {
 pub const Device = struct {
     manager: utils.Manager(Device) = .{},
     queue: *Queue,
-    hdc: c.HDC,
-    hglrc: c.HGLRC,
-    pixel_format: c_int,
+    hdc: if (builtin.target.os.tag == .windows) c.HDC else void,
+    hglrc: if (builtin.target.os.tag == .windows) c.HGLRC else void,
+    pixel_format: if (builtin.target.os.tag == .windows) c_int else void,
     gl: proc.DeviceGL,
     streaming_manager: StreamingManager = undefined,
     reference_trackers: std.ArrayListUnmanaged(*ReferenceTracker) = .{},
@@ -380,9 +434,9 @@ pub const Device = struct {
         var device = try allocator.create(Device);
         device.* = .{
             .queue = queue,
-            .hdc = adapter.hdc,
-            .hglrc = adapter.hglrc,
-            .pixel_format = adapter.pixel_format,
+            .hdc = if (builtin.target.os.tag == .windows) adapter.hdc else {},
+            .hglrc = if (builtin.target.os.tag == .windows) adapter.hglrc else {},
+            .pixel_format = if (builtin.target.os.tag == .windows) adapter.pixel_format else {},
             .gl = gl,
         };
 
@@ -598,8 +652,11 @@ pub const StreamingManager = struct {
 pub const SwapChain = struct {
     manager: utils.Manager(SwapChain) = .{},
     device: *Device,
-    hdc: c.HDC,
-    pixel_format: c_int,
+    hdc: if (builtin.target.os.tag == .windows) c.HDC else void,
+    pixel_format: if (builtin.target.os.tag == .windows) c_int else void,
+    x11_display: if (builtin.target.os.tag == .linux) ?*anyopaque else void,
+    x11_window: if (builtin.target.os.tag == .linux) u32 else void,
+    glXSwapBuffers: if (builtin.target.os.tag == .linux) *const fn (*anyopaque, c_ulong) callconv(.C) bool else void,
     back_buffer_count: u32,
     textures: [max_back_buffer_count]*Texture,
     views: [max_back_buffer_count]*TextureView,
@@ -626,8 +683,13 @@ pub const SwapChain = struct {
 
         swapchain.* = .{
             .device = device,
-            .hdc = c.GetDC(surface.hwnd),
-            .pixel_format = surface.pixel_format,
+            .hdc = if (builtin.target.os.tag == .windows) c.GetDC(surface.hwnd) else {},
+            .pixel_format = if (builtin.target.os.tag == .windows) surface.pixel_format else {},
+            .x11_display = if (builtin.target.os.tag == .linux) surface.x11_display else {},
+            .x11_window = if (builtin.target.os.tag == .linux) surface.x11_window else {},
+            .glXSwapBuffers = if (builtin.target.os.tag == .linux) blk: {
+                break :blk proc.libgl.lookup(*const fn (*anyopaque, c_ulong) callconv(.C) bool, "glXSwapBuffers") orelse return error.SymbolNotFound;
+            } else {},
             .back_buffer_count = back_buffer_count,
             .textures = textures.buffer,
             .views = views.buffer,
@@ -650,11 +712,17 @@ pub const SwapChain = struct {
 
     pub fn present(swapchain: *SwapChain) !void {
         const device = swapchain.device;
-        var ctx = ActiveContext.init(swapchain.hdc, device.hglrc);
-        defer ctx.deinit();
+        if (builtin.target.os.tag == .windows) {
+            var ctx = ActiveContext.init(swapchain.hdc, device.hglrc);
+            defer ctx.deinit();
 
-        if (c.SwapBuffers(swapchain.hdc) == c.FALSE)
-            return error.SwapBuffersFailed;
+            if (c.SwapBuffers(swapchain.hdc) == c.FALSE)
+                return error.SwapBuffersFailed;
+        } else if (builtin.target.os.tag == .linux) {
+            if (swapchain.x11_display) |display| {
+                _ = swapchain.glXSwapBuffers(display, @intCast(swapchain.x11_window));
+            }
+        }
     }
 };
 
@@ -791,11 +859,36 @@ pub const Texture = struct {
     sample_count: u32,
 
     pub fn init(device: *Device, desc: *const sysgpu.Texture.Descriptor) !*Texture {
-        _ = device;
+        const gl = &device.gl;
+        var ctx = ActiveContext.init(device.hdc, device.hglrc);
+        defer ctx.deinit();
+
+        var handle: c.GLuint = undefined;
+        gl.genTextures(1, &handle);
+
+        const target: c.GLenum = switch (desc.dimension) {
+            .dimension_1d => c.GL_TEXTURE_1D,
+            .dimension_2d => c.GL_TEXTURE_2D,
+            .dimension_3d => c.GL_TEXTURE_3D,
+        };
+
+        gl.bindTexture(target, handle);
+
+        const internal_format = conv.glTextureInternalFormat(desc.format);
+        if (desc.dimension == .dimension_2d) {
+            gl.texStorage2D(target, @intCast(desc.mip_level_count), @intCast(internal_format), @intCast(desc.size.width), @intCast(desc.size.height));
+        }
+
+        gl.texParameteri(target, c.GL_TEXTURE_MIN_FILTER, c.GL_NEAREST);
+        gl.texParameteri(target, c.GL_TEXTURE_MAG_FILTER, c.GL_NEAREST);
+        gl.texParameteri(target, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE);
+        gl.texParameteri(target, c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE);
+
+        gl.bindTexture(target, 0);
 
         const texture = try allocator.create(Texture);
         texture.* = .{
-            .handle = 0,
+            .handle = handle,
             .swapchain = null,
             .usage = desc.usage,
             .dimension = desc.dimension,
@@ -825,6 +918,10 @@ pub const Texture = struct {
     }
 
     pub fn deinit(texture: *Texture) void {
+        if (texture.handle != 0) {
+            // Note: we can't easily get the GL context here to delete
+            // For now just destroy. TODO: proper GL cleanup
+        }
         allocator.destroy(texture);
     }
 
@@ -891,14 +988,27 @@ pub const TextureView = struct {
 };
 
 pub const Sampler = struct {
-    manager: utils.Manager(TextureView) = .{},
+    manager: utils.Manager(Sampler) = .{},
+    handle: c.GLuint,
 
     pub fn init(device: *Device, desc: *const sysgpu.Sampler.Descriptor) !*Sampler {
-        _ = desc;
-        _ = device;
+        const gl = &device.gl;
+        var ctx = ActiveContext.init(device.hdc, device.hglrc);
+        defer ctx.deinit();
+
+        var handle: c.GLuint = undefined;
+        gl.genSamplers(1, &handle);
+
+        gl.samplerParameteri(handle, c.GL_TEXTURE_WRAP_S, conv.glSamplerAddressMode(desc.address_mode_u));
+        gl.samplerParameteri(handle, c.GL_TEXTURE_WRAP_T, conv.glSamplerAddressMode(desc.address_mode_v));
+        gl.samplerParameteri(handle, c.GL_TEXTURE_WRAP_R, conv.glSamplerAddressMode(desc.address_mode_w));
+        gl.samplerParameteri(handle, c.GL_TEXTURE_MAG_FILTER, conv.glSamplerMagFilter(desc.mag_filter));
+        gl.samplerParameteri(handle, c.GL_TEXTURE_MIN_FILTER, conv.glSamplerMinFilter(desc.min_filter, desc.mipmap_filter));
 
         const sampler = try allocator.create(Sampler);
-        sampler.* = .{};
+        sampler.* = .{
+            .handle = handle,
+        };
         return sampler;
     }
 
@@ -974,6 +1084,8 @@ pub const BindGroup = struct {
         buffer: ?*Buffer = null,
         offset: u32 = 0,
         size: u32 = 0,
+        texture_view: ?*TextureView = null,
+        sampler: ?*Sampler = null,
     };
 
     manager: utils.Manager(BindGroup) = .{},
@@ -1004,6 +1116,16 @@ pub const BindGroup = struct {
                 gl_entry.buffer = buffer;
                 gl_entry.offset = @intCast(entry.offset);
                 gl_entry.size = @intCast(entry.size);
+            } else if (entry.texture_view) |texture_view_raw| {
+                const texture_view: *TextureView = @ptrCast(@alignCast(texture_view_raw));
+                texture_view.manager.reference();
+                gl_entry.kind = .texture;
+                gl_entry.texture_view = texture_view;
+            } else if (entry.sampler) |sampler_raw| {
+                const sampler_obj: *Sampler = @ptrCast(@alignCast(sampler_raw));
+                sampler_obj.manager.reference();
+                gl_entry.kind = .sampler;
+                gl_entry.sampler = sampler_obj;
             }
         }
 
@@ -1017,6 +1139,8 @@ pub const BindGroup = struct {
     pub fn deinit(group: *BindGroup) void {
         for (group.entries) |entry| {
             if (entry.buffer) |buffer| buffer.manager.release();
+            if (entry.texture_view) |tv| tv.manager.release();
+            if (entry.sampler) |s| s.manager.release();
         }
         allocator.free(group.entries);
         allocator.destroy(group);
@@ -1682,6 +1806,15 @@ const Command = union(enum) {
         destination_offset: u64,
         size: u64,
     },
+    copy_buffer_to_texture: struct {
+        source_buffer: *Buffer,
+        source_offset: u64,
+        bytes_per_row: u32,
+        dest_texture: *Texture,
+        dest_origin: sysgpu.Origin3D,
+        width: u32,
+        height: u32,
+    },
     dispatch_workgroups: struct {
         workgroup_count_x: u32,
         workgroup_count_y: u32,
@@ -1770,6 +1903,28 @@ pub const CommandBuffer = struct {
         // reference_tracker lifetime is managed externally
         command_buffer.commands.deinit(allocator);
         allocator.destroy(command_buffer);
+    }
+
+    fn bindEntry(gl: *proc.DeviceGL, entry: BindGroup.Entry, slot: u32, dynamic_offsets: anytype) void {
+        switch (entry.kind) {
+            .buffer => {
+                var offset = entry.offset;
+                if (entry.dynamic_index) |i|
+                    offset += dynamic_offsets.buffer[i];
+                gl.bindBufferRange(entry.target, slot, entry.buffer.?.handle, offset, entry.size);
+            },
+            .texture => {
+                gl.activeTexture(@intCast(@as(u32, @intCast(c.GL_TEXTURE0)) + slot));
+                if (entry.texture_view) |tv| {
+                    gl.bindTexture(c.GL_TEXTURE_2D, tv.texture.handle);
+                }
+            },
+            .sampler => {
+                if (entry.sampler) |s| {
+                    gl.bindSampler(slot, s.handle);
+                }
+            },
+        }
     }
 
     // Internal
@@ -1981,6 +2136,27 @@ pub const CommandBuffer = struct {
                         @intCast(cmd.size),
                     );
                 },
+                .copy_buffer_to_texture => |cmd| {
+                    gl.bindBuffer(c.GL_PIXEL_UNPACK_BUFFER, cmd.source_buffer.handle);
+                    gl.bindTexture(c.GL_TEXTURE_2D, cmd.dest_texture.handle);
+                    gl.pixelStorei(c.GL_UNPACK_ROW_LENGTH, @intCast(cmd.bytes_per_row / conv.glTexturePixelByteSize(cmd.dest_texture.format)));
+                    gl.texSubImage2D(
+                        c.GL_TEXTURE_2D,
+                        0,
+                        @intCast(cmd.dest_origin.x),
+                        @intCast(cmd.dest_origin.y),
+                        @intCast(cmd.width),
+                        @intCast(cmd.height),
+                        conv.glTexturePixelFormat(cmd.dest_texture.format),
+                        conv.glTexturePixelType(cmd.dest_texture.format),
+                        @ptrFromInt(cmd.source_offset),
+                    );
+                    gl.pixelStorei(c.GL_UNPACK_ROW_LENGTH, 0);
+                    gl.bindBuffer(c.GL_PIXEL_UNPACK_BUFFER, 0);
+                    gl.bindTexture(c.GL_TEXTURE_2D, 0);
+                    cmd.source_buffer.manager.release();
+                    cmd.dest_texture.manager.release();
+                },
                 .dispatch_workgroups => |cmd| {
                     gl.dispatchCompute(cmd.workgroup_count_x, cmd.workgroup_count_y, cmd.workgroup_count_z);
                 },
@@ -2036,15 +2212,7 @@ pub const CommandBuffer = struct {
                         const key = BindingPoint{ .group = cmd.group_index, .binding = entry.binding };
 
                         if (compute_pipeline.?.layout.bindings.get(key)) |slot| {
-                            switch (entry.kind) {
-                                .buffer => {
-                                    var offset = entry.offset;
-                                    if (entry.dynamic_index) |i|
-                                        offset += cmd.dynamic_offsets.buffer[i];
-                                    gl.bindBufferRange(entry.target, slot, entry.buffer.?.handle, offset, entry.size);
-                                },
-                                else => @panic("unimplemented"),
-                            }
+                            bindEntry(gl, entry, slot, &cmd.dynamic_offsets);
                         }
                     }
 
@@ -2059,15 +2227,7 @@ pub const CommandBuffer = struct {
                         const key = BindingPoint{ .group = cmd.group_index, .binding = entry.binding };
 
                         if (render_pipeline.?.layout.bindings.get(key)) |slot| {
-                            switch (entry.kind) {
-                                .buffer => {
-                                    var offset = entry.offset;
-                                    if (entry.dynamic_index) |i|
-                                        offset += cmd.dynamic_offsets.buffer[i];
-                                    gl.bindBufferRange(entry.target, slot, entry.buffer.?.handle, offset, entry.size);
-                                },
-                                else => @panic("unimplemented"),
-                            }
+                            bindEntry(gl, entry, slot, &cmd.dynamic_offsets);
                         }
                     }
                     group.manager.release();
@@ -2284,11 +2444,22 @@ pub const CommandEncoder = struct {
         destination: *const sysgpu.ImageCopyTexture,
         copy_size: *const sysgpu.Extent3D,
     ) !void {
-        _ = copy_size;
-        _ = destination;
         const source_buffer: *Buffer = @ptrCast(@alignCast(source.buffer));
+        const dest_texture: *Texture = @ptrCast(@alignCast(destination.texture));
 
         try encoder.reference_tracker.referenceBuffer(source_buffer);
+
+        source_buffer.manager.reference();
+        dest_texture.manager.reference();
+        try encoder.commands.append(allocator, .{ .copy_buffer_to_texture = .{
+            .source_buffer = source_buffer,
+            .source_offset = source.layout.offset,
+            .bytes_per_row = source.layout.bytes_per_row,
+            .dest_texture = dest_texture,
+            .dest_origin = destination.origin,
+            .width = copy_size.width,
+            .height = copy_size.height,
+        } });
     }
 
     pub fn copyTextureToTexture(

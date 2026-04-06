@@ -290,6 +290,10 @@ fn linkSysgpu(b: *std.Build, module: *std.Build.Module) void {
 
     if (target.result.os.tag == .linux) {
         module.link_libc = true;
+        if (b.lazyDependency("opengl_headers", .{
+            .target = target,
+            .optimize = optimize,
+        })) |dep| module.linkLibrary(dep.artifact("opengl-headers"));
     } else if (target.result.isDarwin()) {
         module.linkFramework("CoreGraphics", .{});
         module.linkFramework("Foundation", .{});

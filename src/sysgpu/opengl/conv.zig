@@ -261,3 +261,142 @@ pub fn glTargetForBufferBinding(binding_type: sysgpu.Buffer.BindingType) c.GLenu
         .read_only_storage => c.GL_SHADER_STORAGE_BUFFER,
     };
 }
+
+pub fn glTextureInternalFormat(format: sysgpu.Texture.Format) c.GLenum {
+    return switch (format) {
+        .rgba8_unorm => c.GL_RGBA8,
+        .rgba8_unorm_srgb => c.GL_SRGB8_ALPHA8,
+        .rgba8_snorm => c.GL_RGBA8_SNORM,
+        .rgba8_uint => c.GL_RGBA8UI,
+        .rgba8_sint => c.GL_RGBA8I,
+        .bgra8_unorm => c.GL_RGBA8,
+        .bgra8_unorm_srgb => c.GL_SRGB8_ALPHA8,
+        .r8_unorm => c.GL_R8,
+        .r8_snorm => c.GL_R8_SNORM,
+        .r8_uint => c.GL_R8UI,
+        .r8_sint => c.GL_R8I,
+        .rg8_unorm => c.GL_RG8,
+        .rg8_snorm => c.GL_RG8_SNORM,
+        .rg8_uint => c.GL_RG8UI,
+        .rg8_sint => c.GL_RG8I,
+        .r16_uint => c.GL_R16UI,
+        .r16_sint => c.GL_R16I,
+        .r16_float => c.GL_R16F,
+        .rg16_uint => c.GL_RG16UI,
+        .rg16_sint => c.GL_RG16I,
+        .rg16_float => c.GL_RG16F,
+        .rgba16_uint => c.GL_RGBA16UI,
+        .rgba16_sint => c.GL_RGBA16I,
+        .rgba16_float => c.GL_RGBA16F,
+        .r32_uint => c.GL_R32UI,
+        .r32_sint => c.GL_R32I,
+        .r32_float => c.GL_R32F,
+        .rg32_uint => c.GL_RG32UI,
+        .rg32_sint => c.GL_RG32I,
+        .rg32_float => c.GL_RG32F,
+        .rgba32_uint => c.GL_RGBA32UI,
+        .rgba32_sint => c.GL_RGBA32I,
+        .rgba32_float => c.GL_RGBA32F,
+        .depth16_unorm => c.GL_DEPTH_COMPONENT16,
+        .depth24_plus => c.GL_DEPTH_COMPONENT24,
+        .depth24_plus_stencil8 => c.GL_DEPTH24_STENCIL8,
+        .depth32_float => c.GL_DEPTH_COMPONENT32F,
+        .depth32_float_stencil8 => c.GL_DEPTH32F_STENCIL8,
+        else => c.GL_RGBA8,
+    };
+}
+
+pub fn glTexturePixelFormat(format: sysgpu.Texture.Format) c.GLenum {
+    return switch (format) {
+        .rgba8_unorm, .rgba8_unorm_srgb, .rgba8_snorm => c.GL_RGBA,
+        .rgba8_uint, .rgba8_sint => c.GL_RGBA_INTEGER,
+        .bgra8_unorm, .bgra8_unorm_srgb => c.GL_BGRA,
+        .r8_unorm, .r8_snorm => c.GL_RED,
+        .r8_uint, .r8_sint => c.GL_RED_INTEGER,
+        .rg8_unorm, .rg8_snorm => c.GL_RG,
+        .rg8_uint, .rg8_sint => c.GL_RG_INTEGER,
+        .r16_uint, .r16_sint, .r16_float => c.GL_RED_INTEGER,
+        .rg16_uint, .rg16_sint, .rg16_float => c.GL_RG_INTEGER,
+        .rgba16_uint, .rgba16_sint, .rgba16_float => c.GL_RGBA_INTEGER,
+        .r32_uint, .r32_sint, .r32_float => c.GL_RED_INTEGER,
+        .rg32_uint, .rg32_sint, .rg32_float => c.GL_RG_INTEGER,
+        .rgba32_uint, .rgba32_sint, .rgba32_float => c.GL_RGBA_INTEGER,
+        .depth16_unorm, .depth24_plus, .depth32_float => c.GL_DEPTH_COMPONENT,
+        .depth24_plus_stencil8, .depth32_float_stencil8 => c.GL_DEPTH_STENCIL,
+        else => c.GL_RGBA,
+    };
+}
+
+pub fn glTexturePixelType(format: sysgpu.Texture.Format) c.GLenum {
+    return switch (format) {
+        .rgba8_unorm, .rgba8_unorm_srgb, .rgba8_snorm, .rgba8_uint,
+        .bgra8_unorm, .bgra8_unorm_srgb,
+        .r8_unorm, .r8_snorm, .r8_uint,
+        .rg8_unorm, .rg8_snorm, .rg8_uint,
+        => c.GL_UNSIGNED_BYTE,
+        .rgba8_sint, .r8_sint, .rg8_sint => c.GL_BYTE,
+        .r16_uint, .rg16_uint, .rgba16_uint => c.GL_UNSIGNED_SHORT,
+        .r16_sint, .rg16_sint, .rgba16_sint => c.GL_SHORT,
+        .r16_float, .rg16_float, .rgba16_float => c.GL_HALF_FLOAT,
+        .r32_uint, .rg32_uint, .rgba32_uint => c.GL_UNSIGNED_INT,
+        .r32_sint, .rg32_sint, .rgba32_sint => c.GL_INT,
+        .r32_float, .rg32_float, .rgba32_float => c.GL_FLOAT,
+        .depth16_unorm => c.GL_UNSIGNED_SHORT,
+        .depth24_plus => c.GL_UNSIGNED_INT,
+        .depth24_plus_stencil8 => c.GL_UNSIGNED_INT_24_8,
+        .depth32_float => c.GL_FLOAT,
+        .depth32_float_stencil8 => c.GL_FLOAT_32_UNSIGNED_INT_24_8_REV,
+        else => c.GL_UNSIGNED_BYTE,
+    };
+}
+
+pub fn glTexturePixelByteSize(format: sysgpu.Texture.Format) u32 {
+    return switch (format) {
+        .r8_unorm, .r8_snorm, .r8_uint, .r8_sint => 1,
+        .rg8_unorm, .rg8_snorm, .rg8_uint, .rg8_sint,
+        .r16_uint, .r16_sint, .r16_float,
+        => 2,
+        .rgba8_unorm, .rgba8_unorm_srgb, .rgba8_snorm, .rgba8_uint, .rgba8_sint,
+        .bgra8_unorm, .bgra8_unorm_srgb,
+        .rg16_uint, .rg16_sint, .rg16_float,
+        .r32_uint, .r32_sint, .r32_float,
+        .depth24_plus, .depth24_plus_stencil8,
+        => 4,
+        .rgba16_uint, .rgba16_sint, .rgba16_float,
+        .rg32_uint, .rg32_sint, .rg32_float,
+        .depth32_float_stencil8,
+        => 8,
+        .rgba32_uint, .rgba32_sint, .rgba32_float => 16,
+        .depth16_unorm => 2,
+        .depth32_float => 4,
+        else => 4,
+    };
+}
+
+pub fn glSamplerAddressMode(mode: sysgpu.Sampler.AddressMode) c.GLint {
+    return switch (mode) {
+        .repeat => c.GL_REPEAT,
+        .mirror_repeat => c.GL_MIRRORED_REPEAT,
+        .clamp_to_edge => c.GL_CLAMP_TO_EDGE,
+    };
+}
+
+pub fn glSamplerMinFilter(min_filter: sysgpu.FilterMode, mipmap_filter: sysgpu.MipmapFilterMode) c.GLint {
+    return switch (min_filter) {
+        .nearest => switch (mipmap_filter) {
+            .nearest => c.GL_NEAREST_MIPMAP_NEAREST,
+            .linear => c.GL_NEAREST_MIPMAP_LINEAR,
+        },
+        .linear => switch (mipmap_filter) {
+            .nearest => c.GL_LINEAR_MIPMAP_NEAREST,
+            .linear => c.GL_LINEAR_MIPMAP_LINEAR,
+        },
+    };
+}
+
+pub fn glSamplerMagFilter(mag_filter: sysgpu.FilterMode) c.GLint {
+    return switch (mag_filter) {
+        .nearest => c.GL_NEAREST,
+        .linear => c.GL_LINEAR,
+    };
+}

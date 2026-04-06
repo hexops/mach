@@ -125,6 +125,8 @@ fn emitType(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
             .matrix => |inst| try glsl.emitMatrixType(inst),
             .array => |inst| try glsl.emitType(inst.elem_type),
             .@"struct" => |inst| try glsl.writeName(inst.name),
+            .texture_type => |inst| try glsl.emitTextureType(inst),
+            .sampler_type, .comparison_sampler_type => {},
             else => |inst| try glsl.print("Type: {}", .{inst}), // TODO
         }
     }
@@ -192,6 +194,27 @@ fn emitMatrixType(glsl: *Glsl, inst: Inst.Matrix) !void {
     try glsl.emitVectorSize(inst.rows);
 }
 
+fn emitTextureType(glsl: *Glsl, inst: Inst.TextureType) !void {
+    try glsl.writeAll(switch (inst.kind) {
+        .sampled_1d => "sampler1D",
+        .sampled_2d => "sampler2D",
+        .sampled_2d_array => "sampler2DArray",
+        .sampled_3d => "sampler3D",
+        .sampled_cube => "samplerCube",
+        .sampled_cube_array => "samplerCubeArray",
+        .multisampled_2d => "sampler2DMS",
+        .multisampled_depth_2d => "sampler2DMSShadow",
+        .storage_1d => "image1D",
+        .storage_2d => "image2D",
+        .storage_2d_array => "image2DArray",
+        .storage_3d => "image3D",
+        .depth_2d => "sampler2DShadow",
+        .depth_2d_array => "sampler2DArrayShadow",
+        .depth_cube => "samplerCubeShadow",
+        .depth_cube_array => "samplerCubeArrayShadow",
+    });
+}
+
 fn emitStruct(glsl: *Glsl, inst: Inst.Struct) !void {
     // Workaround - structures with runtime arrays are not generally supported but can exist directly
     // in a block context which we inline in emitGlobalVar
@@ -253,6 +276,23 @@ fn emitGlobalVar(glsl: *Glsl, inst: Inst.Var) !void {
     const key = BindingPoint{ .group = @intCast(group), .binding = @intCast(binding) };
     const slot = glsl.bindings.get(key) orelse return error.NoBinding;
 
+    const var_type = glsl.air.getInst(inst.type);
+    switch (var_type) {
+        .texture_type => |tex_inst| {
+            try glsl.print("layout(binding = {}) uniform ", .{slot});
+            try glsl.emitTextureType(tex_inst);
+            try glsl.writeAll(" ");
+            try glsl.writeName(inst.name);
+            try glsl.writeAll(";\n");
+            return;
+        },
+        .sampler_type, .comparison_sampler_type => {
+            // Samplers are combined with textures in GLSL; skip standalone sampler declarations
+            return;
+        },
+        else => {},
+    }
+
     try glsl.print("layout(binding = {}, ", .{slot});
     try glsl.writeAll(if (inst.addr_space == .uniform) "std140" else "std430");
     try glsl.writeAll(") ");
@@ -260,7 +300,6 @@ fn emitGlobalVar(glsl: *Glsl, inst: Inst.Var) !void {
         try glsl.writeAll("readonly ");
     try glsl.writeAll(if (inst.addr_space == .uniform) "uniform" else "buffer");
     try glsl.print(" Block{}", .{slot});
-    const var_type = glsl.air.getInst(inst.type);
     switch (var_type) {
         .@"struct" => |struct_inst| {
             // Inline struct to support runtime arrays
@@ -430,7 +469,7 @@ fn emitStatement(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         // .@"while" => |inst| try glsl.emitWhile(inst),
         .@"for" => |inst| try glsl.emitFor(inst),
         // .switch
-        //.discard => try glsl.emitDiscard(),
+        .discard => try glsl.writeAll("discard;\n"),
         // .@"break" => try glsl.emitBreak(),
         .@"continue" => try glsl.writeAll("continue;\n"),
         // .call => |inst| try glsl.emitCall(inst),
@@ -583,10 +622,10 @@ fn emitExpr(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         //.call => |inst| try glsl.emitCall(inst),
         //.struct_construct: StructConstruct,
         //.bitcast: Bitcast,
-        //.texture_sample => |inst| try glsl.emitTextureSample(inst),
+        .texture_sample => |inst| try glsl.emitTextureSample(inst),
         //.texture_dimension => |inst| try glsl.emitTextureDimension(inst),
         //.texture_load => |inst| try glsl.emitTextureLoad(inst),
-        //.texture_store => |inst| try glsl.emitTextureStore(inst),
+        .texture_store => |inst| try glsl.emitTextureStore(inst),
         //else => |inst| std.debug.panic("TODO: implement Air tag {s}", .{@tagName(inst)}),
         else => |inst| std.debug.panic("Expr: {}", .{inst}), // TODO
     }
@@ -878,6 +917,25 @@ fn enterScope(glsl: *Glsl) void {
 
 fn exitScope(glsl: *Glsl) void {
     glsl.indent -= 4;
+}
+
+fn emitTextureSample(glsl: *Glsl, inst: Inst.TextureSample) !void {
+    // In GLSL, combined texture/sampler uses texture() with the texture variable directly
+    try glsl.writeAll("texture(");
+    try glsl.emitExpr(inst.texture);
+    try glsl.writeAll(", ");
+    try glsl.emitExpr(inst.coords);
+    try glsl.writeAll(")");
+}
+
+fn emitTextureStore(glsl: *Glsl, inst: Inst.TextureStore) !void {
+    try glsl.writeAll("imageStore(");
+    try glsl.emitExpr(inst.texture);
+    try glsl.writeAll(", ");
+    try glsl.emitExpr(inst.coords);
+    try glsl.writeAll(", ");
+    try glsl.emitExpr(inst.value);
+    try glsl.writeAll(")");
 }
 
 fn writeIndent(glsl: *Glsl) !void {
