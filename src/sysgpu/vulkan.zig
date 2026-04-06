@@ -384,6 +384,9 @@ pub const Surface = struct {
     manager: utils.Manager(Surface) = .{},
     instance: *Instance,
     vk_surface: vk.SurfaceKHR,
+    /// Retained by deinit of a previous SwapChain so that the next createSwapChain
+    /// can pass it as old_swapchain to vkCreateSwapchainKHR for a safe handoff.
+    old_vk_swapchain: vk.SwapchainKHR = .null_handle,
 
     pub fn init(instance: *Instance, desc: *const sysgpu.Surface.Descriptor) !*Surface {
         const vk_instance = instance.vk_instance;
@@ -702,10 +705,6 @@ pub const Device = struct {
         return &device.queue.?;
     }
 
-    pub fn recreateSwapChain(swap_chain: *SwapChain, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
-        return SwapChain.recreate(swap_chain, surface, desc);
-    }
-
     pub fn tick(device: *Device) !void {
         if (device.queue) |*queue| try queue.flush();
         device.processQueuedOperations();
@@ -972,6 +971,7 @@ pub const StreamingManager = struct {
 pub const SwapChain = struct {
     manager: utils.Manager(SwapChain) = .{},
     device: *Device,
+    surface: *Surface,
     vk_swapchain: vk.SwapchainKHR,
     fence: vk.Fence,
     wait_semaphore: vk.Semaphore,
@@ -982,10 +982,13 @@ pub const SwapChain = struct {
     current_texture_view: ?*TextureView = null,
     format: sysgpu.Texture.Format,
     extent: vk.Extent2D,
-    stale: bool = false,
 
     pub fn init(device: *Device, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
         const vk_device = device.vk_device;
+
+        // Consume old swapchain handle from surface for a safe Vulkan handoff.
+        const old_vk_swapchain = surface.old_vk_swapchain;
+        surface.old_vk_swapchain = .null_handle;
 
         const sc = try allocator.create(SwapChain);
 
@@ -1041,7 +1044,13 @@ pub const SwapChain = struct {
             .composite_alpha = composite_alpha,
             .present_mode = present_mode,
             .clipped = vk.FALSE,
+            .old_swapchain = old_vk_swapchain,
         }, null);
+
+        // Destroy the old swapchain now that the new one has been created.
+        if (old_vk_swapchain != .null_handle) {
+            vkd.destroySwapchainKHR(vk_device, old_vk_swapchain, null);
+        }
 
         const fence = try vkd.createFence(vk_device, &.{ .flags = .{ .signaled_bit = false } }, null);
         errdefer vkd.destroyFence(vk_device, fence, null);
@@ -1074,6 +1083,7 @@ pub const SwapChain = struct {
 
         sc.* = .{
             .device = device,
+            .surface = surface,
             .vk_swapchain = vk_swapchain,
             .fence = fence,
             .wait_semaphore = wait_semaphore,
@@ -1087,112 +1097,6 @@ pub const SwapChain = struct {
         return sc;
     }
 
-    pub fn recreate(old_swap_chain: *SwapChain, surface: *Surface, desc: *const sysgpu.SwapChain.Descriptor) !*SwapChain {
-        const device = old_swap_chain.device;
-        const vk_device = device.vk_device;
-        vkd.deviceWaitIdle(vk_device) catch {};
-
-        for (old_swap_chain.texture_views) |view| view.manager.release();
-        for (old_swap_chain.textures) |texture| texture.manager.release();
-
-        const sc = try allocator.create(SwapChain);
-
-        const capabilities = try vki.getPhysicalDeviceSurfaceCapabilitiesKHR(
-            device.adapter.physical_device,
-            surface.vk_surface,
-        );
-
-        // TODO: query surface formats
-        // TODO: query surface present modes
-
-        const composite_alpha = blk: {
-            const composite_alpha_flags = [_]vk.CompositeAlphaFlagsKHR{
-                .{ .opaque_bit_khr = true },
-                .{ .pre_multiplied_bit_khr = true },
-                .{ .post_multiplied_bit_khr = true },
-                .{ .inherit_bit_khr = true },
-            };
-            for (composite_alpha_flags) |flag| {
-                if (@as(vk.Flags, @bitCast(flag)) & @as(vk.Flags, @bitCast(capabilities.supported_composite_alpha)) != 0) {
-                    break :blk flag;
-                }
-            }
-            break :blk vk.CompositeAlphaFlagsKHR{};
-        };
-        const image_count = @max(capabilities.min_image_count + 1, capabilities.max_image_count);
-        const format = conv.vulkanFormat(device, desc.format);
-        const extent = vk.Extent2D{
-            .width = std.math.clamp(
-                desc.width,
-                capabilities.min_image_extent.width,
-                capabilities.max_image_extent.width,
-            ),
-            .height = std.math.clamp(
-                desc.height,
-                capabilities.min_image_extent.height,
-                capabilities.max_image_extent.height,
-            ),
-        };
-        const image_usage = conv.vulkanImageUsageFlags(desc.usage, desc.format);
-        const present_mode = conv.vulkanPresentMode(desc.present_mode);
-
-        const vk_swapchain = try vkd.createSwapchainKHR(vk_device, &.{
-            .surface = surface.vk_surface,
-            .min_image_count = image_count,
-            .image_format = format,
-            .image_color_space = .srgb_nonlinear_khr,
-            .image_extent = extent,
-            .image_array_layers = 1,
-            .image_usage = image_usage,
-            .image_sharing_mode = .exclusive,
-            .pre_transform = .{ .identity_bit_khr = true },
-            .composite_alpha = composite_alpha,
-            .present_mode = present_mode,
-            .clipped = vk.FALSE,
-            .old_swapchain = old_swap_chain.vk_swapchain,
-        }, null);
-
-        var images_len: u32 = 0;
-        _ = try vkd.getSwapchainImagesKHR(vk_device, vk_swapchain, &images_len, null);
-        const images = try allocator.alloc(vk.Image, images_len);
-        defer allocator.free(images);
-        _ = try vkd.getSwapchainImagesKHR(vk_device, vk_swapchain, &images_len, images.ptr);
-
-        std.debug.assert(allocator.resize(old_swap_chain.textures, images_len));
-        const textures = old_swap_chain.textures;
-        errdefer allocator.free(textures);
-
-        std.debug.assert(allocator.resize(old_swap_chain.texture_views, images_len));
-        const texture_views = old_swap_chain.texture_views;
-        errdefer allocator.free(texture_views);
-
-        for (0..images_len) |i| {
-            const texture = try Texture.initForSwapChain(device, desc, images[i], sc);
-            textures[i] = texture;
-            texture_views[i] = try texture.createView(&.{
-                .format = desc.format,
-                .dimension = .dimension_2d,
-            });
-        }
-
-        sc.* = .{
-            .device = device,
-            .vk_swapchain = vk_swapchain,
-            .fence = old_swap_chain.fence,
-            .wait_semaphore = old_swap_chain.wait_semaphore,
-            .signal_semaphore = old_swap_chain.signal_semaphore,
-            .textures = textures,
-            .texture_views = texture_views,
-            .format = desc.format,
-            .extent = extent,
-        };
-
-        vkd.destroySwapchainKHR(vk_device, old_swap_chain.vk_swapchain, null);
-        allocator.destroy(old_swap_chain);
-
-        return sc;
-    }
-
     pub fn deinit(sc: *SwapChain) void {
         const vk_device = sc.device.vk_device;
 
@@ -1202,7 +1106,9 @@ pub const SwapChain = struct {
         vkd.destroySemaphore(vk_device, sc.wait_semaphore, null);
         vkd.destroySemaphore(vk_device, sc.signal_semaphore, null);
         vkd.destroyFence(vk_device, sc.fence, null);
-        vkd.destroySwapchainKHR(vk_device, sc.vk_swapchain, null);
+        // Stash the swapchain handle on the surface so the next createSwapChain
+        // can pass it as old_swapchain to vkCreateSwapchainKHR.
+        sc.surface.old_vk_swapchain = sc.vk_swapchain;
         allocator.free(sc.textures);
         allocator.free(sc.texture_views);
         allocator.destroy(sc);
@@ -1225,7 +1131,7 @@ pub const SwapChain = struct {
         ) catch |err| if (err == error.OutOfDateKHR) null else return err;
 
         if (result == null) {
-            sc.setStale();
+            sc.handleOutOfDate();
             return null;
         }
 
@@ -1262,8 +1168,7 @@ pub const SwapChain = struct {
             .p_image_indices = &[_]u32{sc.texture_index},
         }) catch |err| {
             if (err == error.OutOfDateKHR) {
-                sc.setStale();
-                sc.current_texture_view = null;
+                sc.handleOutOfDate();
                 return;
             } else {
                 return err;
@@ -1273,13 +1178,9 @@ pub const SwapChain = struct {
         sc.current_texture_view = null;
     }
 
-    pub fn isStale(sc: *SwapChain) bool {
-        return sc.*.stale;
-    }
-
-    pub fn setStale(sc: *SwapChain) void {
-        sc.*.stale = true;
-        const queue = try sc.device.getQueue();
+    fn handleOutOfDate(sc: *SwapChain) void {
+        sc.current_texture_view = null;
+        const queue = sc.device.getQueue() catch return;
         queue.command_encoder = null;
         queue.command_buffers.clearRetainingCapacity();
     }

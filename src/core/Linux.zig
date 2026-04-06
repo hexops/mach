@@ -104,8 +104,7 @@ pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
 
 inline fn renewSwapChain(core: *Core, window_id: mach.ObjectID) void {
     var core_window = core.windows.getValue(window_id);
-    if (core_window.swap_chain.isStale() or
-        core_window.framebuffer_width != core_window.width or
+    if (core_window.framebuffer_width != core_window.width or
         core_window.framebuffer_height != core_window.height)
     {
         core_window.framebuffer_width = core_window.width;
@@ -113,7 +112,8 @@ inline fn renewSwapChain(core: *Core, window_id: mach.ObjectID) void {
         core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
         core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
 
-        core_window.swap_chain = core_window.swap_chain.recreate(core_window.surface, &core_window.swap_chain_descriptor);
+        core_window.swap_chain.release();
+        core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
         core.windows.setValueRaw(window_id, core_window);
     }
 }
