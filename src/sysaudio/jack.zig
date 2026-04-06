@@ -32,6 +32,7 @@ const Lib = struct {
     jack_port_get_buffer: *const fn (?*c.jack_port_t, c.jack_nframes_t) callconv(.C) ?*anyopaque,
     jack_port_connected_to: *const fn (?*const c.jack_port_t, [*c]const u8) callconv(.C) c_int,
     jack_port_type_size: *const fn () c_int,
+    jack_get_buffer_size: *const fn (?*c.jack_client_t) callconv(.C) c.jack_nframes_t,
 
     pub fn load() !void {
         lib.handle = try mach.dynLibOpen("libjack.so");
@@ -117,7 +118,7 @@ pub const Context = struct {
                 continue;
 
             const flags = lib.jack_port_flags(port);
-            const mode: main.Device.Mode = if (flags & c.JackPortIsInput != 0) .capture else .playback;
+            const mode: main.Device.Mode = if (flags & c.JackPortIsInput != 0) .playback else .capture;
 
             const name = std.mem.span(port_names[i]);
             const id = std.mem.sliceTo(name, ':');
@@ -127,7 +128,7 @@ pub const Context = struct {
                     const new_ch: main.ChannelPosition = @enumFromInt(dev.channels.len);
                     dev.channels = try ctx.allocator.realloc(dev.channels, dev.channels.len + 1);
                     dev.channels[dev.channels.len - 1] = new_ch;
-                    break :outer;
+                    continue :outer;
                 }
             }
 
@@ -179,16 +180,24 @@ pub const Context = struct {
     }
 
     pub fn createPlayer(ctx: *Context, device: main.Device, writeFn: main.WriteFn, options: main.StreamOptions) !backends.Player {
+        // Find the actual JACK input ports for the destination device.
+        const dest_port_names = lib.jack_get_ports(ctx.client, device.id.ptr, c.JACK_DEFAULT_AUDIO_TYPE, c.JackPortIsInput) orelse
+            return error.OpeningDevice;
+        defer lib.jack_free(@as(?*anyopaque, @ptrCast(dest_port_names)));
+
         var ports = try ctx.allocator.alloc(*c.jack_port_t, device.channels.len);
         var dest_ports = try ctx.allocator.alloc([:0]const u8, ports.len);
         var buf: [64]u8 = undefined;
         for (device.channels, 0..) |_, i| {
             const port_name = std.fmt.bufPrintZ(&buf, "playback_{d}", .{i + 1}) catch unreachable;
-            const dest_name = try std.fmt.allocPrintZ(ctx.allocator, "{s}:{s}", .{ device.id, port_name });
             ports[i] = lib.jack_port_register(ctx.client, port_name.ptr, c.JACK_DEFAULT_AUDIO_TYPE, c.JackPortIsOutput, 0) orelse
                 return error.OpeningDevice;
-            dest_ports[i] = dest_name;
+            dest_ports[i] = try ctx.allocator.dupeZ(u8, std.mem.span(dest_port_names[i]));
         }
+
+        const max_frames = lib.jack_get_buffer_size(ctx.client);
+        const frame_size = main.Format.f32.frameSize(@intCast(device.channels.len));
+        const sample_buffer = try ctx.allocator.alloc(u8, max_frames * frame_size);
 
         const player = try ctx.allocator.create(Player);
         player.* = .{
@@ -202,21 +211,30 @@ pub const Context = struct {
             .user_data = options.user_data,
             .channels = device.channels,
             .format = .f32,
+            .sample_buffer = sample_buffer,
         };
         return .{ .jack = player };
     }
 
     pub fn createRecorder(ctx: *Context, device: main.Device, readFn: main.ReadFn, options: main.StreamOptions) !backends.Recorder {
+        // Find the actual JACK output ports for the source device.
+        const src_port_names = lib.jack_get_ports(ctx.client, device.id.ptr, c.JACK_DEFAULT_AUDIO_TYPE, c.JackPortIsOutput) orelse
+            return error.OpeningDevice;
+        defer lib.jack_free(@as(?*anyopaque, @ptrCast(src_port_names)));
+
         var ports = try ctx.allocator.alloc(*c.jack_port_t, device.channels.len);
         var dest_ports = try ctx.allocator.alloc([:0]const u8, ports.len);
         var buf: [64]u8 = undefined;
         for (device.channels, 0..) |_, i| {
             const port_name = std.fmt.bufPrintZ(&buf, "capture_{d}", .{i + 1}) catch unreachable;
-            const dest_name = try std.fmt.allocPrintZ(ctx.allocator, "{s}:{s}", .{ device.id, port_name });
             ports[i] = lib.jack_port_register(ctx.client, port_name.ptr, c.JACK_DEFAULT_AUDIO_TYPE, c.JackPortIsInput, 0) orelse
                 return error.OpeningDevice;
-            dest_ports[i] = dest_name;
+            dest_ports[i] = try ctx.allocator.dupeZ(u8, std.mem.span(src_port_names[i]));
         }
+
+        const max_frames = lib.jack_get_buffer_size(ctx.client);
+        const frame_size = main.Format.f32.frameSize(@intCast(device.channels.len));
+        const sample_buffer = try ctx.allocator.alloc(u8, max_frames * frame_size);
 
         const recorder = try ctx.allocator.create(Recorder);
         recorder.* = .{
@@ -230,6 +248,7 @@ pub const Context = struct {
             .user_data = options.user_data,
             .channels = device.channels,
             .format = .f32,
+            .sample_buffer = sample_buffer,
         };
         return .{ .jack = recorder };
     }
@@ -247,8 +266,10 @@ pub const Player = struct {
 
     channels: []main.ChannelPosition,
     format: main.Format,
+    sample_buffer: []u8,
 
     pub fn deinit(player: *Player) void {
+        player.allocator.free(player.sample_buffer);
         player.allocator.free(player.ports);
         for (player.dest_ports) |d|
             player.allocator.free(d);
@@ -272,12 +293,22 @@ pub const Player = struct {
 
     fn processCallback(n_frames: c.jack_nframes_t, player_opaque: ?*anyopaque) callconv(.C) c_int {
         const player = @as(*Player, @ptrCast(@alignCast(player_opaque.?)));
+        const num_channels = player.ports.len;
+        const frame_size = player.format.frameSize(@intCast(num_channels));
+        const buf_len = n_frames * frame_size;
+        const buf = player.sample_buffer[0..buf_len];
 
-        if (true) @panic("TODO: convert planar to interleaved");
-        // for (player.channels, 0..) |*ch, i| {
-        //     ch.*.ptr = @as([*]u8, @ptrCast(lib.jack_port_get_buffer(player.ports[i], n_frames)));
-        // }
-        player.writeFn(player.user_data, undefined, n_frames);
+        // Fill the interleaved buffer via user callback.
+        player.writeFn(player.user_data, buf);
+
+        // De-interleave: scatter from interleaved buffer into JACK's per-channel planar buffers.
+        const interleaved = @as([*]const f32, @ptrCast(@alignCast(buf.ptr)))[0 .. n_frames * num_channels];
+        for (player.ports, 0..) |port, ch| {
+            const port_buf = @as([*]f32, @ptrCast(@alignCast(lib.jack_port_get_buffer(port, n_frames) orelse continue)));
+            for (0..n_frames) |frame| {
+                port_buf[frame] = interleaved[frame * num_channels + ch] * player.vol;
+            }
+        }
 
         return 0;
     }
@@ -329,8 +360,10 @@ pub const Recorder = struct {
 
     channels: []main.ChannelPosition,
     format: main.Format,
+    sample_buffer: []u8,
 
     pub fn deinit(recorder: *Recorder) void {
+        recorder.allocator.free(recorder.sample_buffer);
         recorder.allocator.free(recorder.ports);
         for (recorder.dest_ports) |d|
             recorder.allocator.free(d);
@@ -354,12 +387,21 @@ pub const Recorder = struct {
 
     fn processCallback(n_frames: c.jack_nframes_t, recorder_opaque: ?*anyopaque) callconv(.C) c_int {
         const recorder = @as(*Recorder, @ptrCast(@alignCast(recorder_opaque.?)));
+        const num_channels = recorder.ports.len;
+        const frame_size = recorder.format.frameSize(@intCast(num_channels));
+        const buf_len = n_frames * frame_size;
+        const buf = recorder.sample_buffer[0..buf_len];
 
-        if (true) @panic("TODO: convert planar to interleaved");
-        // for (recorder.channels, 0..) |*ch, i| {
-        //     ch.*.ptr = @as([*]u8, @ptrCast(lib.jack_port_get_buffer(recorder.ports[i], n_frames)));
-        // }
-        recorder.readFn(recorder.user_data, n_frames);
+        // Interleave: gather from JACK's per-channel planar buffers into the interleaved buffer.
+        const interleaved = @as([*]f32, @ptrCast(@alignCast(buf.ptr)))[0 .. n_frames * num_channels];
+        for (recorder.ports, 0..) |port, ch| {
+            const port_buf = @as([*]const f32, @ptrCast(@alignCast(lib.jack_port_get_buffer(port, n_frames) orelse continue)));
+            for (0..n_frames) |frame| {
+                interleaved[frame * num_channels + ch] = port_buf[frame] * recorder.vol;
+            }
+        }
+
+        recorder.readFn(recorder.user_data, buf);
 
         return 0;
     }
