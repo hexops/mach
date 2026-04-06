@@ -62,7 +62,7 @@ pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@
     while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
 }
 
-pub fn tick(core: *Core, _: mach.Mod(Core)) !void {
+pub fn tick(core: *Core, core_mod: mach.Mod(Core)) !void {
     var windows = core.windows.slice();
     while (windows.next()) |window_id| {
         const native_opt: ?Native = core.windows.get(window_id, .native);
@@ -82,15 +82,32 @@ pub fn tick(core: *Core, _: mach.Mod(Core)) !void {
                 .wayland => try Wayland.tick(window_id),
             }
             renewSwapChain(core, window_id);
+
+            // Re-read after renewSwapChain may have replaced the swap chain
+            const updated_window = core.windows.getValue(window_id);
+
+            // Run render callback and present frame
+            if (updated_window.on_render) |on_render| {
+                core_mod.run(on_render);
+                mach.sysgpu.Impl.deviceTick(updated_window.device);
+                updated_window.swap_chain.present();
+            }
         } else {
             try initWindow(core, window_id);
+            // Consume the initial updated flags so we don't spuriously
+            // call setDisplayMode/setBorder on the next tick.
+            _ = core.windows.updated(window_id, .display_mode);
+            _ = core.windows.updated(window_id, .decorated);
         }
     }
 }
 
 inline fn renewSwapChain(core: *Core, window_id: mach.ObjectID) void {
     var core_window = core.windows.getValue(window_id);
-    if (core_window.swap_chain.isStale()) {
+    if (core_window.swap_chain.isStale() or
+        core_window.framebuffer_width != core_window.width or
+        core_window.framebuffer_height != core_window.height)
+    {
         core_window.framebuffer_width = core_window.width;
         core_window.framebuffer_height = core_window.height;
         core_window.swap_chain_descriptor.height = core_window.framebuffer_height;

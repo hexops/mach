@@ -244,18 +244,9 @@ pub fn setTitle(x11: *const Native, title: [:0]const u8) void {
 
 pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: bool) void {
     const wm_state = libx11.?.XInternAtom(x11.display, "_NET_WM_STATE", c.False);
-    const wm_fullscreen = libx11.?.XInternAtom(x11.display, "_NET_WM_STATE_FULLSCREEN", c.False);
     switch (display_mode) {
         .windowed => {
-            var atoms = std.BoundedArray(c.Atom, 5){};
-            if (display_mode == .fullscreen) {
-                atoms.append(wm_fullscreen) catch unreachable;
-            }
-            atoms.append(x11.motif_wm_hints) catch unreachable;
-            // TODO
-            // if (x11.floating) {
-            //     atoms.append(x11.net_wm_state_above) catch unreachable;
-            // }
+            // Clear _NET_WM_STATE (remove fullscreen/above states)
             _ = libx11.?.XChangeProperty(
                 x11.display,
                 x11.window,
@@ -263,8 +254,8 @@ pub fn setDisplayMode(x11: *const Native, display_mode: DisplayMode, border: boo
                 c.XA_ATOM,
                 32,
                 c.PropModeReplace,
-                @ptrCast(atoms.slice()),
-                @intCast(atoms.len),
+                null,
+                0,
             );
             setFullscreen(x11, false);
             setDecorated(x11, border);
