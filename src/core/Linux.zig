@@ -122,76 +122,63 @@ pub fn initWindow(
     core: *Core,
     window_id: mach.ObjectID,
 ) !void {
-    const desired_backend: BackendEnum = blk: {
+    const force_backend: ?BackendEnum = blk: {
         const backend = std.process.getEnvVarOwned(
             core.allocator,
-            "MACH_BACKEND",
+            "MACH_FORCE_BACKEND",
         ) catch |err| switch (err) {
-            error.EnvironmentVariableNotFound => {
-                // default backend
-                break :blk .wayland;
-            },
+            error.EnvironmentVariableNotFound => break :blk null,
             else => return err,
         };
         defer core.allocator.free(backend);
 
         if (std.ascii.eqlIgnoreCase(backend, "x11")) break :blk .x11;
         if (std.ascii.eqlIgnoreCase(backend, "wayland")) break :blk .wayland;
-        std.debug.panic("mach: unknown MACH_BACKEND: {s}", .{backend});
+        std.debug.panic("mach: unknown MACH_FORCE_BACKEND: {s}", .{backend});
     };
 
-    // Try to initialize the desired backend, falling back to the other if that one is not supported
-    switch (desired_backend) {
-        .x11 => {
-            X11.initWindow(core, window_id) catch |err| {
-                const err_msg = switch (err) {
-                    error.LibraryNotFound => "Missing X11 library",
-                    error.FailedToConnectToDisplay => "Failed to connect to X11 display",
-                    else => "An unknown error occured while trying to connect to X11",
+    const desired_backend: BackendEnum = force_backend orelse .wayland;
+
+    if (force_backend) |forced| {
+        // MACH_FORCE_BACKEND: no fallback, fail hard if the forced backend can't init
+        switch (forced) {
+            .x11 => {
+                X11.initWindow(core, window_id) catch |err| {
+                    log.err("MACH_FORCE_BACKEND=x11: failed to initialize X11: {}", .{err});
+                    return err;
                 };
-                log.err("{s}\n\nFalling back to Wayland\n", .{err_msg});
-                Wayland.initWindow(core, window_id) catch |e| {
-                    log.err("Failed to connect to fallback display server, Wayland.\n", .{});
-                    var libs = std.ArrayList(u8).init(core.allocator);
-                    defer libs.deinit();
-                    if (X11.libx11 == null) {
-                        try libs.appendSlice("\t* " ++ X11.LibX11.lib_name ++ "\n");
-                    }
-                    if (X11.libxkbcommon == null) {
-                        try libs.appendSlice("\t* " ++ X11.LibXkbCommon.lib_name ++ "\n");
-                    }
-                    if (X11.libgl == null) {
-                        try libs.appendSlice("\t* " ++ X11.LibGL.lib_name ++ "\n");
-                    }
-                    log.err("The following X11 libraries were not available:\n{s}", .{libs.items});
-                    return e;
+            },
+            .wayland => {
+                Wayland.initWindow(core, window_id) catch |err| {
+                    log.err("MACH_FORCE_BACKEND=wayland: failed to initialize Wayland: {}", .{err});
+                    return err;
                 };
+            },
+        }
+    } else {
+        // Default: try Wayland first, fall back to X11
+        Wayland.initWindow(core, window_id) catch |err| {
+            const err_msg = switch (err) {
+                error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
+                error.LibraryNotFound => "Missing Wayland library",
+                error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
+                else => "An unknown error occured while trying to connect to Wayland",
             };
-        },
-        .wayland => {
-            Wayland.initWindow(core, window_id) catch |err| {
-                const err_msg = switch (err) {
-                    error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
-                    error.LibraryNotFound => "Missing Wayland library",
-                    error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
-                    else => "An unknown error occured while trying to connect to Wayland",
-                };
-                log.err("{s}\n\nFalling back to X11\n", .{err_msg});
-                X11.initWindow(core, window_id) catch |e| {
-                    log.err("Failed to connect to fallback display server, X11.\n", .{});
-                    var libs = std.ArrayList(u8).init(core.allocator);
-                    defer libs.deinit();
-                    if (Wayland.libwaylandclient == null) {
-                        try libs.appendSlice("\t* " ++ Wayland.LibWaylandClient.lib_name ++ "\n");
-                    }
-                    if (Wayland.libxkbcommon == null) {
-                        try libs.appendSlice("\t* " ++ Wayland.LibXkbCommon.lib_name ++ "\n");
-                    }
-                    log.err("The following Wayland libraries were not available:\n{s}", .{libs.items});
-                    return e;
-                };
+            log.err("{s}\n\nFalling back to X11\n", .{err_msg});
+            X11.initWindow(core, window_id) catch |e| {
+                log.err("Failed to connect to fallback display server, X11.\n", .{});
+                var libs = std.ArrayList(u8).init(core.allocator);
+                defer libs.deinit();
+                if (Wayland.libwaylandclient == null) {
+                    try libs.appendSlice("\t* " ++ Wayland.LibWaylandClient.lib_name ++ "\n");
+                }
+                if (Wayland.libxkbcommon == null) {
+                    try libs.appendSlice("\t* " ++ Wayland.LibXkbCommon.lib_name ++ "\n");
+                }
+                log.err("The following Wayland libraries were not available:\n{s}", .{libs.items});
+                return e;
             };
-        },
+        };
     }
 
     // warn about incomplete features

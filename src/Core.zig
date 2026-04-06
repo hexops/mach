@@ -165,7 +165,9 @@ pub fn initWindow(core: *Core, window_id: mach.ObjectID) !void {
     }, &response, requestAdapterCallback);
     if (response.status != .success) {
         log.err("failed to create GPU adapter: {?s}", .{response.message});
-        log.info("-> maybe try MACH_GPU_BACKEND=opengl ?", .{});
+        if (builtin.target.os.tag == .linux) {
+            log.info("-> maybe try MACH_FORCE_GPU_BACKEND=opengl ?", .{});
+        }
         std.process.exit(1);
     }
 
@@ -397,7 +399,7 @@ pub inline fn printUnhandledErrorCallback(_: void, ty: gpu.ErrorType, message: [
 pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
     const backend = std.process.getEnvVarOwned(
         allocator,
-        "MACH_GPU_BACKEND",
+        "MACH_FORCE_GPU_BACKEND",
     ) catch |err| switch (err) {
         error.EnvironmentVariableNotFound => {
             return switch (build_options.sysgpu_backend) {
@@ -421,7 +423,7 @@ pub fn detectBackendType(allocator: std.mem.Allocator) !gpu.BackendType {
     if (std.ascii.eqlIgnoreCase(backend, "opengl")) return .opengl;
     if (std.ascii.eqlIgnoreCase(backend, "opengles")) return .opengles;
 
-    @panic("unknown MACH_GPU_BACKEND type");
+    @panic("unknown MACH_FORCE_GPU_BACKEND type");
 }
 
 const Platform = switch (builtin.target.os.tag) {
