@@ -564,8 +564,6 @@ fn emitGlobalStructReturn(glsl: *Glsl, inst: Inst.Struct, inst_idx: InstIndex) !
         try glsl.writeAll(".");
         try glsl.writeName(member.name);
         try glsl.writeAll(";\n");
-
-
     }
 }
 
