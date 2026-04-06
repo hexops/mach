@@ -72,8 +72,12 @@ pub fn gen(
                 if (entrypoint_name) |_| {
                     if (std.mem.eql(u8, entrypoint_name.?, name)) {
                         try glsl.emitFn(inst);
+                    } else if (inst.stage == .none) {
+                        try glsl.emitFn(inst);
                     }
                 } else if (inst.stage != .none) {
+                    try glsl.emitFn(inst);
+                } else {
                     try glsl.emitFn(inst);
                 }
             },
@@ -459,7 +463,7 @@ fn emitStatement(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
     try glsl.writeIndent();
     switch (glsl.air.getInst(inst_idx)) {
         .@"var" => |inst| try glsl.emitVar(inst),
-        //.@"const" => |inst| try glsl.emitConst(inst),
+        .@"const" => |inst| try glsl.emitConst(inst),
         .block => |block| try glsl.emitBlock(block),
         // .loop => |inst| try glsl.emitLoop(inst),
         // .continuing
@@ -472,7 +476,7 @@ fn emitStatement(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         .discard => try glsl.writeAll("discard;\n"),
         // .@"break" => try glsl.emitBreak(),
         .@"continue" => try glsl.writeAll("continue;\n"),
-        // .call => |inst| try glsl.emitCall(inst),
+        .call,
         .assign,
         .nil_intrinsic,
         .texture_store,
@@ -486,6 +490,19 @@ fn emitStatement(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
 }
 
 fn emitVar(glsl: *Glsl, inst: Inst.Var) !void {
+    const t = if (inst.type != .none) inst.type else inst.init;
+    try glsl.emitType(t);
+    try glsl.writeAll(" ");
+    try glsl.writeName(inst.name);
+    try glsl.emitTypeSuffix(t);
+    if (inst.init != .none) {
+        try glsl.writeAll(" = ");
+        try glsl.emitExpr(inst.init);
+    }
+    try glsl.writeAll(";\n");
+}
+
+fn emitConst(glsl: *Glsl, inst: Inst.Const) !void {
     const t = if (inst.type != .none) inst.type else inst.init;
     try glsl.emitType(t);
     try glsl.writeAll(" ");
@@ -547,6 +564,8 @@ fn emitGlobalStructReturn(glsl: *Glsl, inst: Inst.Struct, inst_idx: InstIndex) !
         try glsl.writeAll(".");
         try glsl.writeName(member.name);
         try glsl.writeAll(";\n");
+
+
     }
 }
 
@@ -619,7 +638,7 @@ fn emitExpr(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         .field_access => |inst| try glsl.emitFieldAccess(inst),
         .swizzle_access => |inst| try glsl.emitSwizzleAccess(inst),
         .index_access => |inst| try glsl.emitIndexAccess(inst),
-        //.call => |inst| try glsl.emitCall(inst),
+        .call => |inst| try glsl.emitCall(inst),
         //.struct_construct: StructConstruct,
         //.bitcast: Bitcast,
         .texture_sample => |inst| try glsl.emitTextureSample(inst),
@@ -629,6 +648,23 @@ fn emitExpr(glsl: *Glsl, inst_idx: InstIndex) error{OutOfMemory}!void {
         //else => |inst| std.debug.panic("TODO: implement Air tag {s}", .{@tagName(inst)}),
         else => |inst| std.debug.panic("Expr: {}", .{inst}), // TODO
     }
+}
+
+fn emitCall(glsl: *Glsl, inst: Inst.FnCall) !void {
+    const fn_inst = glsl.air.getInst(inst.@"fn").@"fn";
+    try glsl.writeName(fn_inst.name);
+    try glsl.writeAll("(");
+
+    if (inst.args != .none) {
+        var first = true;
+        for (glsl.air.refToList(inst.args)) |arg_inst_idx| {
+            if (!first) try glsl.writeAll(", ");
+            first = false;
+            try glsl.emitExpr(arg_inst_idx);
+        }
+    }
+
+    try glsl.writeAll(")");
 }
 
 fn emitVarRef(glsl: *Glsl, inst_idx: InstIndex) !void {
