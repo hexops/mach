@@ -415,10 +415,10 @@ pub const Device = struct {
         var gl: proc.DeviceGL = undefined;
         gl.loadVersion(gl_major_version, gl_minor_version);
 
-        // Default state
+        // Match WebGPU depth range [0,1] instead of [-1,1]
+        gl.clipControl(c.GL_LOWER_LEFT, c.GL_ZERO_TO_ONE);
         gl.enable(c.GL_SCISSOR_TEST);
         gl.enable(c.GL_PRIMITIVE_RESTART_FIXED_INDEX);
-        gl.enable(c.GL_FRAMEBUFFER_SRGB);
 
         if (debug_enabled) {
             gl.enable(c.GL_DEBUG_OUTPUT);
@@ -2027,6 +2027,15 @@ pub const CommandBuffer = struct {
 
                         width = view.width();
                         height = view.height();
+                    }
+
+                    // When rendering to an FBO, use GL_UPPER_LEFT so the rendered image
+                    // is stored top-down in the texture, matching WebGPU's convention.
+                    // For the default framebuffer, use GL_LOWER_LEFT (OpenGL default).
+                    if (!default_framebuffer) {
+                        gl.clipControl(c.GL_UPPER_LEFT, c.GL_ZERO_TO_ONE);
+                    } else {
+                        gl.clipControl(c.GL_LOWER_LEFT, c.GL_ZERO_TO_ONE);
                     }
 
                     // Default State
