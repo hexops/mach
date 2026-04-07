@@ -2510,16 +2510,19 @@ fn genFnCall(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex {
 
     var args = RefIndex.none;
     if (node_lhs != .none) {
-        const params = astgen.refToList(astgen.getInst(decl).@"fn".params);
+        const params_ref = astgen.getInst(decl).@"fn".params;
+        const params_count = astgen.refToList(params_ref).len;
         const arg_nodes = astgen.tree.spanToList(node_lhs);
-        if (params.len != arg_nodes.len) {
+        if (params_count != arg_nodes.len) {
             try astgen.errors.add(node_loc, "function params count mismatch", .{}, null);
             return error.AnalysisFail;
         }
         for (arg_nodes, 0..) |arg_node, i| {
             const arg = try astgen.genExpr(scope, arg_node);
             const arg_res = try astgen.resolve(arg);
-            if (try astgen.coerce(astgen.getInst(params[i]).fn_param.type, arg_res)) {
+            // genExpr may reallocate astgen.refs (#1343), so re-fetch each iteration.
+            const curr_param = astgen.refToList(params_ref)[i];
+            if (try astgen.coerce(astgen.getInst(curr_param).fn_param.type, arg_res)) {
                 try astgen.scratch.append(astgen.allocator, arg);
             } else {
                 try astgen.errors.add(
@@ -2553,7 +2556,8 @@ fn genStructConstruct(astgen: *AstGen, scope: *Scope, decl: InstIndex, node: Nod
     const scratch_top = astgen.scratch.items.len;
     defer astgen.scratch.shrinkRetainingCapacity(scratch_top);
 
-    const struct_member_count = astgen.refToList(astgen.getInst(decl).@"struct".members).len;
+    const members_ref = astgen.getInst(decl).@"struct".members;
+    const struct_member_count = astgen.refToList(members_ref).len;
     if (node_lhs != .none) {
         const arg_nodes = astgen.tree.spanToList(node_lhs);
         if (struct_member_count != arg_nodes.len) {
@@ -2563,9 +2567,8 @@ fn genStructConstruct(astgen: *AstGen, scope: *Scope, decl: InstIndex, node: Nod
         for (arg_nodes, 0..) |arg_node, i| {
             const arg = try astgen.genExpr(scope, arg_node);
             const arg_res = try astgen.resolve(arg);
-            // genExpr may change the address of the astgen.refs array (#1343),
-            // so fetch the current struct member here instead of outside the loop to prevent invalid pointers.
-            const curr_member = astgen.refToList(astgen.getInst(decl).@"struct".members)[i];
+            // genExpr may reallocate astgen.refs (#1343), so re-fetch each iteration.
+            const curr_member = astgen.refToList(members_ref)[i];
             if (try astgen.coerce(arg_res, astgen.getInst(curr_member).struct_member.type)) {
                 try astgen.scratch.append(astgen.allocator, arg);
             } else {
