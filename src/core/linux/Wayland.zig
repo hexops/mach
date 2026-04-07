@@ -1015,7 +1015,6 @@ const libdecor_listener = struct {
 
         var width: c_int = 0;
         var height: c_int = 0;
-        var changed_size = false;
         if (!libdecor.?.libdecor_configuration_get_content_size(configuration, frame, &width, &height)) {
             //Set initial window size configuration
             width = @intCast(core_window.width);
@@ -1024,15 +1023,10 @@ const libdecor_listener = struct {
             const new_width: u32 = @intCast(width);
             const new_height: u32 = @intCast(height);
             if (core_window.width != new_width or core_window.height != new_height) {
-                changed_size = true;
-                //Handle Resize
+                // Update logical size only. renewSwapChain in Linux.zig detects the mismatch
+                // and recreates the swapchain
                 core_window.height = new_height;
                 core_window.width = new_width;
-
-                core_window.framebuffer_width = core_window.width * wl.scale;
-                core_window.framebuffer_height = core_window.height * wl.scale;
-                core_window.swap_chain_descriptor.width = core_window.framebuffer_width;
-                core_window.swap_chain_descriptor.height = core_window.framebuffer_height;
 
                 setContentAreaOpaque(wl, Core.Size{ .width = core_window.width, .height = core_window.height });
                 core_ptr.pushEvent(.{ .window_resize = .{ .window_id = window_id, .size = .{ .height = core_window.height, .width = core_window.width } } });
@@ -1045,12 +1039,6 @@ const libdecor_listener = struct {
 
         libdecor.?.libdecor_frame_commit(wl.libdecor_frame, state, configuration);
         c.wl_surface_commit(wl.surface);
-
-        if (changed_size) {
-            //does not work :(
-            core_window.swap_chain.release();
-            core_window.swap_chain = core_window.device.createSwapChain(core_window.surface, &core_window.swap_chain_descriptor);
-        }
 
         core_ptr.windows.setValue(window_id, core_window);
     }

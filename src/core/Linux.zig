@@ -56,7 +56,7 @@ backend: Backend,
 // these arrays are used as info messages to the user that some features are missing
 // please keep these up to date until we can remove them
 const MISSING_FEATURES_X11 = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
-const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Resizing window", "Changing display mode", "VSync", "Setting window border/cursor" };
+const MISSING_FEATURES_WAYLAND = [_][]const u8{ "Changing display mode", "VSync", "Setting window border/cursor" };
 
 pub fn run(comptime on_each_update_fn: anytype, args_tuple: std.meta.ArgsTuple(@TypeOf(on_each_update_fn))) void {
     while (@call(.auto, on_each_update_fn, args_tuple) catch false) {}
@@ -159,7 +159,7 @@ pub fn initWindow(
         // Default: try Wayland first, fall back to X11
         Wayland.initWindow(core, window_id) catch |err| {
             const err_msg = switch (err) {
-                error.NoServerSideDecorationSupport => "Server Side Decorations aren't supported",
+                error.NoDecorationSupport => "No window decoration support available",
                 error.LibraryNotFound => "Missing Wayland library",
                 error.FailedToConnectToDisplay => "Failed to connect to Wayland display",
                 else => "An unknown error occured while trying to connect to Wayland",
