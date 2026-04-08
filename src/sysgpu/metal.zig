@@ -269,7 +269,7 @@ pub const Device = struct {
         return Texture.init(device, desc);
     }
 
-    pub fn destroySwapChain(swapchain: *const sysgpu.SwapChain.Descriptor) void {
+    pub fn destroySwapChain(swapchain: *SwapChain) void {
         return SwapChain.deinit(swapchain);
     }
 
