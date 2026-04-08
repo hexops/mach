@@ -76,19 +76,24 @@ pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: Ren
     const buffer: ?[*]const u8 = glyph_bitmap.buffer;
     const width = glyph_bitmap.width;
     const height = glyph_bitmap.rows;
-    const pitch = @as(u32, @intCast(glyph_bitmap.pitch)); // TODO: handle negative pitch
+    const abs_pitch: u32 = @intCast(@abs(glyph_bitmap.pitch));
     const margin = 1;
 
     const dst_width = width + (margin * 2);
     const dst_height = height + (margin * 2);
 
     if (buffer == null) return RenderedGlyph{
-       .bitmap = null,
-       .width = dst_width,
-       .height = dst_height,
+        .bitmap = null,
+        .width = dst_width,
+        .height = dst_height,
     };
 
     const num_pixels = dst_width * dst_height;
+
+    // If we have negative pitch, rows are stored bottom-to-top. In that case, the buffer pointer
+    // still points to the first byte of the bitmap data, but we need to start from the last row
+    // and work backwards.
+    const src: [*]const u8 = if (glyph_bitmap.pitch >= 0) buffer.? else buffer.? + (height - 1) * abs_pitch;
 
     // Add 1 pixel padding to texture to avoid bleeding over other textures. This is part of the
     // render() API contract.
@@ -100,21 +105,21 @@ pub fn render(f: *Font, allocator: std.mem.Allocator, glyph_index: u32, opt: Ren
     @memset(f.bitmap.items, RGBA32{ .r = 0, .g = 0, .b = 0, .a = 0 });
 
     for (0..height) |y| {
-       const src_row = buffer.?[y * pitch ..][0..width];
-       const dst_y = y + margin;
-       const dst_row_start = (dst_y * dst_width) + margin;
-       const dst_row = f.bitmap.items[dst_row_start..][0..width];
+        const src_row = if (glyph_bitmap.pitch >= 0) src[y * abs_pitch ..][0..width] else (src - y * abs_pitch)[0..width];
+        const dst_y = y + margin;
+        const dst_row_start = (dst_y * dst_width) + margin;
+        const dst_row = f.bitmap.items[dst_row_start..][0..width];
 
-       for (0..width) |x| {
-           const alpha = src_row[x];
-           dst_row[x] = RGBA32{ .r = 255, .g = 255, .b = 255, .a = alpha };
-       }
+        for (0..width) |x| {
+            const alpha = src_row[x];
+            dst_row[x] = RGBA32{ .r = 255, .g = 255, .b = 255, .a = alpha };
+        }
     }
 
     return RenderedGlyph{
-       .bitmap = f.bitmap.items,
-       .width = dst_width,
-       .height = dst_height,
+        .bitmap = f.bitmap.items,
+        .width = dst_width,
+        .height = dst_height,
     };
 }
 
