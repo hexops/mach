@@ -214,6 +214,14 @@ pub fn initWindow(
             return error.ListenerHasAlreadyBeenSet;
         }
 
+        c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
+
+        const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
+            wl.interfaces.zxdg_decoration_manager_v1,
+            wl.toplevel,
+        ) orelse return error.UnableToGetToplevelDecoration;
+        c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+
         // Save so that xdg listeners can use the `wl.surface`
         core_ptr.windows.setValue(window_id, core_window);
     }
@@ -237,16 +245,6 @@ pub fn initWindow(
         wl = &core_window.native.?.wayland;
 
         if (result != -1 and wl.configured) break;
-    }
-
-    if (!wl.use_client_side_decorations) {
-        c.xdg_toplevel_set_title(wl.toplevel, @ptrCast(core_window.title));
-        const decoration = c.zxdg_decoration_manager_v1_get_toplevel_decoration(
-            wl.interfaces.zxdg_decoration_manager_v1,
-            wl.toplevel,
-        ) orelse return error.UnableToGetToplevelDecoration;
-
-        c.zxdg_toplevel_decoration_v1_set_mode(decoration, c.ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
     }
 
     // Commit changes to surface
