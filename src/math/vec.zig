@@ -1,6 +1,5 @@
 const std = @import("std");
 
-
 const mach = @import("../main.zig");
 const testing = mach.testing;
 const math = mach.math;
@@ -145,7 +144,7 @@ pub fn Vec3(comptime Scalar: type) type {
         pub inline fn mulQuat(v: *const VecN, q: *const quat.Quat(Scalar)) VecN {
             const q_xyz = q.v.swizzle(.x, .y, .z);
             const uv = q_xyz.cross(v);
-            const uuv = q.xyz(&uv);
+            const uuv = q_xyz.cross(&uv);
             return v.add(&uv.mulScalar(q.v.w()).add(&uuv).mulScalar(2));
         }
 
@@ -216,6 +215,19 @@ pub fn Vec4(comptime Scalar: type) type {
         }
         pub inline fn w(v: *const VecN) Scalar {
             return v.v[3];
+        }
+
+        pub inline fn swizzle(
+            v: *const VecN,
+            xc: VecComponent,
+            yc: VecComponent,
+            zc: VecComponent,
+        ) Vec3(Scalar) {
+            return .{ .v = @shuffle(Scalar, v.v, undefined, [3]T{
+                @intFromEnum(xc),
+                @intFromEnum(yc),
+                @intFromEnum(zc),
+            }) };
         }
 
         /// Vector * Matrix multiplication
