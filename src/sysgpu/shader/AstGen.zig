@@ -2797,7 +2797,7 @@ fn genBuiltinSelect(astgen: *AstGen, scope: *Scope, node: NodeIndex) !InstIndex 
                     .type = arg1_res,
                     .true = arg1,
                     .false = arg2,
-                    .cond = arg2,
+                    .cond = arg3,
                 },
             });
         },
