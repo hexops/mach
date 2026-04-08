@@ -43,12 +43,19 @@ export fn wl_proxy_add_listener(proxy: ?*c.struct_wl_proxy, implementation: [*c]
 export fn wl_proxy_get_version(proxy: ?*c.struct_wl_proxy) u32 {
     return @call(.always_tail, libwaylandclient.?.wl_proxy_get_version, .{proxy});
 }
-export fn wl_proxy_marshal_flags(proxy: ?*c.struct_wl_proxy, opcode: u32, interface: [*c]const c.struct_wl_interface, version: u32, flags: u32, ...) ?*c.struct_wl_proxy {
-    var arg_list: std.builtin.VaList = @cVaStart();
-    defer @cVaEnd(&arg_list);
+// TODO(aarch64-linux): we have to write varargs code in C due to Zig on aarch64-linux not providing a varargs
+// implementation, see https://github.com/ziglang/zig/issues/15389
+//
+// export fn wl_proxy_marshal_flags(proxy: ?*c.struct_wl_proxy, opcode: u32, interface: [*c]const c.struct_wl_interface, version: u32, flags: u32, ...) ?*c.struct_wl_proxy {
+//     var arg_list: std.builtin.VaList = @cVaStart();
+//     defer @cVaEnd(&arg_list);
+//
+//     return @call(.always_tail, libwaylandclient.?.wl_proxy_marshal_flags, .{ proxy, opcode, interface, version, flags, arg_list });
+// }
+//
+export var wl_proxy_marshal_array_flags_ptr: ?*const fn () callconv(.C) void = null;
+// TODO(aarch64-linux): remove the code above, and uncomment the commented out code once aarch64-linux has a varargs implementation.
 
-    return @call(.always_tail, libwaylandclient.?.wl_proxy_marshal_flags, .{ proxy, opcode, interface, version, flags, arg_list });
-}
 export fn wl_proxy_destroy(proxy: ?*c.struct_wl_proxy) void {
     return @call(.always_tail, libwaylandclient.?.wl_proxy_destroy, .{proxy});
 }
@@ -82,6 +89,10 @@ pub fn initWindow(
     core_ptr = core;
     var core_window = core.windows.getValue(window_id);
     libwaylandclient = try LibWaylandClient.load();
+    // TODO(aarch64-linux): we have to write varargs code in C due to Zig on aarch64-linux not providing a varargs
+    // implementation, see https://github.com/ziglang/zig/issues/15389
+    wl_proxy_marshal_array_flags_ptr = @ptrCast(libwaylandclient.?.wl_proxy_marshal_array_flags);
+    // TODO(aarch64-linux): remove the code above once aarch64-linux has a varargs implementation.
     libxkbcommon = try LibXkbCommon.load();
 
     core_window.native = .{
@@ -293,7 +304,14 @@ pub const LibWaylandClient = struct {
     wl_display_get_fd: *const @TypeOf(c.wl_display_get_fd),
     wl_proxy_add_listener: *const @TypeOf(c.wl_proxy_add_listener),
     wl_proxy_get_version: *const @TypeOf(c.wl_proxy_get_version),
-    wl_proxy_marshal_flags: *const @TypeOf(c.wl_proxy_marshal_flags),
+    // TODO(aarch64-linux): we have to write varargs code in C due to Zig on aarch64-linux not providing a varargs
+    // implementation, see https://github.com/ziglang/zig/issues/15389
+    //
+    // wl_proxy_marshal_flags: *const @TypeOf(c.wl_proxy_marshal_flags),
+    //
+    wl_proxy_marshal_array_flags: *const @TypeOf(c.wl_proxy_marshal_array_flags),
+    // TODO(aarch64-linux): remove the code above, and uncomment the commented out code once aarch64-linux has a varargs implementation.
+
     wl_proxy_set_tag: *const @TypeOf(c.wl_proxy_set_tag),
     wl_proxy_destroy: *const @TypeOf(c.wl_proxy_destroy),
 
