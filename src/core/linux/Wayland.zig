@@ -1023,8 +1023,8 @@ const libdecor_listener = struct {
             width = @intCast(core_window.width);
             height = @intCast(core_window.height);
         } else {
-            const new_width: u32 = if(width > 0) @intCast(width) else core_window.width;
-            const new_height: u32 = if(height > 0) @intCast(height) else core_window.height;
+            const new_width: u32 = if (width > 0) @intCast(width) else core_window.width;
+            const new_height: u32 = if (height > 0) @intCast(height) else core_window.height;
             if (core_window.width != new_width or core_window.height != new_height) {
                 // Update logical size only. renewSwapChain in Linux.zig detects the mismatch
                 // and recreates the swapchain
@@ -1063,8 +1063,8 @@ const libdecor_listener = struct {
         _ = frame;
     }
 
-    var interface = c.libdecor_interface{ .@"error" = handle_error };
-    var frame_interface = c.libdecor_frame_interface{
+    const interface = c.libdecor_interface{ .@"error" = handle_error };
+    const frame_interface = c.libdecor_frame_interface{
         .configure = libdecor_configure,
         .commit = libdecor_commit,
         .close = libdecor_close,
