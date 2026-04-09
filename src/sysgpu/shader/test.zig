@@ -263,7 +263,7 @@ test "vertexWriteGBuffers" {
 
 test "select" {
     const src = @embedFile("test/select.wgsl");
-    
+
     try expectCodegen(src, "select.spv", .spirv, false);
     try expectCodegen(src, "select.hlsl", .hlsl, false);
     try expectCodegen(src, "select.msl", .msl, false);

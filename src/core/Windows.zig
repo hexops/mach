@@ -182,12 +182,14 @@ const CreateWindowArgs = struct {
 };
 
 var wndproc_core: *Core = undefined;
+var wndproc_init_complete: bool = false;
 
 fn initWindow(
     core: *Core,
     window_id: mach.ObjectID,
 ) !void {
     wndproc_core = core;
+    wndproc_init_complete = false;
 
     var core_window = core.windows.getValue(window_id);
 
@@ -270,6 +272,7 @@ fn initWindow(
             .from_windows_hwnd = &surface_descriptor_from_hwnd,
         } });
         try core.initWindow(window_id);
+        wndproc_init_complete = true;
     }
 }
 
@@ -331,6 +334,12 @@ fn wndProc(hwnd: w.HWND, msg: u32, wParam: w.WPARAM, lParam: w.LPARAM) callconv(
             return 0;
         },
         w.WM_DESTROY => @panic("Mach doesn't support destroying windows yet"),
+        else => {},
+    }
+
+    if (!wndproc_init_complete) return w.DefWindowProcW(hwnd, msg, wParam, lParam);
+
+    switch (msg) {
         w.WM_CLOSE => {
             core.pushEvent(.{ .close = .{ .window_id = windowIdFromHwnd(hwnd) } });
             return 0;
