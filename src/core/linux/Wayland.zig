@@ -293,6 +293,12 @@ pub fn tick(window_id: mach.ObjectID) !void {
     } else {
         _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
     }
+
+    const err = libwaylandclient.?.wl_display_get_error(wl.display);
+    if (err != 0) {
+        log.err("wayland display error: {}", .{err});
+        return error.DisplayError;
+    }
 }
 
 pub fn setTitle(wl: *const Native, title: [:0]const u8) void {
@@ -1063,8 +1069,8 @@ const libdecor_listener = struct {
         _ = frame;
     }
 
-    const interface = c.libdecor_interface{ .@"error" = handle_error };
-    const frame_interface = c.libdecor_frame_interface{
+    var interface = c.libdecor_interface{ .@"error" = handle_error };
+    var frame_interface = c.libdecor_frame_interface{
         .configure = libdecor_configure,
         .commit = libdecor_commit,
         .close = libdecor_close,
