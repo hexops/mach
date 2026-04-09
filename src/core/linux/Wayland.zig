@@ -92,6 +92,7 @@ pub const Native = struct {
     libdecor_frame: ?*c.libdecor_frame = null,
 
     // scaling factor, this is updated by the wl_output scale event
+    // TODO(wayland): https://code.hexops.org/hexops/mach/issues/1457
     scale: u32 = 1,
 };
 
