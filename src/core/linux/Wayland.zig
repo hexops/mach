@@ -288,7 +288,11 @@ pub fn tick(window_id: mach.ObjectID) !void {
         }
     }
 
-    _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
+    if (wl.use_client_side_decorations) {
+        _ = libdecor.?.libdecor_dispatch(wl.libdecor_context, 0);
+    } else {
+        _ = libwaylandclient.?.wl_display_roundtrip(wl.display);
+    }
 }
 
 pub fn setTitle(wl: *const Native, title: [:0]const u8) void {
