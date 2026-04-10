@@ -412,8 +412,8 @@ pub const Player = struct {
 
     pub fn deinit(player: *Player) void {
         lib.pw_thread_loop_stop(player.thread);
-        lib.pw_thread_loop_destroy(player.thread);
         lib.pw_stream_destroy(player.stream);
+        lib.pw_thread_loop_destroy(player.thread);
         player.allocator.destroy(player);
     }
 
@@ -483,8 +483,8 @@ pub const Recorder = struct {
 
     pub fn deinit(recorder: *Recorder) void {
         lib.pw_thread_loop_stop(recorder.thread);
-        lib.pw_thread_loop_destroy(recorder.thread);
         lib.pw_stream_destroy(recorder.stream);
+        lib.pw_thread_loop_destroy(recorder.thread);
         recorder.allocator.destroy(recorder);
     }
 
