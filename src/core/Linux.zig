@@ -19,7 +19,6 @@ const Key = Core.Key;
 const KeyMods = Core.KeyMods;
 
 const log = std.log.scoped(.mach);
-const gamemode_log = std.log.scoped(.gamemode);
 
 const BackendEnum = enum {
     x11,
@@ -50,7 +49,7 @@ headless: bool,
 refresh_rate: u32,
 size: Size,
 surface_descriptor: gpu.Surface.Descriptor,
-gamemode: ?bool = null,
+
 backend: Backend,
 
 // these arrays are used as info messages to the user that some features are missing
@@ -230,32 +229,6 @@ pub fn setCursorMode(_: *Linux, _: CursorMode) void {
 
 pub fn setCursorShape(_: *Linux, _: CursorShape) void {
     return;
-}
-
-/// Check if gamemode should be activated
-pub fn wantGamemode(allocator: std.mem.Allocator) error{ OutOfMemory, InvalidWtf8 }!bool {
-    const use_gamemode = std.process.getEnvVarOwned(
-        allocator,
-        "MACH_USE_GAMEMODE",
-    ) catch |err| switch (err) {
-        error.EnvironmentVariableNotFound => return true,
-        else => |e| return e,
-    };
-    defer allocator.free(use_gamemode);
-
-    return !(std.ascii.eqlIgnoreCase(use_gamemode, "off") or std.ascii.eqlIgnoreCase(use_gamemode, "false"));
-}
-
-pub fn initLinuxGamemode() bool {
-    mach.gamemode.start();
-    if (!mach.gamemode.isActive()) return false;
-    gamemode_log.info("gamemode: activated\n", .{});
-    return true;
-}
-
-pub fn deinitLinuxGamemode() void {
-    mach.gamemode.stop();
-    gamemode_log.info("gamemode: deactivated\n", .{});
 }
 
 /// Used to inform users that some features are not present. Remove when features are complete.

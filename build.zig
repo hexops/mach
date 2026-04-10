@@ -118,9 +118,6 @@ pub fn build(b: *std.Build) !void {
     );
 
     if (want_mach) {
-        // Linux gamemode requires libc.
-        if (target.result.os.tag == .linux) module.link_libc = true;
-
         if (target.result.cpu.arch != .wasm32) {
             if (b.lazyDependency("freetype", .{
                 .target = target,
@@ -226,9 +223,6 @@ pub fn build(b: *std.Build) !void {
         while (iter.next()) |e| {
             unit_tests.root_module.addImport(e.key_ptr.*, e.value_ptr.*);
         }
-
-        // Linux gamemode requires libc.
-        if (target.result.os.tag == .linux) unit_tests.root_module.link_libc = true;
 
         // Exposes a `test` step to the `zig build --help` menu, providing a way for the user to
         // request running the unit tests.
