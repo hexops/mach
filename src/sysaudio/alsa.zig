@@ -260,6 +260,93 @@ pub const Context = struct {
             freeDevice(ctx.allocator, d);
         ctx.devices_info.clear();
 
+        // Add the "default" ALSA device, which routes through PipeWire/PulseAudio when available.
+        for (&[_]main.Device.Mode{ .playback, .capture }) |mode| {
+            const snd_stream = modeToStream(mode);
+            var pcm: ?*c.snd_pcm_t = null;
+            if (lib.snd_pcm_open(&pcm, "default", snd_stream, 0) < 0)
+                continue;
+            defer _ = lib.snd_pcm_close(pcm);
+
+            var params: ?*c.snd_pcm_hw_params_t = null;
+            _ = lib.snd_pcm_hw_params_malloc(&params);
+            defer lib.snd_pcm_hw_params_free(params);
+            if (lib.snd_pcm_hw_params_any(pcm, params) < 0)
+                continue;
+
+            const device = main.Device{
+                .mode = mode,
+                .channels = blk: {
+                    const chmap = lib.snd_pcm_query_chmaps(pcm);
+                    if (chmap) |_| {
+                        defer lib.snd_pcm_free_chmaps(chmap);
+                        if (chmap[0] == null) continue;
+                        const channels = try ctx.allocator.alloc(main.ChannelPosition, chmap.*.*.map.channels);
+                        for (channels, 0..) |*ch, i|
+                            ch.* = fromAlsaChannel(chmap[0][0].map.pos()[i]) catch return error.OpeningDevice;
+                        break :blk channels;
+                    } else {
+                        continue;
+                    }
+                },
+                .formats = blk: {
+                    var fmt_mask: ?*c.snd_pcm_format_mask_t = null;
+                    _ = lib.snd_pcm_format_mask_malloc(&fmt_mask);
+                    defer lib.snd_pcm_format_mask_free(fmt_mask);
+                    lib.snd_pcm_format_mask_none(fmt_mask);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S8);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U8);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S16_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S16_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U16_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U16_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S24_3LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S24_3BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U24_3LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U24_3BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S24_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S24_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U24_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U24_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S32_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_S32_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U32_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_U32_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_FLOAT_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_FLOAT_BE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_FLOAT64_LE);
+                    lib.snd_pcm_format_mask_set(fmt_mask, c.SND_PCM_FORMAT_FLOAT64_BE);
+                    lib.snd_pcm_hw_params_get_format_mask(params, fmt_mask);
+
+                    var fmt_arr = std.ArrayList(main.Format).init(ctx.allocator);
+                    inline for (std.meta.tags(main.Format)) |format| {
+                        if (lib.snd_pcm_format_mask_test(fmt_mask, toAlsaFormat(format)) != 0) {
+                            try fmt_arr.append(format);
+                        }
+                    }
+
+                    break :blk try fmt_arr.toOwnedSlice();
+                },
+                .sample_rate = blk: {
+                    var rate_min: c_uint = 0;
+                    var rate_max: c_uint = 0;
+                    if (lib.snd_pcm_hw_params_get_rate_min(params, &rate_min, null) < 0)
+                        continue;
+                    if (lib.snd_pcm_hw_params_get_rate_max(params, &rate_max, null) < 0)
+                        continue;
+                    break :blk .{
+                        .min = @as(u24, @intCast(rate_min)),
+                        .max = @as(u24, @intCast(rate_max)),
+                    };
+                },
+                .id = try ctx.allocator.dupeZ(u8, "default"),
+                .name = try ctx.allocator.dupeZ(u8, "Default"),
+            };
+
+            try ctx.devices_info.list.append(ctx.allocator, device);
+            ctx.devices_info.setDefault(mode, ctx.devices_info.list.items.len - 1);
+        }
+
         var pcm_info: ?*c.snd_pcm_info_t = null;
         _ = lib.snd_pcm_info_malloc(&pcm_info);
         defer lib.snd_pcm_info_free(pcm_info);
@@ -451,29 +538,41 @@ pub const Context = struct {
 
         {
             if (lib.snd_mixer_open(mixer, 0) < 0)
-                return error.OutOfMemory;
+                return;
 
             const card_id = try ctx.allocator.dupeZ(u8, std.mem.sliceTo(device.id, ','));
             defer ctx.allocator.free(card_id);
 
-            if (lib.snd_mixer_attach(mixer.*, card_id.ptr) < 0)
-                return error.IncompatibleDevice;
+            if (lib.snd_mixer_attach(mixer.*, card_id.ptr) < 0) {
+                _ = lib.snd_mixer_close(mixer.*);
+                mixer.* = null;
+                return;
+            }
 
-            if (lib.snd_mixer_selem_register(mixer.*, null, null) < 0)
-                return error.OpeningDevice;
+            if (lib.snd_mixer_selem_register(mixer.*, null, null) < 0 or
+                lib.snd_mixer_load(mixer.*) < 0)
+            {
+                _ = lib.snd_mixer_close(mixer.*);
+                mixer.* = null;
+                return;
+            }
 
-            if (lib.snd_mixer_load(mixer.*) < 0)
-                return error.OpeningDevice;
-
-            if (lib.snd_mixer_selem_id_malloc(selem) < 0)
-                return error.OutOfMemory;
-            errdefer lib.snd_mixer_selem_id_free(selem.*);
+            if (lib.snd_mixer_selem_id_malloc(selem) < 0) {
+                _ = lib.snd_mixer_close(mixer.*);
+                mixer.* = null;
+                return;
+            }
 
             lib.snd_mixer_selem_id_set_index(selem.*, 0);
             lib.snd_mixer_selem_id_set_name(selem.*, "Master");
 
-            mixer_elm.* = lib.snd_mixer_find_selem(mixer.*, selem.*) orelse
-                return error.IncompatibleDevice;
+            mixer_elm.* = lib.snd_mixer_find_selem(mixer.*, selem.*) orelse {
+                lib.snd_mixer_selem_id_free(selem.*);
+                selem.* = null;
+                _ = lib.snd_mixer_close(mixer.*);
+                mixer.* = null;
+                return;
+            };
         }
     }
 
@@ -495,9 +594,9 @@ pub const Context = struct {
             .sample_buffer = try ctx.allocator.alloc(u8, period_size * format.frameSize(@intCast(device.channels.len))),
             .period_size = period_size,
             .pcm = pcm.?,
-            .mixer = mixer.?,
-            .selem = selem.?,
-            .mixer_elm = mixer_elm.?,
+            .mixer = mixer,
+            .selem = selem,
+            .mixer_elm = mixer_elm,
             .writeFn = writeFn,
             .user_data = options.user_data,
             .channels = device.channels,
@@ -525,9 +624,9 @@ pub const Context = struct {
             .sample_buffer = try ctx.allocator.alloc(u8, period_size * format.frameSize(@intCast(device.channels.len))),
             .period_size = period_size,
             .pcm = pcm.?,
-            .mixer = mixer.?,
-            .selem = selem.?,
-            .mixer_elm = mixer_elm.?,
+            .mixer = mixer,
+            .selem = selem,
+            .mixer_elm = mixer_elm,
             .readFn = readFn,
             .user_data = options.user_data,
             .channels = device.channels,
@@ -545,9 +644,9 @@ pub const Player = struct {
     sample_buffer: []u8,
     period_size: c_ulong,
     pcm: *c.snd_pcm_t,
-    mixer: *c.snd_mixer_t,
-    selem: *c.snd_mixer_selem_id_t,
-    mixer_elm: *c.snd_mixer_elem_t,
+    mixer: ?*c.snd_mixer_t,
+    selem: ?*c.snd_mixer_selem_id_t,
+    mixer_elm: ?*c.snd_mixer_elem_t,
     writeFn: main.WriteFn,
     user_data: ?*anyopaque,
 
@@ -559,8 +658,8 @@ pub const Player = struct {
         player.aborted.store(true, .unordered);
         player.thread.join();
 
-        _ = lib.snd_mixer_close(player.mixer);
-        lib.snd_mixer_selem_id_free(player.selem);
+        if (player.selem) |s| lib.snd_mixer_selem_id_free(s);
+        if (player.mixer) |m| _ = lib.snd_mixer_close(m);
         _ = lib.snd_pcm_close(player.pcm);
         _ = lib.snd_pcm_hw_free(player.pcm);
 
@@ -616,26 +715,28 @@ pub const Player = struct {
     }
 
     pub fn setVolume(player: *Player, vol: f32) !void {
+        const elm = player.mixer_elm orelse return error.CannotSetVolume;
         var min_vol: c_long = 0;
         var max_vol: c_long = 0;
-        if (lib.snd_mixer_selem_get_playback_volume_range(player.mixer_elm, &min_vol, &max_vol) < 0)
+        if (lib.snd_mixer_selem_get_playback_volume_range(elm, &min_vol, &max_vol) < 0)
             return error.CannotSetVolume;
 
         const dist = @as(f32, @floatFromInt(max_vol - min_vol));
         if (lib.snd_mixer_selem_set_playback_volume_all(
-            player.mixer_elm,
+            elm,
             @as(c_long, @intFromFloat(dist * vol)) + min_vol,
         ) < 0)
             return error.CannotSetVolume;
     }
 
     pub fn volume(player: *Player) !f32 {
+        const elm = player.mixer_elm orelse return error.CannotGetVolume;
         var vol: c_long = 0;
         var channel: c_int = 0;
 
         while (channel < c.SND_MIXER_SCHN_LAST) : (channel += 1) {
-            if (lib.snd_mixer_selem_has_playback_channel(player.mixer_elm, channel) == 1) {
-                if (lib.snd_mixer_selem_get_playback_volume(player.mixer_elm, channel, &vol) == 0)
+            if (lib.snd_mixer_selem_has_playback_channel(elm, channel) == 1) {
+                if (lib.snd_mixer_selem_get_playback_volume(elm, channel, &vol) == 0)
                     break;
             }
         }
@@ -645,7 +746,7 @@ pub const Player = struct {
 
         var min_vol: c_long = 0;
         var max_vol: c_long = 0;
-        if (lib.snd_mixer_selem_get_playback_volume_range(player.mixer_elm, &min_vol, &max_vol) < 0)
+        if (lib.snd_mixer_selem_get_playback_volume_range(elm, &min_vol, &max_vol) < 0)
             return error.CannotGetVolume;
 
         return @as(f32, @floatFromInt(vol)) / @as(f32, @floatFromInt(max_vol - min_vol));
@@ -659,9 +760,9 @@ pub const Recorder = struct {
     sample_buffer: []u8,
     period_size: c_ulong,
     pcm: *c.snd_pcm_t,
-    mixer: *c.snd_mixer_t,
-    selem: *c.snd_mixer_selem_id_t,
-    mixer_elm: *c.snd_mixer_elem_t,
+    mixer: ?*c.snd_mixer_t,
+    selem: ?*c.snd_mixer_selem_id_t,
+    mixer_elm: ?*c.snd_mixer_elem_t,
     readFn: main.ReadFn,
     user_data: ?*anyopaque,
 
@@ -673,8 +774,8 @@ pub const Recorder = struct {
         recorder.aborted.store(true, .unordered);
         recorder.thread.join();
 
-        _ = lib.snd_mixer_close(recorder.mixer);
-        lib.snd_mixer_selem_id_free(recorder.selem);
+        if (recorder.selem) |s| lib.snd_mixer_selem_id_free(s);
+        if (recorder.mixer) |m| _ = lib.snd_mixer_close(m);
         _ = lib.snd_pcm_close(recorder.pcm);
         _ = lib.snd_pcm_hw_free(recorder.pcm);
 
@@ -727,26 +828,28 @@ pub const Recorder = struct {
     }
 
     pub fn setVolume(recorder: *Recorder, vol: f32) !void {
+        const elm = recorder.mixer_elm orelse return error.CannotSetVolume;
         var min_vol: c_long = 0;
         var max_vol: c_long = 0;
-        if (lib.snd_mixer_selem_get_capture_volume_range(recorder.mixer_elm, &min_vol, &max_vol) < 0)
+        if (lib.snd_mixer_selem_get_capture_volume_range(elm, &min_vol, &max_vol) < 0)
             return error.CannotSetVolume;
 
         const dist = @as(f32, @floatFromInt(max_vol - min_vol));
         if (lib.snd_mixer_selem_set_capture_volume_all(
-            recorder.mixer_elm,
+            elm,
             @as(c_long, @intFromFloat(dist * vol)) + min_vol,
         ) < 0)
             return error.CannotSetVolume;
     }
 
     pub fn volume(recorder: *Recorder) !f32 {
+        const elm = recorder.mixer_elm orelse return error.CannotGetVolume;
         var vol: c_long = 0;
         var channel: c_int = 0;
 
         while (channel < c.SND_MIXER_SCHN_LAST) : (channel += 1) {
-            if (lib.snd_mixer_selem_has_capture_channel(recorder.mixer_elm, channel) == 1) {
-                if (lib.snd_mixer_selem_get_capture_volume(recorder.mixer_elm, channel, &vol) == 0)
+            if (lib.snd_mixer_selem_has_capture_channel(elm, channel) == 1) {
+                if (lib.snd_mixer_selem_get_capture_volume(elm, channel, &vol) == 0)
                     break;
             }
         }
@@ -756,7 +859,7 @@ pub const Recorder = struct {
 
         var min_vol: c_long = 0;
         var max_vol: c_long = 0;
-        if (lib.snd_mixer_selem_get_capture_volume_range(recorder.mixer_elm, &min_vol, &max_vol) < 0)
+        if (lib.snd_mixer_selem_get_capture_volume_range(elm, &min_vol, &max_vol) < 0)
             return error.CannotGetVolume;
 
         return @as(f32, @floatFromInt(vol)) / @as(f32, @floatFromInt(max_vol - min_vol));

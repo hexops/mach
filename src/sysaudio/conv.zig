@@ -281,6 +281,10 @@ pub fn floatToSigned(
     len: usize,
 ) void {
     const max = maxInt(DstType) + 1;
+    // The largest float that fits in DstType: nextDown(2^(bits-1)) to avoid overflow in @intFromFloat.
+    const FloatBits = std.meta.Int(.unsigned, @typeInfo(SrcType).float.bits);
+    const max_clamp_val: SrcType = @bitCast(@as(FloatBits, @bitCast(@as(SrcType, max))) - 1);
+    const min_clamp_val: SrcType = @floatFromInt(std.math.minInt(DstType));
     var i: usize = 0;
 
     // Use SIMD when available
@@ -288,10 +292,17 @@ pub fn floatToSigned(
         const VecSrc = @Vector(vec_size, SrcType);
         const VecDst = @Vector(vec_size, DstType);
         const max_vec: VecSrc = @splat(max);
+        const min_clamp: VecSrc = @splat(min_clamp_val);
+        const max_clamp: VecSrc = @splat(max_clamp_val);
+        const zero_vec: VecSrc = @splat(0);
         const vec_blocks_len = len - (len % vec_size);
         while (i < vec_blocks_len) : (i += vec_size) {
             const src_vec = bytesAsValue(VecSrc, src[i * src_stride ..][0 .. vec_size * src_stride]).*;
-            const dst_sample: VecDst = @intFromFloat(src_vec * max_vec);
+            // Replace NaN with 0, then scale and clamp
+            const clean = @select(SrcType, src_vec == src_vec, src_vec, zero_vec);
+            const scaled = clean * max_vec;
+            const clamped = @min(@max(scaled, min_clamp), max_clamp);
+            const dst_sample: VecDst = @intFromFloat(clamped);
             @memcpy(dst[i * dst_stride ..][0 .. vec_size * dst_stride], asBytes(&dst_sample)[0 .. vec_size * dst_stride]);
         }
     }
@@ -299,7 +310,10 @@ pub fn floatToSigned(
     // Convert the remaining samples
     while (i < len) : (i += 1) {
         const src_sample: *const SrcType = @ptrCast(@alignCast(src[i * src_stride ..][0..src_stride]));
-        const dst_sample: DstType = @truncate(@as(i32, @intFromFloat(src_sample.* * max)));
+        const val = if (src_sample.* == src_sample.*) src_sample.* else @as(SrcType, 0);
+        const scaled = val * max;
+        const clamped = @min(@max(scaled, min_clamp_val), max_clamp_val);
+        const dst_sample: DstType = @truncate(@as(i32, @intFromFloat(clamped)));
         @memcpy(dst[i * dst_stride ..][0..dst_stride], asBytes(&dst_sample)[0..dst_stride]);
     }
 }
