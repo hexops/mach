@@ -68,11 +68,27 @@ driver_needs_num_samples: usize = 0,
 
 const SampleBuffer = std.fifo.LinearFifo(u8, .Dynamic);
 
+fn initAudioContext(allocator: std.mem.Allocator) sysaudio.Context.InitError!sysaudio.Context {
+    const forced = std.process.getEnvVarOwned(allocator, "MACH_FORCE_AUDIO_BACKEND") catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => return sysaudio.Context.init(null, allocator, .{}),
+        else => return sysaudio.Context.init(null, allocator, .{}),
+    };
+    defer allocator.free(forced);
+
+    inline for (std.meta.fields(sysaudio.Backend)) |field| {
+        if (std.ascii.eqlIgnoreCase(forced, field.name)) {
+            return sysaudio.Context.init(@enumFromInt(field.value), allocator, .{});
+        }
+    }
+    log.err("unknown MACH_FORCE_AUDIO_BACKEND: {s}", .{forced});
+    return sysaudio.Context.init(null, allocator, .{});
+}
+
 pub fn init(audio: *Audio, audio_mod: mach.Mod(Audio)) !void {
     // TODO(allocator): find a better way for modules to get allocators
     const allocator = std.heap.c_allocator;
 
-    const ctx = try sysaudio.Context.init(null, allocator, .{});
+    const ctx = try initAudioContext(allocator);
     try ctx.refresh();
 
     // TODO(audio): let people handle these errors

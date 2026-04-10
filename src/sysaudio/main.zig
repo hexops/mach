@@ -38,7 +38,7 @@ pub const Context = struct {
                 const d = try @typeInfo(
                     std.meta.fieldInfo(backends.Context, b).type,
                 ).pointer.child.init(allocator, options);
-                log.info("Backend selected: {s}", .{b.name});
+                log.info("Backend selected: {s}", .{@tagName(b)});
                 break :blk d;
             } else {
                 inline for (std.meta.fields(Backend), 0..) |b, i| {
