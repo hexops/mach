@@ -35,7 +35,7 @@ const Lib = struct {
     jack_get_buffer_size: *const fn (?*c.jack_client_t) callconv(.C) c.jack_nframes_t,
 
     pub fn load() !void {
-        lib.handle = try mach.dynLibOpen("libjack.so");
+        lib.handle = try mach.dynLibOpen(.{ "libjack.so.0", "libjack.so" });
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

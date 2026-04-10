@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const mach = @import("main.zig");
 
 const log = std.log.scoped(.gamemode);
 
@@ -100,11 +101,7 @@ const linux_impl = struct {
     pub fn tryInit() LoadError!void {
         if (state == .init) return;
 
-        var dl = std.DynLib.open("libgamemode.so.0") catch |e| switch (e) {
-            // backwards-compatibility for old gamemode versions
-            error.FileNotFound => try std.DynLib.open("libgamemode.so"),
-            else => return e,
-        };
+        var dl = mach.dynLibOpen(.{ "libgamemode.so.0", "libgamemode.so" }) catch return error.FileNotFound;
         errdefer dl.close();
 
         // Populate symbol table.

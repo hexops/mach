@@ -334,11 +334,9 @@ pub const LibXkbCommon = struct {
     xkb_compose_state_get_one_sym: *const @TypeOf(c.xkb_compose_state_get_one_sym),
     xkb_keysym_to_utf32: *const @TypeOf(c.xkb_keysym_to_utf32),
 
-    pub const lib_name = "libxkbcommon.so.0";
-
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libxkbcommon.so.0", "libxkbcommon.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -397,11 +395,9 @@ pub const LibWaylandClient = struct {
     wl_surface_interface: *@TypeOf(c.wl_surface_interface),
     wl_touch_interface: *@TypeOf(c.wl_touch_interface),
 
-    pub const lib_name = "libwayland-client.so.0";
-
     pub fn load() !LibWaylandClient {
         var lib: LibWaylandClient = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libwayland-client.so.0", "libwayland-client.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibWaylandClient).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -427,11 +423,9 @@ pub const LibDecor = struct {
     libdecor_state_free: *@TypeOf(c.libdecor_state_free),
     libdecor_dispatch: *@TypeOf(c.libdecor_dispatch),
 
-    pub const lib_name = "libdecor-0.so.0";
-
     pub fn load() !LibDecor {
         var lib: LibDecor = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libdecor-0.so.0", "libdecor-0.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibDecor).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

@@ -401,11 +401,9 @@ pub const LibX11 = struct {
     XSetWMNormalHints: *const @TypeOf(c.XSetWMNormalHints),
     XFree: *const @TypeOf(c.XFree),
 
-    pub const lib_name = "libX11.so.6";
-
     pub fn load() !LibX11 {
         var lib: LibX11 = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libX11.so.6", "libX11.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibX11).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -425,7 +423,7 @@ const LibXCursor = struct {
     XcursorLibraryLoadImage: *const @TypeOf(c.XcursorLibraryLoadImage),
     pub fn load() !LibXCursor {
         var lib: LibXCursor = undefined;
-        lib.handle = std.DynLib.open("libXcursor.so.1") catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libXcursor.so.1", "libXcursor.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXCursor).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -441,7 +439,7 @@ const LibXRR = struct {
     XRRConfigCurrentRate: *const @TypeOf(c.XRRConfigCurrentRate),
     pub fn load() !LibXRR {
         var lib: LibXRR = undefined;
-        lib.handle = std.DynLib.open("libXrandr.so.1") catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libXrandr.so.1", "libXrandr.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXRR).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -471,11 +469,9 @@ pub const LibGL = struct {
     glXChooseVisual: *const fn (*c.Display, c_int, [*]const c_int) callconv(.C) *c.XVisualInfo,
     glXSwapBuffers: *const fn (*c.Display, Drawable) callconv(.C) bool,
 
-    pub const lib_name = "libGL.so.1";
-
     pub fn load() !LibGL {
         var lib: LibGL = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libGL.so.1", "libGL.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibGL).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);
@@ -505,11 +501,9 @@ pub const LibXkbCommon = struct {
     // xkb_compose_state_get_one_sym: *const @TypeOf(c.xkb_compose_state_get_one_sym),
     xkb_keysym_to_utf32: *const @TypeOf(c.xkb_keysym_to_utf32),
 
-    pub const lib_name = "libxkbcommon.so.0";
-
     pub fn load() !LibXkbCommon {
         var lib: LibXkbCommon = undefined;
-        lib.handle = std.DynLib.open(lib_name) catch return error.LibraryNotFound;
+        lib.handle = mach.dynLibOpen(.{ "libxkbcommon.so.0", "libxkbcommon.so" }) catch return error.LibraryNotFound;
         inline for (@typeInfo(LibXkbCommon).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

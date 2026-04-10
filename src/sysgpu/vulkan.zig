@@ -30,9 +30,9 @@ pub fn init(alloc: std.mem.Allocator, options: InitOptions) !void {
         vkb = try proc.loadBase(baseLoader);
     } else {
         libvulkan = try mach.dynLibOpen(switch (builtin.target.os.tag) {
-            .windows => "vulkan-1.dll",
-            .linux => "libvulkan.so.1",
-            .macos => "libvulkan.1.dylib",
+            .windows => .{"vulkan-1.dll"},
+            .linux => .{ "libvulkan.so.1", "libvulkan.so" },
+            .macos => .{"libvulkan.1.dylib"},
             else => @compileError("Unknown OS!"),
         });
         vkb = try proc.loadBase(libVulkanBaseLoader);

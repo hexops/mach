@@ -38,17 +38,17 @@ pub fn schedule(v: anytype) @TypeOf(v) {
 }
 
 // Instrumented function to load system libraries and print nicer error
-// messages.
-pub inline fn dynLibOpen(libName: []const u8) !std.DynLib {
-    return std.DynLib.open(libName) catch |err| {
-        switch (err) {
-            error.FileNotFound => {
-                log.err("Missing system library: '{s}'!", .{libName});
-                return error.LibraryNotFound;
-            },
-            else => return err,
-        }
-    };
+// messages. Accepts a tuple of library names to try in order (e.g.,
+// versioned soname first, then unversioned fallback).
+pub inline fn dynLibOpen(comptime lib_names: anytype) !std.DynLib {
+    inline for (lib_names) |name| {
+        if (std.DynLib.open(name)) |lib| return lib else |_| {}
+    }
+    log.err("missing system library, tried:", .{});
+    inline for (lib_names) |name| {
+        log.err("  * {s}", .{name});
+    }
+    return error.LibraryNotFound;
 }
 
 test {

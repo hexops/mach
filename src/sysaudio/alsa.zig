@@ -71,7 +71,7 @@ const Lib = struct {
     snd_mixer_selem_has_capture_channel: *const fn (?*c.snd_mixer_elem_t, c.snd_mixer_selem_channel_id_t) callconv(.C) c_int,
 
     pub fn load() !void {
-        lib.handle = try mach.dynLibOpen("libasound.so");
+        lib.handle = try mach.dynLibOpen(.{ "libasound.so.2", "libasound.so" });
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

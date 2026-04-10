@@ -171,10 +171,10 @@ pub fn initWindow(
                 var libs = std.ArrayList(u8).init(core.allocator);
                 defer libs.deinit();
                 if (Wayland.libwaylandclient == null) {
-                    try libs.appendSlice("\t* " ++ Wayland.LibWaylandClient.lib_name ++ "\n");
+                    try libs.appendSlice("\t* libwayland-client\n");
                 }
                 if (Wayland.libxkbcommon == null) {
-                    try libs.appendSlice("\t* " ++ Wayland.LibXkbCommon.lib_name ++ "\n");
+                    try libs.appendSlice("\t* libxkbcommon\n");
                 }
                 log.err("The following Wayland libraries were not available:\n{s}", .{libs.items});
                 return e;

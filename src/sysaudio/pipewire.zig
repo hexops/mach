@@ -34,7 +34,7 @@ const Lib = struct {
     pw_stream_get_state: *const fn (?*c.pw_stream, [*c][*c]const u8) callconv(.C) c.pw_stream_state,
 
     pub fn load() !void {
-        lib.handle = try mach.dynLibOpen("libpipewire-0.3.so");
+        lib.handle = try mach.dynLibOpen(.{ "libpipewire-0.3.so.0", "libpipewire-0.3.so" });
         inline for (@typeInfo(Lib).@"struct".fields[1..]) |field| {
             const name = std.fmt.comptimePrint("{s}\x00", .{field.name});
             const name_z: [:0]const u8 = @ptrCast(name[0 .. name.len - 1]);

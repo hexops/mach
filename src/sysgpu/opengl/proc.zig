@@ -34,10 +34,10 @@ var glXGetProcAddress: ?*const fn ([*:0]const u8) callconv(.C) ?GlFuncPtr = null
 
 pub fn init() !void {
     if (builtin.target.os.tag == .linux) {
-        libgl = try mach.dynLibOpen("libGL.so.1");
+        libgl = try mach.dynLibOpen(.{ "libGL.so.1", "libGL.so" });
         glXGetProcAddress = libgl.lookup(*const fn ([*:0]const u8) callconv(.C) ?GlFuncPtr, "glXGetProcAddress");
     } else {
-        libgl = try mach.dynLibOpen("opengl32.dll");
+        libgl = try mach.dynLibOpen(.{"opengl32.dll"});
     }
 }
 
